@@ -122,6 +122,8 @@ fn HomePage() -> impl IntoView {
         move |_| get_recipes(),
     );
 
+    let editable_recipe = create_signal(false);
+
     view! {
         <h1>"Welcome to Leptos!"</h1>
         <button on:click=on_click>"Click Me: " {count}</button>
@@ -145,7 +147,6 @@ fn HomePage() -> impl IntoView {
             </label>
             <input type="submit" value="Add"/>
         </MultiActionForm>
-        //<EditableRecipeSheet recipe=// />
         <Transition fallback=move || view! {<p>"Loading..."</p> }>
             {move || {
                 let existing_todos = {
@@ -163,12 +164,7 @@ fn HomePage() -> impl IntoView {
                                             .into_iter()
                                             .map(move |recipe| {
                                                 view! {
-                                                    /*
-                                                    <li>{recipe.name}</li><br/>
-                                                    <li>{recipe.ingredients}</li><br/>
-                                                    <li>{recipe.instructions}</li><br/>
-                                                    */
-                                                    <EditableRecipeSheet recipe=recipe />
+                                                    <EditableRecipeSheet recipe=recipe editable=editable_recipe />
                                                 }
                                             })
                                             .collect_view()

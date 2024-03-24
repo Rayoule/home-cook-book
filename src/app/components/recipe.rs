@@ -1,4 +1,4 @@
-use leptos::*;
+use leptos::{leptos_dom::logging::console_log, *};
 use serde::{Serialize, Deserialize};
 
 type SignalList = (ReadSignal<Vec<(ReadSignal<String>, WriteSignal<String>)>>, WriteSignal<Vec<(ReadSignal<String>, WriteSignal<String>)>>);
@@ -110,13 +110,13 @@ pub fn RecipeName(
     view! {
         <Show
             // Is the entry in edit mode ?
-            when=move || { is_edit.0.get() }
+            when=move || { editable.0.get() }
             // If not in edit mode:
             fallback= move || {
                 view! {
-                    <h1>{name.0}</h1>
-                    <Show
-                        when=move || { editable.0.get() }
+                    <h1>{name.0.get()}</h1>
+                    /*<Show
+                        when=move || { is_edit.0.get() }
                     >
                         <button
                             on:click=move |_| {
@@ -125,7 +125,7 @@ pub fn RecipeName(
                         >
                             "Edit"
                         </button>
-                    </Show>
+                    </Show>*/
                 }
             }
         >
@@ -156,25 +156,39 @@ pub fn RecipeName(
                 };
 
                 view! {
-                    <form on:submit=on_submit>
-                        <input type="text"
-                            // here, we use the `value` *attribute* to set only
-                            // the initial value, letting the browser maintain
-                            // the state after that
-                            value=name.0
-            
-                            // store a reference to this input in `input_element`
-                            node_ref=input_element
-                        /><br/>
-                        <input
-                            type="submit"
-                            value="☑"
-                        />
-                    </form>
+
+                    <Show
+                        when=move || { !is_edit.0.get() }
+                        fallback=move || {view!{
+                            <form on:submit=on_submit>
+                                <input type="text"
+                                    // here, we use the `value` *attribute* to set only
+                                    // the initial value, letting the browser maintain
+                                    // the state after that
+                                    value=name.0
+                    
+                                    // store a reference to this input in `input_element`
+                                    node_ref=input_element
+                                /><br/>
+                                <input
+                                    type="submit"
+                                    value="☑"
+                                />
+                            </form>
+                        }}
+                    >
+                        <button
+                            on:click=move |_| {
+                                is_edit.1.set(true);
+                            }
+                        >
+                            "Edit"
+                        </button>
+                    </Show>
                 }
             }
         </Show>
-        <h1>{name.0.get()}</h1>
+        //<h1>{name.0.get()}</h1>
     }
 }
 
@@ -189,7 +203,10 @@ pub fn StringEntryList(
     editable: Option<(ReadSignal<bool>, WriteSignal<bool>)>,
 ) -> impl IntoView {
 
-    let editable = editable.unwrap_or_else(|| create_signal(true));
+    let editable = editable.unwrap_or_else(|| {
+        console_log("Oh noooooooooooo");
+        create_signal(true)
+    });
 
 
     // This dynamic list will use the <For/> component.
@@ -211,7 +228,7 @@ pub fn StringEntryList(
                 .map(|s| {
                     let new_id: u16 = unique_id;
                     unique_id += 1;
-                    let is_edit_signal = create_signal(true);
+                    let is_edit_signal = create_signal(editable.0.get());
                     let content_signal = create_signal(s.clone());
 
                     (new_id, is_edit_signal, content_signal)
@@ -237,10 +254,6 @@ pub fn StringEntryList(
 
     view! {
         <div>
-            //<p>{"Editable Recipe START"}</p>
-            <button on:click=add_entry>
-                "Add Entry"
-            </button>
             <ul>
                 // The <For/> component is central here
                 // This allows for efficient, key list rendering
@@ -261,16 +274,73 @@ pub fn StringEntryList(
                             <li>
                                 <Show
                                     // Is the entry in edit mode ?
-                                    when=move || { is_edit.0.get() }
+                                    when=move || { editable.0.get() }
 
                                     // If not in edit mode:
                                     fallback= move ||
                                     {
                                         view!{ 
                                             <p>{entry}</p>
+                                        }
+                                    }
+                                > // If in edit mode:
+                                    {
+                                        // we'll use a NodeRef to store a reference to the input element
+                                        // this will be filled when the element is created
+                                        let input_element: NodeRef<html::Input> = create_node_ref();
+
+                                        // fires when the form `submit` event happens
+                                        // this will store the value of the <input> in our signal
+                                        let on_submit = move |ev: ev::SubmitEvent| {
+                                            // stop the page from reloading!
+                                            ev.prevent_default();
+                                            
+                                            // here, we'll extract the value from the input
+                                            let value = input_element()
+                                                // event handlers can only fire after the view
+                                                // is mounted to the DOM, so the `NodeRef` will be `Some`
+                                                .expect("<input> to exist")
+                                                // `NodeRef` implements `Deref` for the DOM element type
+                                                // this means we can call`HtmlInputElement::value()`
+                                                // to get the current value of the input
+                                                .value();
+                                            set_entry.set(value);
+
+                                            // Then remove the edit mode
+                                            set_entries.update(|entries| {
+                                                // Set edit mode for this entry
+                                                entries.iter_mut().for_each(|i| {
+                                                    if i.0 == id {
+                                                        i.1.1.set(false);
+                                                    }
+                                                });
+                                            });
+                                        };
+                                        
+                                        view!{
                                             <Show
-                                                when=move || {editable.0.get()}
+                                                when=move || { !is_edit.0.get() }
+
+                                                fallback=move || { view! {
+                                                    <form on:submit=on_submit>
+                                                        <input type="text"
+                                                            // here, we use the `value` *attribute* to set only
+                                                            // the initial value, letting the browser maintain
+                                                            // the state after that
+                                                            value=entry
+                                            
+                                                            // store a reference to this input in `input_element`
+                                                            node_ref=input_element
+                                                        /><br/>
+                                                        <input
+                                                            type="submit"
+                                                            value="☑"
+                                                        />
+                                                    </form>
+                                                }}
                                             >
+                                                <p>{entry}</p>
+                                                
                                                 <button
                                                     on:click=move |_| {
                                                         set_entries.update(|entries| {
@@ -311,65 +381,19 @@ pub fn StringEntryList(
                                             </button>
                                         }
                                     }
-                                > // If in edit mode:
-                                    {
-                                        // we'll use a NodeRef to store a reference to the input element
-                                        // this will be filled when the element is created
-                                        let input_element: NodeRef<html::Input> = create_node_ref();
-
-                                        // fires when the form `submit` event happens
-                                        // this will store the value of the <input> in our signal
-                                        let on_submit = move |ev: ev::SubmitEvent| {
-                                            // stop the page from reloading!
-                                            ev.prevent_default();
-                                            
-                                            // here, we'll extract the value from the input
-                                            let value = input_element()
-                                                // event handlers can only fire after the view
-                                                // is mounted to the DOM, so the `NodeRef` will be `Some`
-                                                .expect("<input> to exist")
-                                                // `NodeRef` implements `Deref` for the DOM element type
-                                                // this means we can call`HtmlInputElement::value()`
-                                                // to get the current value of the input
-                                                .value();
-                                            set_entry.set(value);
-
-                                            // Then remove the edit mode
-                                            set_entries.update(|entries| {
-                                                // Set edit mode for this entry
-                                                entries.iter_mut().for_each(|i| {
-                                                    if i.0 == id {
-                                                        i.1.1.set(false);
-                                                    }
-                                                });
-                                            });
-                                        };
-                                        
-                                        view!{
-                                            <form on:submit=on_submit>
-                                                <input type="text"
-                                                    // here, we use the `value` *attribute* to set only
-                                                    // the initial value, letting the browser maintain
-                                                    // the state after that
-                                                    value=entry
-                                    
-                                                    // store a reference to this input in `input_element`
-                                                    node_ref=input_element
-                                                /><br/>
-                                                <input
-                                                    type="submit"
-                                                    value="☑"
-                                                />
-                                            </form>
-                                        }
-                                    }
                                 </Show>
                             </li>
                         }
                     }
                 />
             </ul>
-            //<p>{"Editable Recipe END"}</p>
+            <Show
+                when=move || editable.0.get()
+            >
+                <button on:click=add_entry>
+                    "+"
+                </button>
+            </Show>
         </div>
     }
 }
