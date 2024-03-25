@@ -1,39 +1,43 @@
-use leptos::{leptos_dom::logging::console_log, *};
+use leptos::*;
 use serde::{Serialize, Deserialize};
 
-type SignalList = (ReadSignal<Vec<(ReadSignal<String>, WriteSignal<String>)>>, WriteSignal<Vec<(ReadSignal<String>, WriteSignal<String>)>>);
+use crate::app::*;
 
+
+// Main Recipe Format
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
 pub struct Recipe {
+    // The primary key as it is stored into the database
+    pub id: u16,
     pub name: String,
     pub ingredients: Vec<String>,
     pub instructions: Vec<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+// The Recipe format, without the ID, that will be serialize into JSON
+#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
 pub struct JsonRecipe {
+    pub name: String,
+    pub ingredients: Vec<String>,
+    pub instructions: Vec<String>,
+}
+
+// Recipe format when it is stored in the DB
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
+pub struct DbRowRecipe {
     pub id: u16,
     pub recipe: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RecipeSignal {
-    pub name: (ReadSignal<String>, WriteSignal<String>),
-    pub ingredients: SignalList,
-    pub instructions: SignalList,
+
+#[derive(Clone)]
+pub enum RecipeContentType {
+    Ingredients,
+    Instructions,
 }
 
-impl Default for RecipeSignal {
-    fn default() -> Self {
-        Self {
-            name: create_signal("".to_owned()),
-            ingredients: create_signal(vec![]),
-            instructions: create_signal(vec![])
-        }
-    }
-}
 
 #[component]
 pub fn EditableRecipeSheet(
@@ -45,26 +49,58 @@ pub fn EditableRecipeSheet(
 
     let editable = editable.unwrap_or_else(|| create_signal(false));
 
+    // Get the recipe
     let recipe = recipe.unwrap_or_default();
+    // Create the signal so we can edit the recipe
+    let (recipe_getter, recipe_setter) = create_signal(recipe.clone());
+
+    // provide context for children so they can update it
+    //provide_context(RecipeContextSetter(recipe_signal.1));
+
+    // The save logic
+    let save_recipe_action = create_action(|input: &Recipe| save_recipe(input.clone()));
+    //let save_submitted = save_recipe_action.input();
+    let save_pending = save_recipe_action.pending();
+
+    let on_save_click = move |_| {
+        // TODO Save the edited recipe back to the DB !!
+        // TODO get the recipe from the forms
+        // then dispatch the action and wait for it to finish before setting it to false
+        save_recipe_action.dispatch(recipe_getter.get());
+        editable.1.set(false);
+    };
+
+    
 
     view! {
         <div>
 
+            <Show
+                when=move || {save_pending.get()}
+            >
+                <p>SAVE PENDING !</p>
+            </Show>
+
             <h1>Name</h1>
             <RecipeName
                 name=recipe.name
+                recipe_setter=recipe_setter.clone()
                 editable=editable
             />
 
             <h2>Ingredients</h2>
             <StringEntryList
                 entry_list=recipe.ingredients
+                entry_type=RecipeContentType::Ingredients
+                recipe_setter=recipe_setter.clone()
                 editable=editable
             />
 
             <h2>Instructions</h2>
             <StringEntryList
                 entry_list=recipe.instructions
+                entry_type=RecipeContentType::Instructions
+                recipe_setter=recipe_setter.clone()
                 editable=editable
             />
 
@@ -72,14 +108,22 @@ pub fn EditableRecipeSheet(
                 when=move || !editable.0.get()
                 fallback=move || {
                     view! {
-                        <button
-                            on:click=move |_| {
-                                // TODO Save the edited recipe back to the DB !!
-                                editable.1.set(false);
-                            }
+
+                        <Show
+                            when=move || {save_pending.get()}
+                            fallback=move || {view!{
+
+                                <button
+                                    on:click=on_save_click
+                                >
+                                    "Save"
+                                </button>
+
+                            }}
                         >
-                            "Save"
-                        </button>
+                            <p>wait for save</p>
+                        </Show>
+
                     }
                 }
             >
@@ -97,6 +141,7 @@ pub fn EditableRecipeSheet(
 pub fn RecipeName(
     #[prop(optional)]
     name: Option<String>,
+    recipe_setter: WriteSignal<Recipe>,
     #[prop(optional)]
     editable: Option<(ReadSignal<bool>, WriteSignal<bool>)>,
 ) -> impl IntoView {
@@ -115,17 +160,6 @@ pub fn RecipeName(
             fallback= move || {
                 view! {
                     <h1>{name.0.get()}</h1>
-                    /*<Show
-                        when=move || { is_edit.0.get() }
-                    >
-                        <button
-                            on:click=move |_| {
-                                is_edit.1.set(true);
-                            }
-                        >
-                            "Edit"
-                        </button>
-                    </Show>*/
                 }
             }
         >
@@ -149,10 +183,15 @@ pub fn RecipeName(
                         // this means we can call`HtmlInputElement::value()`
                         // to get the current value of the input
                         .value();
-                        name.1.set(value);
+                    // Set the value in the name signal
+                    name.1.set(value.clone());
+                    // Update the recipe in the parent signal
+                    recipe_setter.update(|current_recipe| {
+                        current_recipe.name = value;
+                    });
 
-                        // Remove edit mode
-                        is_edit.1.set(false);
+                    // Remove edit mode
+                    is_edit.1.set(false);
                 };
 
                 view! {
@@ -177,6 +216,7 @@ pub fn RecipeName(
                             </form>
                         }}
                     >
+                        <h1>{name.0.get()}</h1>
                         <button
                             on:click=move |_| {
                                 is_edit.1.set(true);
@@ -197,16 +237,19 @@ pub fn RecipeName(
 
 #[component]
 pub fn StringEntryList(
-    #[prop(optional)]
-    entry_list: Option<Vec<String>>,
+    entry_list: Vec<String>,
+    entry_type: RecipeContentType,
+    recipe_setter: WriteSignal<Recipe>,
     #[prop(optional)]
     editable: Option<(ReadSignal<bool>, WriteSignal<bool>)>,
 ) -> impl IntoView {
 
     let editable = editable.unwrap_or_else(|| {
-        console_log("Oh noooooooooooo");
         create_signal(true)
     });
+
+    // Needed
+    let entry_type = create_signal(entry_type);
 
 
     // This dynamic list will use the <For/> component.
@@ -223,7 +266,6 @@ pub fn StringEntryList(
     let (get_entries, set_entries): (ReadSignal<EntryListTuple>, WriteSignal<EntryListTuple>) =
         create_signal(
             entry_list
-                .unwrap_or_else(|| vec![] )
                 .iter()
                 .map(|s| {
                     let new_id: u16 = unique_id;
@@ -314,6 +356,20 @@ pub fn StringEntryList(
                                                         i.1.1.set(false);
                                                     }
                                                 });
+                                            });
+
+                                            // Update the recipe in the parent
+                                            let new_entries: Vec<String> =
+                                                get_entries
+                                                    .get()
+                                                    .into_iter()
+                                                    .map(|e| e.2.0.get()) // We get the entry, then the string content signal, then its getter
+                                                    .collect();
+                                            recipe_setter.update(|current_recipe| {
+                                                match entry_type.0.get() {
+                                                    RecipeContentType::Ingredients => current_recipe.ingredients = new_entries,
+                                                    RecipeContentType::Instructions => current_recipe.instructions = new_entries,
+                                                }
                                             });
                                         };
                                         

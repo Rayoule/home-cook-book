@@ -23,6 +23,35 @@ pub mod ssr {
 }
 
 
+#[server]
+pub async fn save_recipe(recipe: Recipe) -> Result<(), ServerFnError> {
+    use self::ssr::*;
+
+    let mut conn = db().await?;
+
+    println!("{:?}", recipe);
+
+    // fake API delay
+    std::thread::sleep(std::time::Duration::from_millis(1250));
+
+    let recipe_id = recipe.id;
+    let json_recipe = JsonRecipe {
+        name:           recipe.name,
+        ingredients:    recipe.ingredients,
+        instructions:   recipe.instructions,
+    };
+    let serialized_recipe: String = serde_json::to_string(&json_recipe)?;
+
+    match sqlx::query( "UPDATE recipes SET recipe = $1 WHERE id = $2;" )
+        .bind(serialized_recipe)
+        .bind(recipe_id)
+        .execute(&mut conn)
+        .await
+    {
+        Ok(_row) => Ok(()),
+        Err(e) => Err(ServerFnError::ServerError(e.to_string())),
+    }
+}
 
 
 #[server]
@@ -48,7 +77,6 @@ pub async fn add_recipe(recipe: Recipe) -> Result<(), ServerFnError> {
     }
 }
 
-
 #[server]
 pub async fn get_recipes() -> Result<Vec<Recipe>, ServerFnError> {
     use self::ssr::*;
@@ -57,12 +85,17 @@ pub async fn get_recipes() -> Result<Vec<Recipe>, ServerFnError> {
 
     let mut conn = db().await?;
 
-    let mut recipes = Vec::new();
-    //let mut rows = sqlx::query_as::<_, Recipe>("SELECT * FROM recipes").fetch(&mut conn);
-    let mut rows = sqlx::query_as::<_, JsonRecipe>("SELECT * FROM recipes").fetch(&mut conn);
+    let mut recipes: Vec<Recipe> = vec![];
+    let mut rows = sqlx::query_as::<_, DbRowRecipe>("SELECT * FROM recipes").fetch(&mut conn);
     while let Some(row) = rows.try_next().await? {
-        let row_recipe: Recipe = serde_json::from_str(&row.recipe)?;
-        recipes.push(row_recipe);
+        let json_recipe: JsonRecipe = serde_json::from_str(&row.recipe)?;
+        let recipe = Recipe {
+            id:             row.id,
+            name:           json_recipe.name,
+            ingredients:    json_recipe.ingredients,
+            instructions:   json_recipe.instructions,
+        };
+        recipes.push(recipe);
     }
 
     Ok(recipes)
