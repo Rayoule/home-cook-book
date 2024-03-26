@@ -34,7 +34,11 @@ pub async fn save_recipe(recipe: Recipe) -> Result<(), ServerFnError> {
     // fake API delay
     std::thread::sleep(std::time::Duration::from_millis(1250));
 
-    let recipe_id = recipe.id;
+    let recipe_id =
+        recipe
+            .id
+            .expect("to save recipe with no ID");
+    
     let json_recipe = JsonRecipe {
         name:           recipe.name,
         ingredients:    recipe.ingredients,
@@ -65,10 +69,15 @@ pub async fn add_recipe(recipe: Recipe) -> Result<(), ServerFnError> {
     // fake API delay
     std::thread::sleep(std::time::Duration::from_millis(1250));
 
-    match sqlx::query("INSERT INTO recipes (name, ingredients, instructions) VALUES ($1, $2, $3)")
-        .bind(recipe.name)
-        .bind(recipe.ingredients[0].clone())
-        .bind(recipe.instructions[0].clone())
+    let json_recipe = JsonRecipe {
+        name:           recipe.name,
+        ingredients:    recipe.ingredients,
+        instructions:   recipe.instructions,
+    };
+    let serialized_recipe: String = serde_json::to_string(&json_recipe)?;
+
+    match sqlx::query("INSERT INTO recipes (recipe) VALUES ($1)")
+        .bind(serialized_recipe)
         .execute(&mut conn)
         .await
     {
@@ -90,7 +99,7 @@ pub async fn get_recipes() -> Result<Vec<Recipe>, ServerFnError> {
     while let Some(row) = rows.try_next().await? {
         let json_recipe: JsonRecipe = serde_json::from_str(&row.recipe)?;
         let recipe = Recipe {
-            id:             row.id,
+            id:             Some(row.id),
             name:           json_recipe.name,
             ingredients:    json_recipe.ingredients,
             instructions:   json_recipe.instructions,
@@ -144,9 +153,6 @@ pub fn App() -> impl IntoView {
 /// Renders the home page of your application.
 #[component]
 fn HomePage() -> impl IntoView {
-    // Creates a reactive value to update the button
-    let (count, set_count) = create_signal(0);
-    let on_click = move |_| set_count.update(|count| *count += 1);
 
     let add_recipe = create_server_multi_action::<AddRecipe>();
     
@@ -159,27 +165,6 @@ fn HomePage() -> impl IntoView {
 
     view! {
         <h1>"Welcome to Leptos!"</h1>
-        <button on:click=on_click>"Click Me: " {count}</button>
-        <MultiActionForm
-            // we can handle client-side validation in the on:submit event
-            // leptos_router implements a `FromFormData` trait that lets you
-            // parse deserializable types from form data and check them
-            on:submit=move |ev| {
-                let data = AddRecipe::from_event(&ev).expect("to parse form data");
-                logging::log!("where do I run?");
-                if data.recipe.name == "" {
-                    // ev.prevent_default() will prevent form submission
-                    ev.prevent_default();
-                }
-            }
-            action=add_recipe
-        >
-            <label>
-                "Add a Recipe"
-                <input type="text" name="title"/>
-            </label>
-            <input type="submit" value="Add"/>
-        </MultiActionForm>
         <Transition fallback=move || view! {<p>"Loading..."</p> }>
             {move || {
                 let existing_todos = {
@@ -211,7 +196,9 @@ fn HomePage() -> impl IntoView {
                 view! {
                     <ul>
                         {existing_todos}
-                    </ul>
+                    </ul><br/>
+
+                    <NewRecipe/>
                 }
             }
         }

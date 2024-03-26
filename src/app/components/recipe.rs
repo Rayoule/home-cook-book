@@ -8,7 +8,7 @@ use crate::app::*;
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Recipe {
     // The primary key as it is stored into the database
-    pub id: u16,
+    pub id: Option<u16>,
     pub name: String,
     pub ingredients: Vec<String>,
     pub instructions: Vec<String>,
@@ -45,12 +45,18 @@ pub fn EditableRecipeSheet(
     recipe: Option<Recipe>,
     #[prop(optional)]
     editable: Option<(ReadSignal<bool>, WriteSignal<bool>)>,
+    #[prop(optional)]
+    is_new_recipe: Option<bool>,
+    #[prop(optional)]
+    creation_done_setter: Option<WriteSignal<bool>>
 ) -> impl IntoView {
+
+    let is_new_recipe = is_new_recipe.unwrap_or_else(|| false);
 
     let editable = editable.unwrap_or_else(|| create_signal(false));
 
     // Get the recipe
-    let recipe = recipe.unwrap_or_default();
+    let recipe = recipe.unwrap_or_else(|| Recipe::default());
     // Create the signal so we can edit the recipe
     let (recipe_getter, recipe_setter) = create_signal(recipe.clone());
 
@@ -58,22 +64,38 @@ pub fn EditableRecipeSheet(
     //provide_context(RecipeContextSetter(recipe_signal.1));
 
     // The save logic
-    let save_recipe_action = create_action(|input: &Recipe| save_recipe(input.clone()));
+    let save_recipe_action = if is_new_recipe {
+        create_action(|input: &Recipe| add_recipe(input.clone()))
+    } else {
+        create_action(|input: &Recipe| save_recipe(input.clone()))
+    };
     //let save_submitted = save_recipe_action.input();
     let save_pending = save_recipe_action.pending();
 
     let on_save_click = move |_| {
-        // TODO Save the edited recipe back to the DB !!
-        // TODO get the recipe from the forms
-        // then dispatch the action and wait for it to finish before setting it to false
+        // Make sure that every "in editing mode" elements are done
+        
+        
+        // dispatch the action and wait for it to finish before setting it to false
         save_recipe_action.dispatch(recipe_getter.get());
         editable.1.set(false);
-    };
 
+        if is_new_recipe {
+            creation_done_setter
+                .expect("to have a creation_done_setter for new recipe elements")
+                .set(false);
+        }
+    };
     
 
     view! {
         <div>
+
+            <Show
+                when=move || {is_new_recipe}
+            >
+                <p>NEW RECIPE</p>
+            </Show>
 
             <Show
                 when=move || {save_pending.get()}
@@ -228,7 +250,6 @@ pub fn RecipeName(
                 }
             }
         </Show>
-        //<h1>{name.0.get()}</h1>
     }
 }
 
@@ -373,7 +394,7 @@ pub fn StringEntryList(
                                             });
                                         };
                                         
-                                        view!{
+                                        view! {
                                             <Show
                                                 when=move || { !is_edit.0.get() }
 
@@ -451,5 +472,38 @@ pub fn StringEntryList(
                 </button>
             </Show>
         </div>
+    }
+}
+
+
+
+#[component]
+pub fn NewRecipe() -> impl IntoView {
+
+    let create_new = create_signal(false);
+
+    let editable = create_signal(true);
+
+    let on_new_click = move |_| {
+        create_new.1.set(true);
+    };
+
+    view! {
+        <Show
+            when=move || { create_new.0.get() }
+            fallback=move || { view! {
+                <button
+                    on:click=on_new_click
+                >
+                "Create New Recipe"
+                </button>
+            }}
+        >
+            <EditableRecipeSheet
+                editable=editable
+                is_new_recipe=true
+                creation_done_setter=create_new.1
+            />
+        </Show>
     }
 }
