@@ -3,7 +3,6 @@ use serde::{Serialize, Deserialize};
 
 use crate::app::*;
 
-
 // Main Recipe Format
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Recipe {
@@ -44,7 +43,7 @@ pub fn EditableRecipeSheet(
     #[prop(optional)]
     recipe: Option<Recipe>,
     #[prop(optional)]
-    editable: Option<(ReadSignal<bool>, WriteSignal<bool>)>,
+    editable: Option<bool>,
     #[prop(optional)]
     is_new_recipe: Option<bool>,
     #[prop(optional)]
@@ -53,7 +52,7 @@ pub fn EditableRecipeSheet(
 
     let is_new_recipe = is_new_recipe.unwrap_or_else(|| false);
 
-    let editable = editable.unwrap_or_else(|| create_signal(false));
+    let editable = create_signal(editable.unwrap_or_else(|| false));
 
     // Get the recipe
     let recipe = recipe.unwrap_or_else(|| Recipe::default());
@@ -86,10 +85,9 @@ pub fn EditableRecipeSheet(
                 .set(false);
         }
     };
-    
 
     view! {
-        <div>
+        <div class="recipe-sheet">
 
             <Show
                 when=move || {is_new_recipe}
@@ -103,14 +101,14 @@ pub fn EditableRecipeSheet(
                 <p>SAVE PENDING !</p>
             </Show>
 
-            <h1>Name</h1>
+            //<h1>Name</h1>
             <RecipeName
                 name=recipe.name
                 recipe_setter=recipe_setter.clone()
                 editable=editable
             />
 
-            <h2>Ingredients</h2>
+            //<h2>Ingredients</h2>
             <StringEntryList
                 entry_list=recipe.ingredients
                 entry_type=RecipeContentType::Ingredients
@@ -118,7 +116,7 @@ pub fn EditableRecipeSheet(
                 editable=editable
             />
 
-            <h2>Instructions</h2>
+            //<h2>Instructions</h2>
             <StringEntryList
                 entry_list=recipe.instructions
                 entry_type=RecipeContentType::Instructions
@@ -174,14 +172,21 @@ pub fn RecipeName(
 
     let is_edit = create_signal(false);
 
-    view! {
+    /*let style_class = style! {"recipe_title",
+        .recipe-title {
+            color: #333;
+            text-align: center;
+        }
+    };*/
+
+    view! { class = style_class,
         <Show
             // Is the entry in edit mode ?
             when=move || { editable.0.get() }
             // If not in edit mode:
             fallback= move || {
                 view! {
-                    <h1>{name.0.get()}</h1>
+                    <h1 class="recipe-title">{name.0.get()}</h1>
                 }
             }
         >
@@ -238,7 +243,7 @@ pub fn RecipeName(
                             </form>
                         }}
                     >
-                        <h1>{name.0.get()}</h1>
+                        <h1 class="recipe-title">{name.0.get()}</h1>
                         <button
                             on:click=move |_| {
                                 is_edit.1.set(true);
@@ -268,6 +273,16 @@ pub fn StringEntryList(
     let editable = editable.unwrap_or_else(|| {
         create_signal(true)
     });
+
+    let ingredients_or_instructions = match entry_type {
+        RecipeContentType::Ingredients => "Ingredients".to_owned(),
+        RecipeContentType::Instructions => "Instructions".to_owned(),
+    };
+
+    let style_class = match entry_type {
+        RecipeContentType::Ingredients => "recipe-ingredients".to_owned(),
+        RecipeContentType::Instructions => "recipe-instructions".to_owned(),
+    };
 
     // Needed
     let entry_type = create_signal(entry_type);
@@ -316,7 +331,8 @@ pub fn StringEntryList(
     };
 
     view! {
-        <div>
+        <div class={style_class}>
+            <h3>{ingredients_or_instructions}</h3>
             <ul>
                 // The <For/> component is central here
                 // This allows for efficient, key list rendering
@@ -482,7 +498,7 @@ pub fn NewRecipe() -> impl IntoView {
 
     let create_new = create_signal(false);
 
-    let editable = create_signal(true);
+    let editable = true;
 
     let on_new_click = move |_| {
         create_new.1.set(true);

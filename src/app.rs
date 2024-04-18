@@ -9,8 +9,6 @@ mod components;
 use crate::app::components::recipe::*;
 
 
-
-
 #[cfg(feature = "ssr")]
 pub mod ssr {
     pub use actix_web::HttpRequest;
@@ -161,10 +159,10 @@ fn HomePage() -> impl IntoView {
         move |_| get_recipes(),
     );
 
-    let editable_recipe = create_signal(false);
+    let editable_recipe = false ;
 
     view! {
-        <h1>"Welcome to Leptos!"</h1>
+        <h1>"Welcome to Home Cook Book!"</h1>
         <Transition fallback=move || view! {<p>"Loading..."</p> }>
             {move || {
                 let existing_todos = {
