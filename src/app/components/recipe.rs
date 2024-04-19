@@ -4,13 +4,28 @@ use serde::{Serialize, Deserialize};
 use crate::app::*;
 
 // Main Recipe Format
-#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Recipe {
     // The primary key as it is stored into the database
     pub id: Option<u16>,
     pub name: String,
+    pub categories: Vec<String>,
     pub ingredients: Vec<String>,
     pub instructions: Vec<String>,
+    pub notes: Vec<String>,
+}
+
+impl Default for Recipe {
+    fn default() -> Self {
+        Self {
+            id: None,
+            name: "".to_owned(),
+            categories: vec!["".to_owned()],
+            ingredients: vec!["".to_owned()],
+            instructions: vec!["".to_owned()],
+            notes: vec!["".to_owned()],
+        }
+    }
 }
 
 // The Recipe format, without the ID, that will be serialize into JSON
@@ -18,8 +33,34 @@ pub struct Recipe {
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
 pub struct JsonRecipe {
     pub name: String,
+    pub categories:Vec<String>,
     pub ingredients: Vec<String>,
     pub instructions: Vec<String>,
+    pub notes: Vec<String>,
+}
+
+impl JsonRecipe {
+
+    pub fn from_recipe(recipe: Recipe) -> Self {
+        JsonRecipe {
+            name:           recipe.name,
+            categories:     recipe.categories,
+            ingredients:    recipe.ingredients,
+            instructions:   recipe.instructions,
+            notes:          recipe.notes,
+        }
+    }
+
+    pub fn to_recipe(self, id: u16) -> Recipe {
+        Recipe {
+            id: Some(id),
+            name:           self.name,
+            categories:     self.categories,
+            ingredients:    self.ingredients,
+            instructions:   self.instructions,
+            notes:          self.notes,
+        }
+    }
 }
 
 // Recipe format when it is stored in the DB
@@ -35,126 +76,9 @@ pub struct DbRowRecipe {
 pub enum RecipeContentType {
     Ingredients,
     Instructions,
+    Notes,
 }
 
-
-#[component]
-pub fn EditableRecipeSheet(
-    #[prop(optional)]
-    recipe: Option<Recipe>,
-    #[prop(optional)]
-    editable: Option<bool>,
-    #[prop(optional)]
-    is_new_recipe: Option<bool>,
-    #[prop(optional)]
-    creation_done_setter: Option<WriteSignal<bool>>
-) -> impl IntoView {
-
-    let is_new_recipe = is_new_recipe.unwrap_or_else(|| false);
-
-    let editable = create_signal(editable.unwrap_or_else(|| false));
-
-    // Get the recipe
-    let recipe = recipe.unwrap_or_else(|| Recipe::default());
-    // Create the signal so we can edit the recipe
-    let (recipe_getter, recipe_setter) = create_signal(recipe.clone());
-
-    // provide context for children so they can update it
-    //provide_context(RecipeContextSetter(recipe_signal.1));
-
-    // The save logic
-    let save_recipe_action = if is_new_recipe {
-        create_action(|input: &Recipe| add_recipe(input.clone()))
-    } else {
-        create_action(|input: &Recipe| save_recipe(input.clone()))
-    };
-    //let save_submitted = save_recipe_action.input();
-    let save_pending = save_recipe_action.pending();
-
-    let on_save_click = move |_| {
-        // Make sure that every "in editing mode" elements are done
-        
-        
-        // dispatch the action and wait for it to finish before setting it to false
-        save_recipe_action.dispatch(recipe_getter.get());
-        editable.1.set(false);
-
-        if is_new_recipe {
-            creation_done_setter
-                .expect("to have a creation_done_setter for new recipe elements")
-                .set(false);
-        }
-    };
-
-    view! {
-        <div class="recipe-sheet">
-
-            <Show
-                when=move || {is_new_recipe}
-            >
-                <p>NEW RECIPE</p>
-            </Show>
-
-            <Show
-                when=move || {save_pending.get()}
-            >
-                <p>SAVE PENDING !</p>
-            </Show>
-
-            //<h1>Name</h1>
-            <RecipeName
-                name=recipe.name
-                recipe_setter=recipe_setter.clone()
-                editable=editable
-            />
-
-            //<h2>Ingredients</h2>
-            <StringEntryList
-                entry_list=recipe.ingredients
-                entry_type=RecipeContentType::Ingredients
-                recipe_setter=recipe_setter.clone()
-                editable=editable
-            />
-
-            //<h2>Instructions</h2>
-            <StringEntryList
-                entry_list=recipe.instructions
-                entry_type=RecipeContentType::Instructions
-                recipe_setter=recipe_setter.clone()
-                editable=editable
-            />
-
-            <Show
-                when=move || !editable.0.get()
-                fallback=move || {
-                    view! {
-
-                        <Show
-                            when=move || {save_pending.get()}
-                            fallback=move || {view!{
-
-                                <button
-                                    on:click=on_save_click
-                                >
-                                    "Save"
-                                </button>
-
-                            }}
-                        >
-                            <p>wait for save</p>
-                        </Show>
-
-                    }
-                }
-            >
-                <button on:click=move |_| { editable.1.set(true) } >
-                    "Edit Recipe"
-                </button>
-            </Show>
-
-        </div>
-    }
-}
 
 
 #[component]
@@ -171,13 +95,6 @@ pub fn RecipeName(
     let name = create_signal( name.unwrap_or_else(|| "".to_owned() ) );
 
     let is_edit = create_signal(false);
-
-    /*let style_class = style! {"recipe_title",
-        .recipe-title {
-            color: #333;
-            text-align: center;
-        }
-    };*/
 
     view! { class = style_class,
         <Show
@@ -277,11 +194,13 @@ pub fn StringEntryList(
     let ingredients_or_instructions = match entry_type {
         RecipeContentType::Ingredients => "Ingredients".to_owned(),
         RecipeContentType::Instructions => "Instructions".to_owned(),
+        RecipeContentType::Notes => "Notes".to_owned(),
     };
 
     let style_class = match entry_type {
         RecipeContentType::Ingredients => "recipe-ingredients".to_owned(),
         RecipeContentType::Instructions => "recipe-instructions".to_owned(),
+        RecipeContentType::Notes => "recipe-notes".to_owned(),
     };
 
     // Needed
@@ -406,6 +325,7 @@ pub fn StringEntryList(
                                                 match entry_type.0.get() {
                                                     RecipeContentType::Ingredients => current_recipe.ingredients = new_entries,
                                                     RecipeContentType::Instructions => current_recipe.instructions = new_entries,
+                                                    RecipeContentType::Notes => current_recipe.notes = new_entries,
                                                 }
                                             });
                                         };
@@ -521,5 +441,147 @@ pub fn NewRecipe() -> impl IntoView {
                 creation_done_setter=create_new.1
             />
         </Show>
+    }
+}
+
+
+#[component]
+pub fn EditableRecipeSheet(
+    #[prop(optional)]
+    recipe: Option<Recipe>,
+    #[prop(optional)]
+    editable: Option<bool>,
+    #[prop(optional)]
+    is_new_recipe: Option<bool>,
+    #[prop(optional)]
+    creation_done_setter: Option<WriteSignal<bool>>
+) -> impl IntoView {
+
+    let is_new_recipe = is_new_recipe.unwrap_or_else(|| false);
+
+    let editable = create_signal(editable.unwrap_or_else(|| false));
+
+    // Get the recipe
+    let recipe = recipe.unwrap_or_else(|| Recipe::default());
+    // Create the signal so we can edit the recipe
+    let (recipe_getter, recipe_setter) = create_signal(recipe.clone());
+
+    // provide context for children so they can update it
+    //provide_context(RecipeContextSetter(recipe_signal.1));
+
+    // The delete logic
+    let delete_recipe_action = create_action(|id: &u16| delete_recipe(*id));
+
+    // The save logic
+    let save_recipe_action = if is_new_recipe {
+        create_action(|input: &Recipe| add_recipe(input.clone()))
+    } else {
+        create_action(|input: &Recipe| save_recipe(input.clone()))
+    };
+    //let save_submitted = save_recipe_action.input();
+    let save_pending = save_recipe_action.pending();
+
+    let on_save_click = move |_| {
+        // Make sure that every "in editing mode" elements are done
+        
+        
+        // dispatch the action and wait for it to finish before setting it to false
+        save_recipe_action.dispatch(recipe_getter.get());
+        editable.1.set(false);
+
+        if is_new_recipe {
+            creation_done_setter
+                .expect("to have a creation_done_setter for new recipe elements")
+                .set(false);
+        }
+    };
+
+    view! {
+        <div class="recipe-sheet">
+
+            <Show
+                when=move || {is_new_recipe}
+            >
+                <p>NEW RECIPE</p>
+            </Show>
+
+            <Show
+                when=move || {save_pending.get()}
+            >
+                <p>SAVE PENDING !</p>
+            </Show>
+
+            // Name
+            <RecipeName
+                name=recipe.name
+                recipe_setter=recipe_setter.clone()
+                editable=editable
+            />
+
+            // Ingredients
+            <StringEntryList
+                entry_list=recipe.ingredients
+                entry_type=RecipeContentType::Ingredients
+                recipe_setter=recipe_setter.clone()
+                editable=editable
+            />
+
+            // Instructions
+            <StringEntryList
+                entry_list=recipe.instructions
+                entry_type=RecipeContentType::Instructions
+                recipe_setter=recipe_setter.clone()
+                editable=editable
+            />
+
+            // Notes
+            <StringEntryList
+                entry_list=recipe.notes
+                entry_type=RecipeContentType::Notes
+                recipe_setter=recipe_setter.clone()
+                editable=editable
+            />
+
+            <Show
+                when=move || !editable.0.get()
+                fallback=move || {
+                    view! {
+
+                        <Show
+                            when=move || {save_pending.get()}
+                            fallback=move || {view!{
+
+                                <button
+                                    on:click=on_save_click
+                                >
+                                    "Save"
+                                </button>
+
+                            }}
+                        >
+                            <p>wait for save</p>
+                        </Show>
+
+                    }
+                }
+            >
+                <button on:click=move |_| { editable.1.set(true) } >
+                    "Edit Recipe"
+                </button>
+
+                <Show
+                    when=move || {!is_new_recipe}
+                >
+                    <button on:click=move |_| { 
+                        if let Some(id) = recipe.id {
+                            delete_recipe_action.dispatch(id);
+                        }
+                    }>
+                        "Delete Recipe"
+                    </button>
+                </Show>
+            </Show>
+
+        </div>
     }
 }

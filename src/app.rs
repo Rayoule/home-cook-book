@@ -2,7 +2,7 @@ use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-use serde::{Deserialize, Serialize};
+//use serde::{Deserialize, Serialize};
 
 
 mod components;
@@ -37,11 +37,7 @@ pub async fn save_recipe(recipe: Recipe) -> Result<(), ServerFnError> {
             .id
             .expect("to save recipe with no ID");
     
-    let json_recipe = JsonRecipe {
-        name:           recipe.name,
-        ingredients:    recipe.ingredients,
-        instructions:   recipe.instructions,
-    };
+    let json_recipe = JsonRecipe::from_recipe(recipe);
     let serialized_recipe: String = serde_json::to_string(&json_recipe)?;
 
     match sqlx::query( "UPDATE recipes SET recipe = $1 WHERE id = $2;" )
@@ -60,18 +56,17 @@ pub async fn save_recipe(recipe: Recipe) -> Result<(), ServerFnError> {
 pub async fn add_recipe(recipe: Recipe) -> Result<(), ServerFnError> {
     use self::ssr::*;
 
+    println!("YOLOOOOOOOOOOOOO");
+
     let mut conn = db().await?;
 
-    println!("{:?}", recipe);
+    println!("New recipe added: /n {:?}", recipe);
 
     // fake API delay
     std::thread::sleep(std::time::Duration::from_millis(1250));
 
-    let json_recipe = JsonRecipe {
-        name:           recipe.name,
-        ingredients:    recipe.ingredients,
-        instructions:   recipe.instructions,
-    };
+    let json_recipe = JsonRecipe::from_recipe(recipe);
+
     let serialized_recipe: String = serde_json::to_string(&json_recipe)?;
 
     match sqlx::query("INSERT INTO recipes (recipe) VALUES ($1)")
@@ -96,12 +91,7 @@ pub async fn get_recipes() -> Result<Vec<Recipe>, ServerFnError> {
     let mut rows = sqlx::query_as::<_, DbRowRecipe>("SELECT * FROM recipes").fetch(&mut conn);
     while let Some(row) = rows.try_next().await? {
         let json_recipe: JsonRecipe = serde_json::from_str(&row.recipe)?;
-        let recipe = Recipe {
-            id:             Some(row.id),
-            name:           json_recipe.name,
-            ingredients:    json_recipe.ingredients,
-            instructions:   json_recipe.instructions,
-        };
+        let recipe = json_recipe.to_recipe(row.id);
         recipes.push(recipe);
     }
 
