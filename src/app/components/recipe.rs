@@ -1,4 +1,4 @@
-use leptos::*;
+use leptos::{leptos_dom::Directive, *};
 use serde::{Serialize, Deserialize};
 
 use crate::app::*;
@@ -79,6 +79,13 @@ pub enum RecipeContentType {
     Notes,
 }
 
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum RecipeAction {
+    Add,
+    Save,
+    Delete,
+}
 
 
 #[component]
@@ -414,7 +421,9 @@ pub fn StringEntryList(
 
 
 #[component]
-pub fn NewRecipe() -> impl IntoView {
+pub fn NewRecipe(
+    recipe_action: Action<(Recipe, RecipeAction), Result<(), ServerFnError>>
+) -> impl IntoView {
 
     let create_new = create_signal(false);
 
@@ -439,6 +448,7 @@ pub fn NewRecipe() -> impl IntoView {
                 editable=editable
                 is_new_recipe=true
                 creation_done_setter=create_new.1
+                recipe_action=recipe_action
             />
         </Show>
     }
@@ -454,7 +464,8 @@ pub fn EditableRecipeSheet(
     #[prop(optional)]
     is_new_recipe: Option<bool>,
     #[prop(optional)]
-    creation_done_setter: Option<WriteSignal<bool>>
+    creation_done_setter: Option<WriteSignal<bool>>,
+    recipe_action: Action<(Recipe, RecipeAction), Result<(), ServerFnError>>,
 ) -> impl IntoView {
 
     let is_new_recipe = is_new_recipe.unwrap_or_else(|| false);
@@ -466,27 +477,22 @@ pub fn EditableRecipeSheet(
     // Create the signal so we can edit the recipe
     let (recipe_getter, recipe_setter) = create_signal(recipe.clone());
 
-    // provide context for children so they can update it
-    //provide_context(RecipeContextSetter(recipe_signal.1));
+    let save_pending = recipe_action.pending();
 
-    // The delete logic
-    let delete_recipe_action = create_action(|id: &u16| delete_recipe(*id));
-
-    // The save logic
-    let save_recipe_action = if is_new_recipe {
-        create_action(|input: &Recipe| add_recipe(input.clone()))
-    } else {
-        create_action(|input: &Recipe| save_recipe(input.clone()))
+    let on_delete_click = move |_| {
+        let recipe = recipe_getter.get();
+        if let Some(_) = recipe.id {
+            recipe_action.dispatch((recipe, RecipeAction::Delete));
+        }
     };
-    //let save_submitted = save_recipe_action.input();
-    let save_pending = save_recipe_action.pending();
 
     let on_save_click = move |_| {
-        // Make sure that every "in editing mode" elements are done
-        
-        
         // dispatch the action and wait for it to finish before setting it to false
-        save_recipe_action.dispatch(recipe_getter.get());
+        recipe_action.dispatch((
+            recipe_getter.get(),
+            if is_new_recipe { RecipeAction::Add } else { RecipeAction::Save }
+        ));
+
         editable.1.set(false);
 
         if is_new_recipe {
@@ -556,7 +562,6 @@ pub fn EditableRecipeSheet(
                                 >
                                     "Save"
                                 </button>
-
                             }}
                         >
                             <p>wait for save</p>
@@ -572,12 +577,10 @@ pub fn EditableRecipeSheet(
                 <Show
                     when=move || {!is_new_recipe}
                 >
-                    <button on:click=move |_| { 
-                        if let Some(id) = recipe.id {
-                            delete_recipe_action.dispatch(id);
-                        }
-                    }>
-                        "Delete Recipe"
+                    <button
+                    on:click=on_delete_click
+                    >
+                        "Delete"
                     </button>
                 </Show>
             </Show>

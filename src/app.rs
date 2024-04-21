@@ -22,62 +22,62 @@ pub mod ssr {
 
 
 #[server]
-pub async fn save_recipe(recipe: Recipe) -> Result<(), ServerFnError> {
+pub async fn recipe_function(recipe: Recipe, recipe_action: RecipeAction) -> Result<(), ServerFnError> {
     use self::ssr::*;
 
     let mut conn = db().await?;
 
-    println!("{:?}", recipe);
+    println!("{:?}", &recipe);
 
     // fake API delay
     std::thread::sleep(std::time::Duration::from_millis(1250));
-
-    let recipe_id =
-        recipe
-            .id
-            .expect("to save recipe with no ID");
-    
+    let id = recipe.id.clone();
     let json_recipe = JsonRecipe::from_recipe(recipe);
     let serialized_recipe: String = serde_json::to_string(&json_recipe)?;
 
-    match sqlx::query( "UPDATE recipes SET recipe = $1 WHERE id = $2;" )
-        .bind(serialized_recipe)
-        .bind(recipe_id)
-        .execute(&mut conn)
-        .await
-    {
-        Ok(_row) => Ok(()),
-        Err(e) => Err(ServerFnError::ServerError(e.to_string())),
+    match recipe_action {
+
+        RecipeAction::Add => {
+            match sqlx::query("INSERT INTO recipes (recipe) VALUES ($1)")
+                .bind(serialized_recipe)
+                .execute(&mut conn)
+                .await
+            {
+                Ok(_row) => Ok(()),
+                Err(e) => Err(ServerFnError::ServerError(e.to_string())),
+            }
+        },
+
+        RecipeAction::Save => {
+            if let Some(id) = id {
+                match sqlx::query( "UPDATE recipes SET recipe = $1 WHERE id = $2;" )
+                    .bind(serialized_recipe)
+                    .bind(id)
+                    .execute(&mut conn)
+                    .await
+                {
+                    Ok(_row) => Ok(()),
+                    Err(e) => Err(ServerFnError::ServerError(e.to_string())),
+                }
+            } else {
+                Err(ServerFnError::ServerError("No Recipe ID for recipe deletion".to_owned()))
+            }
+        },
+
+        RecipeAction::Delete => {
+            if let Some(id) = id {
+                Ok(sqlx::query("DELETE FROM recipes WHERE id = $1")
+                .bind(id)
+                .execute(&mut conn)
+                .await
+                .map(|_| ())?)
+            } else {
+                Err(ServerFnError::ServerError("No Recipe ID for recipe deletion".to_owned()))
+            }
+        },
     }
 }
 
-
-#[server]
-pub async fn add_recipe(recipe: Recipe) -> Result<(), ServerFnError> {
-    use self::ssr::*;
-
-    println!("YOLOOOOOOOOOOOOO");
-
-    let mut conn = db().await?;
-
-    println!("New recipe added: /n {:?}", recipe);
-
-    // fake API delay
-    std::thread::sleep(std::time::Duration::from_millis(1250));
-
-    let json_recipe = JsonRecipe::from_recipe(recipe);
-
-    let serialized_recipe: String = serde_json::to_string(&json_recipe)?;
-
-    match sqlx::query("INSERT INTO recipes (recipe) VALUES ($1)")
-        .bind(serialized_recipe)
-        .execute(&mut conn)
-        .await
-    {
-        Ok(_row) => Ok(()),
-        Err(e) => Err(ServerFnError::ServerError(e.to_string())),
-    }
-}
 
 #[server]
 pub async fn get_recipes() -> Result<Vec<Recipe>, ServerFnError> {
@@ -96,20 +96,6 @@ pub async fn get_recipes() -> Result<Vec<Recipe>, ServerFnError> {
     }
 
     Ok(recipes)
-}
-
-// The struct name and path prefix arguments are optional.
-#[server]
-pub async fn delete_recipe(id: u16) -> Result<(), ServerFnError> {
-    use self::ssr::*;
-
-    let mut conn = db().await?;
-
-    Ok(sqlx::query("DELETE FROM recipes WHERE id = $1")
-        .bind(id)
-        .execute(&mut conn)
-        .await
-        .map(|_| ())?)
 }
 
 
@@ -138,14 +124,20 @@ pub fn App() -> impl IntoView {
     }
 }
 
+
 /// Renders the home page of your application.
 #[component]
 fn HomePage() -> impl IntoView {
 
-    let add_recipe = create_server_multi_action::<AddRecipe>();
+    use components::recipe::Recipe;
+
+    let recipe_action = create_action(|input: &(Recipe, RecipeAction)| {
+        let (current_recipe, current_action) = input;
+        recipe_function(current_recipe.clone(), current_action.clone())
+    });
     
     let recipes = create_resource(
-        move || add_recipe.version().get(),
+        move || (recipe_action.version().get(), ),
         move |_| get_recipes(),
     );
 
@@ -170,7 +162,11 @@ fn HomePage() -> impl IntoView {
                                             .into_iter()
                                             .map(move |recipe| {
                                                 view! {
-                                                    <EditableRecipeSheet recipe=recipe editable=editable_recipe />
+                                                    <EditableRecipeSheet
+                                                        recipe=recipe
+                                                        editable=editable_recipe
+                                                        recipe_action=recipe_action
+                                                    />
                                                 }
                                             })
                                             .collect_view()
@@ -186,7 +182,9 @@ fn HomePage() -> impl IntoView {
                         {existing_todos}
                     </ul><br/>
 
-                    <NewRecipe/>
+                    <NewRecipe
+                        recipe_action=recipe_action
+                    />
                 }
             }
         }
