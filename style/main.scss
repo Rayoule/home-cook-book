@@ -21,15 +21,23 @@ body {
 }
 
 .tag-list {
-	position: fixed;
-	top: 0;
-	width: 100%;
-	background-color: #333;
-	color: #fff;
-	padding: 10px 0;
-	text-align: center;
-	max-height: auto;
-	z-index: 1000; /* Ensure it's above other content */
+	list-style-type: none;
+	font-size: small;
+	position: absolute;
+    top: 0;
+    right: 0;
+	width: 45px;
+    background-color: #f0f0f0; /* Optional: Background color */
+    padding: 10px; /* Optional: Add padding */
+}
+
+/*.tag-list li div {
+	margin: 0;
+	padding: 0;
+}*/
+
+.tag-selected {
+	background-color: #f00;
 }
   
 .recipe-title {

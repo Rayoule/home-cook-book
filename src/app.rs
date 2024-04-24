@@ -148,7 +148,7 @@ fn HomePage() -> impl IntoView {
     let (selected_tags, set_selected_tags) = create_signal::<Vec<String>>(vec![]);
     let (already_selected_tags, set_already_selected_tags) = create_signal::<Vec<String>>(vec![]);
 
-    create_effect(move |_| {
+    /*create_effect(move |_| {
         let recipes = recipes.get();
         let tag_list =
             if let Some(Ok(recipes)) = recipes {
@@ -163,24 +163,48 @@ fn HomePage() -> impl IntoView {
                 vec![]
             };
         set_all_tags.set(tag_list);
-    });
+    });*/
 
     let editable_recipe = false;
 
     view! {
         <h1>"Welcome to Home Cook Book!"</h1>
         <Transition fallback=move || view! {<p>"Loading..."</p> }>
-            <TagList
-                tags=all_tags
-                // Tags that are selected
-                selected_tags_signal=set_selected_tags
-                // Tags that are already checked (needed because the component might redraw if tags are added or removed)
-                // This needs to be updated ONLY if tags are added or removed (through addind/removing recipes)
-                already_selected_tags=already_selected_tags
-            />
-        </Transition>
-        <Transition fallback=move || view! {<p>"Loading..."</p> }>
             {move || {
+                let tags_component = {
+                    move || {
+                        let recipes = recipes.get();
+                        let tag_list =
+                            if let Some(Ok(recipes)) = recipes {
+                                recipes
+                                    .iter()
+                                    .map(|recipe| recipe.tags.clone().unwrap_or_else(|| vec![]) )
+                                    /*.map(move |recipes| {
+                                        if let Some(Ok(recipes)) = recipes {
+                                            recipe.tags.clone().unwrap_or_else(|| vec![])
+                                        } else {
+                                            vec![]
+                                        }
+                                    })*/
+                                    .flatten()
+                                    .unique()
+                                    .collect::<Vec<String>>()
+                            } else { vec![] };
+                        set_all_tags.set(tag_list);
+
+                        view! {
+                            <TagList
+                                tags=all_tags
+                                // Tags that are selected
+                                selected_tags_signal=set_selected_tags
+                                // Tags that are already checked (needed because the component might redraw if tags are added or removed)
+                                // This needs to be updated ONLY if tags are added or removed (through addind/removing recipes)
+                                already_selected_tags=already_selected_tags 
+                            />
+                        }
+                    }
+                };
+
                 let existing_recipes = {
                     move || {
                         recipes.get()
@@ -192,16 +216,22 @@ fn HomePage() -> impl IntoView {
                                     if recipes.is_empty() {
                                         view! { <p>"No recipes were found."</p> }.into_view()
                                     } else {
+                                        let sel_tags = selected_tags.get();
                                         recipes
                                             .into_iter()
-                                            .map(move |recipe| {
-                                                view! {
-                                                    <EditableRecipeSheet
-                                                        recipe=recipe
-                                                        editable=editable_recipe
-                                                        recipe_action=recipe_action
-                                                    />
+                                            .filter_map(move |recipe| {
+                                                if recipe.has_tags(&sel_tags) {
+                                                    Some(view! {
+                                                        <EditableRecipeSheet
+                                                            recipe=recipe
+                                                            editable=editable_recipe
+                                                            recipe_action=recipe_action
+                                                        />
+                                                    })
+                                                } else {
+                                                    None
                                                 }
+                                                
                                             })
                                             .collect_view()
                                     }
@@ -212,6 +242,9 @@ fn HomePage() -> impl IntoView {
                 };
 
                 view! {
+                    <div>
+                        {tags_component}
+                    </div>
                     <ul>
                         {existing_recipes}
                     </ul><br/>

@@ -18,7 +18,7 @@ pub fn TagList(
             .get_untracked()
             .iter()
             .map(|t| {
-                create_signal((already_selected_tags.get().contains(t), t.clone()))
+                create_signal((already_selected_tags.get_untracked().contains(t), t.clone()))
             })
             .collect();
 
@@ -30,11 +30,12 @@ pub fn TagList(
             .map(|(tag_state, set_tag_state)| {
                 view! {
                     <li>
-                        <div
-                            on:click=move |_| set_tag_state.update(|(tag_selected, _)| *tag_selected = !*tag_selected )
+                        <button
+                            class:tag-selected = move || tag_state.get().0
+                            on:click = move |_| set_tag_state.update(|(tag_selected, _)| *tag_selected = !*tag_selected )
                         >
-                            <p>{tag_state.get().1}</p>
-                        </div>
+                            { move || tag_state.get().1 }
+                        </button>
                     </li>
                 }
             })

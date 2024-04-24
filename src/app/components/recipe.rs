@@ -15,6 +15,28 @@ pub struct Recipe {
     pub notes: Option<Vec<String>>,
 }
 
+impl Recipe {
+    /// Check if a recipe has a tag in the given tag list
+    pub fn has_tags(&self, tags_to_check: &Vec<String>) -> bool {
+        
+        let mut out = false;
+
+        if let Some(tags) = &self.tags {
+
+            if tags_to_check.len() < 1 { return true }
+
+            for i in 0..tags.len() {
+                if tags_to_check.contains(&tags[i]) {
+                    out = true;
+                    break;
+                }
+            }
+        }
+        out
+    }
+}
+
+
 // The Recipe format, without the ID, that will be serialize into JSON
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
