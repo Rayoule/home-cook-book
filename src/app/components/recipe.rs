@@ -1,31 +1,18 @@
-use leptos::{leptos_dom::Directive, *};
+use leptos::{leptos_dom::{logging::console_log, Directive}, *};
 use serde::{Serialize, Deserialize};
 
 use crate::app::*;
 
 // Main Recipe Format
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Recipe {
     // The primary key as it is stored into the database
     pub id: Option<u16>,
     pub name: String,
-    pub categories: Vec<String>,
-    pub ingredients: Vec<String>,
-    pub instructions: Vec<String>,
-    pub notes: Vec<String>,
-}
-
-impl Default for Recipe {
-    fn default() -> Self {
-        Self {
-            id: None,
-            name: "".to_owned(),
-            categories: vec!["".to_owned()],
-            ingredients: vec!["".to_owned()],
-            instructions: vec!["".to_owned()],
-            notes: vec!["".to_owned()],
-        }
-    }
+    pub tags: Option<Vec<String>>,
+    pub ingredients: Option<Vec<String>>,
+    pub instructions: Option<Vec<String>>,
+    pub notes: Option<Vec<String>>,
 }
 
 // The Recipe format, without the ID, that will be serialize into JSON
@@ -33,10 +20,10 @@ impl Default for Recipe {
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
 pub struct JsonRecipe {
     pub name: String,
-    pub categories:Vec<String>,
-    pub ingredients: Vec<String>,
-    pub instructions: Vec<String>,
-    pub notes: Vec<String>,
+    pub tags:Option<Vec<String>>,
+    pub ingredients: Option<Vec<String>>,
+    pub instructions: Option<Vec<String>>,
+    pub notes: Option<Vec<String>>,
 }
 
 impl JsonRecipe {
@@ -44,7 +31,7 @@ impl JsonRecipe {
     pub fn from_recipe(recipe: Recipe) -> Self {
         JsonRecipe {
             name:           recipe.name,
-            categories:     recipe.categories,
+            tags:           recipe.tags,
             ingredients:    recipe.ingredients,
             instructions:   recipe.instructions,
             notes:          recipe.notes,
@@ -55,7 +42,7 @@ impl JsonRecipe {
         Recipe {
             id: Some(id),
             name:           self.name,
-            categories:     self.categories,
+            tags:           self.tags,
             ingredients:    self.ingredients,
             instructions:   self.instructions,
             notes:          self.notes,
@@ -74,6 +61,7 @@ pub struct DbRowRecipe {
 
 #[derive(Clone)]
 pub enum RecipeContentType {
+    Tags,
     Ingredients,
     Instructions,
     Notes,
@@ -184,10 +172,9 @@ pub fn RecipeName(
 
 
 
-
 #[component]
 pub fn StringEntryList(
-    entry_list: Vec<String>,
+    entry_list: Option<Vec<String>>,
     entry_type: RecipeContentType,
     recipe_setter: WriteSignal<Recipe>,
     #[prop(optional)]
@@ -199,12 +186,14 @@ pub fn StringEntryList(
     });
 
     let ingredients_or_instructions = match entry_type {
+        RecipeContentType::Tags => "Tags".to_owned(),
         RecipeContentType::Ingredients => "Ingredients".to_owned(),
         RecipeContentType::Instructions => "Instructions".to_owned(),
         RecipeContentType::Notes => "Notes".to_owned(),
     };
 
     let style_class = match entry_type {
+        RecipeContentType::Tags => "recipe-tags".to_owned(),
         RecipeContentType::Ingredients => "recipe-ingredients".to_owned(),
         RecipeContentType::Instructions => "recipe-instructions".to_owned(),
         RecipeContentType::Notes => "recipe-notes".to_owned(),
@@ -223,6 +212,8 @@ pub fn StringEntryList(
     // Create a unique ID
     let mut unique_id = 0_u16;
 
+    let entry_list = entry_list.unwrap_or_else(|| vec![]);
+
     // Create the signal of the Vec of signal contents
     type EntryListTuple = Vec<(u16, (ReadSignal<bool>, WriteSignal<bool>), (ReadSignal<String>, WriteSignal<String>))>;
     let (get_entries, set_entries): (ReadSignal<EntryListTuple>, WriteSignal<EntryListTuple>) =
@@ -232,7 +223,7 @@ pub fn StringEntryList(
                 .map(|s| {
                     let new_id: u16 = unique_id;
                     unique_id += 1;
-                    let is_edit_signal = create_signal(editable.0.get());
+                    let is_edit_signal = create_signal(editable.0.get_untracked());
                     let content_signal = create_signal(s.clone());
 
                     (new_id, is_edit_signal, content_signal)
@@ -266,7 +257,7 @@ pub fn StringEntryList(
                     // `each` takes any function that returns an iterator
                     // this should usually be a signal or derived signal
                     // if it's not reactive, just render a Vec<_> instead of <For/>
-                    each=get_entries
+                    each=move || get_entries.get()
                     // the key should be unique and stable for each row
                     // using an index is usually a bad idea, unless your list
                     // can only grow, because moving items around inside the list
@@ -310,6 +301,7 @@ pub fn StringEntryList(
                                                 // to get the current value of the input
                                                 .value();
                                             set_entry.set(value);
+                                            
 
                                             // Then remove the edit mode
                                             set_entries.update(|entries| {
@@ -328,8 +320,16 @@ pub fn StringEntryList(
                                                     .into_iter()
                                                     .map(|e| e.2.0.get()) // We get the entry, then the string content signal, then its getter
                                                     .collect();
+
+                                            let new_entries: Option<Vec<String>> = if new_entries.len() < 1 {
+                                                None
+                                            } else {
+                                                Some(new_entries)
+                                            };
+
                                             recipe_setter.update(|current_recipe| {
                                                 match entry_type.0.get() {
+                                                    RecipeContentType::Tags => current_recipe.tags = new_entries,
                                                     RecipeContentType::Ingredients => current_recipe.ingredients = new_entries,
                                                     RecipeContentType::Instructions => current_recipe.instructions = new_entries,
                                                     RecipeContentType::Notes => current_recipe.notes = new_entries,
@@ -449,10 +449,12 @@ pub fn NewRecipe(
                 is_new_recipe=true
                 creation_done_setter=create_new.1
                 recipe_action=recipe_action
+                start_expended=true
             />
         </Show>
     }
 }
+
 
 
 #[component]
@@ -462,13 +464,15 @@ pub fn EditableRecipeSheet(
     #[prop(optional)]
     editable: Option<bool>,
     #[prop(optional)]
-    is_new_recipe: Option<bool>,
+    is_new_recipe: bool,
     #[prop(optional)]
     creation_done_setter: Option<WriteSignal<bool>>,
+    #[prop(optional)]
+    start_expended: bool,
     recipe_action: Action<(Recipe, RecipeAction), Result<(), ServerFnError>>,
 ) -> impl IntoView {
 
-    let is_new_recipe = is_new_recipe.unwrap_or_else(|| false);
+    //let is_new_recipe = is_new_recipe.unwrap_or_else(|| false);
 
     let editable = create_signal(editable.unwrap_or_else(|| false));
 
@@ -487,7 +491,6 @@ pub fn EditableRecipeSheet(
     };
 
     let on_save_click = move |_| {
-        // dispatch the action and wait for it to finish before setting it to false
         recipe_action.dispatch((
             recipe_getter.get(),
             if is_new_recipe { RecipeAction::Add } else { RecipeAction::Save }
@@ -502,8 +505,20 @@ pub fn EditableRecipeSheet(
         }
     };
 
+    let is_expended = create_signal(start_expended);
+
+    let on_div_click = move |_| {
+        if !is_new_recipe && !editable.0.get() {
+            is_expended.1.set(!is_expended.0.get());
+        }
+    };
+
     view! {
-        <div class="recipe-sheet">
+        <div
+            class="recipe-sheet"
+            class:expended = move || is_expended.0.get()
+            on:click=on_div_click
+        >
 
             <Show
                 when=move || {is_new_recipe}
@@ -520,6 +535,14 @@ pub fn EditableRecipeSheet(
             // Name
             <RecipeName
                 name=recipe.name
+                recipe_setter=recipe_setter.clone()
+                editable=editable
+            />
+
+            // Tags
+            <StringEntryList
+                entry_list=recipe.tags
+                entry_type=RecipeContentType::Tags
                 recipe_setter=recipe_setter.clone()
                 editable=editable
             />

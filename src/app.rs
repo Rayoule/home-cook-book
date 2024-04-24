@@ -1,12 +1,13 @@
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
+use itertools::Itertools;
 
 //use serde::{Deserialize, Serialize};
 
 
 mod components;
-use crate::app::components::recipe::*;
+use crate::app::components::{recipe::*, tags::*};
 
 
 #[cfg(feature = "ssr")]
@@ -25,9 +26,9 @@ pub mod ssr {
 pub async fn recipe_function(recipe: Recipe, recipe_action: RecipeAction) -> Result<(), ServerFnError> {
     use self::ssr::*;
 
-    let mut conn = db().await?;
-
     println!("{:?}", &recipe);
+
+    let mut conn = db().await?;
 
     // fake API delay
     std::thread::sleep(std::time::Duration::from_millis(1250));
@@ -80,7 +81,7 @@ pub async fn recipe_function(recipe: Recipe, recipe_action: RecipeAction) -> Res
 
 
 #[server]
-pub async fn get_recipes() -> Result<Vec<Recipe>, ServerFnError> {
+pub async fn get_recipes(mon_bool: bool) -> Result<Vec<Recipe>, ServerFnError> {
     use self::ssr::*;
 
     use futures::TryStreamExt;
@@ -135,19 +136,52 @@ fn HomePage() -> impl IntoView {
         let (current_recipe, current_action) = input;
         recipe_function(current_recipe.clone(), current_action.clone())
     });
+
+    let custom_sig = create_signal(true);
     
     let recipes = create_resource(
-        move || (recipe_action.version().get(), ),
-        move |_| get_recipes(),
+        move || recipe_action.version().get(),
+        move |_| get_recipes(custom_sig.0.get()),
     );
 
-    let editable_recipe = false ;
+    let (all_tags, set_all_tags) = create_signal::<Vec<String>>(vec![]);
+    let (selected_tags, set_selected_tags) = create_signal::<Vec<String>>(vec![]);
+    let (already_selected_tags, set_already_selected_tags) = create_signal::<Vec<String>>(vec![]);
+
+    create_effect(move |_| {
+        let recipes = recipes.get();
+        let tag_list =
+            if let Some(Ok(recipes)) = recipes {
+                recipes
+                    .iter()
+                    .map(|recipe| recipe.tags.clone().unwrap_or_else(|| vec![]))
+                    .flatten()
+                    .unique()
+                    .collect::<Vec<String>>()
+
+            } else {
+                vec![]
+            };
+        set_all_tags.set(tag_list);
+    });
+
+    let editable_recipe = false;
 
     view! {
         <h1>"Welcome to Home Cook Book!"</h1>
         <Transition fallback=move || view! {<p>"Loading..."</p> }>
+            <TagList
+                tags=all_tags
+                // Tags that are selected
+                selected_tags_signal=set_selected_tags
+                // Tags that are already checked (needed because the component might redraw if tags are added or removed)
+                // This needs to be updated ONLY if tags are added or removed (through addind/removing recipes)
+                already_selected_tags=already_selected_tags
+            />
+        </Transition>
+        <Transition fallback=move || view! {<p>"Loading..."</p> }>
             {move || {
-                let existing_todos = {
+                let existing_recipes = {
                     move || {
                         recipes.get()
                             .map(move |recipes| match recipes {
@@ -179,7 +213,7 @@ fn HomePage() -> impl IntoView {
 
                 view! {
                     <ul>
-                        {existing_todos}
+                        {existing_recipes}
                     </ul><br/>
 
                     <NewRecipe
