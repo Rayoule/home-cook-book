@@ -31,18 +31,13 @@ body {
     padding: 10px; /* Optional: Add padding */
 }
 
-/*.tag-list li div {
-	margin: 0;
-	padding: 0;
-}*/
-
 .tag-selected {
 	background-color: #f00;
 }
   
 .recipe-title {
-	color: #f6ff00;
-	text-align: left;
+	color: #1f1f1f;
+	text-align: center;
 }
   
 .recipe-details {
@@ -73,16 +68,16 @@ body {
 .recipe-ingredients li,
 .recipe-instructions li {
 	position: relative;
-  	padding-left: 20px; /* Add space for custom bullet */
-  	margin-bottom: 5px;
+  	padding-left: 5px; /* Add space for custom bullet */
+  	margin-bottom: 2px;
 }
   
-.recipe-ingredients li:before {
-	content: '\2022'; /* Bullet character */
-  	color: #f00; /* Custom bullet color */
-	font-size: 10px;
-	position: absolute;
-	left: 0;
-	top: 50%;
-	transform: translateY(-50%);
-}
+/*.recipe-ingredients li:before {
+	//content: '\2022';
+  	color: rgb(0, 0, 0);
+	//font-size: small;
+	//position: absolute;
+	//left: 0;
+	//top: 50%;
+	//transform: translateY(-50%);
+}*/

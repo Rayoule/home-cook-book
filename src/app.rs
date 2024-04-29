@@ -90,11 +90,15 @@ pub async fn get_recipes(mon_bool: bool) -> Result<Vec<Recipe>, ServerFnError> {
 
     let mut recipes: Vec<Recipe> = vec![];
     let mut rows = sqlx::query_as::<_, DbRowRecipe>("SELECT * FROM recipes").fetch(&mut conn);
+
     while let Some(row) = rows.try_next().await? {
         let json_recipe: JsonRecipe = serde_json::from_str(&row.recipe)?;
         let recipe = json_recipe.to_recipe(row.id);
         recipes.push(recipe);
     }
+
+    // Sort recipes alphabetically
+    recipes.sort_by_key(|r| r.name.to_lowercase());
 
     Ok(recipes)
 }
@@ -148,23 +152,6 @@ fn HomePage() -> impl IntoView {
     let (selected_tags, set_selected_tags) = create_signal::<Vec<String>>(vec![]);
     let (already_selected_tags, set_already_selected_tags) = create_signal::<Vec<String>>(vec![]);
 
-    /*create_effect(move |_| {
-        let recipes = recipes.get();
-        let tag_list =
-            if let Some(Ok(recipes)) = recipes {
-                recipes
-                    .iter()
-                    .map(|recipe| recipe.tags.clone().unwrap_or_else(|| vec![]))
-                    .flatten()
-                    .unique()
-                    .collect::<Vec<String>>()
-
-            } else {
-                vec![]
-            };
-        set_all_tags.set(tag_list);
-    });*/
-
     let editable_recipe = false;
 
     view! {
@@ -174,22 +161,16 @@ fn HomePage() -> impl IntoView {
                 let tags_component = {
                     move || {
                         let recipes = recipes.get();
-                        let tag_list =
+                        let mut tag_list =
                             if let Some(Ok(recipes)) = recipes {
                                 recipes
                                     .iter()
                                     .map(|recipe| recipe.tags.clone().unwrap_or_else(|| vec![]) )
-                                    /*.map(move |recipes| {
-                                        if let Some(Ok(recipes)) = recipes {
-                                            recipe.tags.clone().unwrap_or_else(|| vec![])
-                                        } else {
-                                            vec![]
-                                        }
-                                    })*/
                                     .flatten()
                                     .unique()
                                     .collect::<Vec<String>>()
                             } else { vec![] };
+                        tag_list.sort_by_key(|t| t.to_lowercase().clone());
                         set_all_tags.set(tag_list);
 
                         view! {

@@ -1,7 +1,5 @@
-use leptos::{leptos_dom::{logging::console_log, Directive}, *};
+use leptos::*;
 use serde::{Serialize, Deserialize};
-
-use crate::app::*;
 
 // Main Recipe Format
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
