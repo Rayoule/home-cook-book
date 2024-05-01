@@ -3,105 +3,12 @@ use leptos_meta::*;
 use leptos_router::*;
 use itertools::Itertools;
 
-//use serde::{Deserialize, Serialize};
+
+pub mod components;
+pub mod elements;
+use crate::app::components::{recipe::*, recipe_server_functions::*, tags::*};
 
 
-mod components;
-use crate::app::components::{recipe::*, tags::*};
-
-
-#[cfg(feature = "ssr")]
-pub mod ssr {
-    pub use actix_web::HttpRequest;
-    pub use leptos::ServerFnError;
-    pub use sqlx::{Connection, SqliteConnection};
-
-    pub async fn db() -> Result<SqliteConnection, ServerFnError> {
-        Ok(SqliteConnection::connect("sqlite:cook-book.db").await?)
-    }
-}
-
-
-#[server]
-pub async fn recipe_function(recipe: Recipe, recipe_action: RecipeAction) -> Result<(), ServerFnError> {
-    use self::ssr::*;
-
-    println!("{:?}", &recipe);
-
-    let mut conn = db().await?;
-
-    // fake API delay
-    std::thread::sleep(std::time::Duration::from_millis(1250));
-    let id = recipe.id.clone();
-    let json_recipe = JsonRecipe::from_recipe(recipe);
-    let serialized_recipe: String = serde_json::to_string(&json_recipe)?;
-
-    match recipe_action {
-
-        RecipeAction::Add => {
-            match sqlx::query("INSERT INTO recipes (recipe) VALUES ($1)")
-                .bind(serialized_recipe)
-                .execute(&mut conn)
-                .await
-            {
-                Ok(_row) => Ok(()),
-                Err(e) => Err(ServerFnError::ServerError(e.to_string())),
-            }
-        },
-
-        RecipeAction::Save => {
-            if let Some(id) = id {
-                match sqlx::query( "UPDATE recipes SET recipe = $1 WHERE id = $2;" )
-                    .bind(serialized_recipe)
-                    .bind(id)
-                    .execute(&mut conn)
-                    .await
-                {
-                    Ok(_row) => Ok(()),
-                    Err(e) => Err(ServerFnError::ServerError(e.to_string())),
-                }
-            } else {
-                Err(ServerFnError::ServerError("No Recipe ID for recipe deletion".to_owned()))
-            }
-        },
-
-        RecipeAction::Delete => {
-            if let Some(id) = id {
-                Ok(sqlx::query("DELETE FROM recipes WHERE id = $1")
-                .bind(id)
-                .execute(&mut conn)
-                .await
-                .map(|_| ())?)
-            } else {
-                Err(ServerFnError::ServerError("No Recipe ID for recipe deletion".to_owned()))
-            }
-        },
-    }
-}
-
-
-#[server]
-pub async fn get_recipes(mon_bool: bool) -> Result<Vec<Recipe>, ServerFnError> {
-    use self::ssr::*;
-
-    use futures::TryStreamExt;
-
-    let mut conn = db().await?;
-
-    let mut recipes: Vec<Recipe> = vec![];
-    let mut rows = sqlx::query_as::<_, DbRowRecipe>("SELECT * FROM recipes").fetch(&mut conn);
-
-    while let Some(row) = rows.try_next().await? {
-        let json_recipe: JsonRecipe = serde_json::from_str(&row.recipe)?;
-        let recipe = json_recipe.to_recipe(row.id);
-        recipes.push(recipe);
-    }
-
-    // Sort recipes alphabetically
-    recipes.sort_by_key(|r| r.name.to_lowercase());
-
-    Ok(recipes)
-}
 
 
 #[component]
@@ -115,24 +22,137 @@ pub fn App() -> impl IntoView {
         <Stylesheet id="leptos" href="/pkg/home-cook-book.css"/>
 
         // sets the document title
-        <Title text="Welcome to Leptos"/>
+        <Title text="Home Cook Book"/>
 
         // content for this welcome page
         <Router>
             <main>
-                <Routes>
-                    <Route path="" view=HomePage/>
+                <HeaderMenu/>
+                <AnimatedRoutes
+                    outro="slideOut"
+                    intro="slideIn"
+                    outro_back="slideOutBack"
+                    intro_back="slideInBack"
+                 >
+                    <Route path="/" view=AllRecipes/>
+                    <Route path="/new-recipe" view=NewRecipePage/>
+                    <Route path="/edit-recipe/:id" view=EditRecipePage/>
                     <Route path="/*any" view=NotFound/>
-                </Routes>
+                </AnimatedRoutes>
             </main>
         </Router>
     }
 }
 
 
+/// 404 - Not Found
+#[component]
+fn NotFound() -> impl IntoView {
+    // set an HTTP status code 404
+    // this is feature gated because it can only be done during
+    // initial server-side rendering
+    // if you navigate to the 404 page subsequently, the status
+    // code will not be set because there is not a new HTTP request
+    // to the server
+    #[cfg(feature = "ssr")]
+    {
+        // this can be done inline because it's synchronous
+        // if it were async, we'd use a server function
+        let resp = expect_context::<leptos_actix::ResponseOptions>();
+        resp.set_status(actix_web::http::StatusCode::NOT_FOUND);
+    }
+
+    view! {
+        <h1>"Not Found"</h1>
+    }
+}
+
+
+#[component]
+fn HeaderMenu() -> impl IntoView {
+    view! {
+        <header class="header-menu">
+            <h1>{"Home Cook Book"}</h1>
+            <A href="">"Recipes"</A>
+            <A href="/new-recipe">"New Recipe"</A>
+        </header>
+    }
+}
+
+
+
+#[component]
+fn NewRecipePage() -> impl IntoView {
+
+    let recipe_action = create_action(|input: &(Recipe, RecipeAction)| {
+        let (current_recipe, current_action) = input;
+        recipe_function(current_recipe.clone(), current_action.clone())
+    });
+
+    view! {
+        <NewRecipe
+            recipe_action=recipe_action
+        />
+    }
+}
+
+
+#[derive(Params, PartialEq, Clone, Default)]
+struct EditRecipeParam {
+    id: Option<u16>
+}
+
+#[component]
+fn EditRecipePage() -> impl IntoView {
+    
+    let recipe_action = create_action(|input: &(Recipe, RecipeAction)| {
+        let (current_recipe, current_action) = input;
+        recipe_function(current_recipe.clone(), current_action.clone())
+    });
+
+    let action_pending = recipe_action.pending();
+
+    let get_recipe_id_param =move || {
+        use_params::<EditRecipeParam>()
+            .get()
+            .unwrap_or_default().id
+    };
+
+    let recipe_resource = create_resource(
+        move || (recipe_action.version().get(), get_recipe_id_param()),
+        move |(_, recipe_id)| get_recipe(recipe_id),
+    );
+
+    let recipe_loading = recipe_resource.loading();
+
+    view! {
+        <Transition fallback=move || view! {<p>"Loading..."</p> }>
+            {move || {
+                let recipe = recipe_resource.get();
+
+                if let Some(Ok(recipe)) = recipe {
+                    view! {
+                        <EditableRecipeSheet
+                            recipe=                 recipe
+                            editable=               true
+                            is_new_recipe=          false
+                            recipe_action=          recipe_action
+                        />
+                    }
+                } else {
+                    view! {
+                        <h1>{"Error: Could not fetch the recipe..."}</h1>
+                    }.into_view()
+                }
+            }}
+        </Transition>
+    }
+}
+
+
 /// Renders the home page of your application.
 #[component]
-fn HomePage() -> impl IntoView {
+fn AllRecipes() -> impl IntoView {
 
     use components::recipe::Recipe;
 
@@ -141,11 +161,11 @@ fn HomePage() -> impl IntoView {
         recipe_function(current_recipe.clone(), current_action.clone())
     });
 
-    let custom_sig = create_signal(true);
+    let action_pending = recipe_action.pending();
     
-    let recipes = create_resource(
+    let recipes_resource = create_resource(
         move || recipe_action.version().get(),
-        move |_| get_recipes(custom_sig.0.get()),
+        move |_| get_recipes(),
     );
 
     let (all_tags, set_all_tags) = create_signal::<Vec<String>>(vec![]);
@@ -155,12 +175,12 @@ fn HomePage() -> impl IntoView {
     let editable_recipe = false;
 
     view! {
-        <h1>"Welcome to Home Cook Book!"</h1>
+        //<h1>"Welcome to Home Cook Book!"</h1>
         <Transition fallback=move || view! {<p>"Loading..."</p> }>
-            {move || {
+            { move || {
                 let tags_component = {
                     move || {
-                        let recipes = recipes.get();
+                        let recipes = recipes_resource.get();
                         let mut tag_list =
                             if let Some(Ok(recipes)) = recipes {
                                 recipes
@@ -188,7 +208,7 @@ fn HomePage() -> impl IntoView {
 
                 let existing_recipes = {
                     move || {
-                        recipes.get()
+                        recipes_resource.get()
                             .map(move |recipes| match recipes {
                                 Err(e) => {
                                     view! { <pre class="error">"Server Error: " {e.to_string()}</pre>}.into_view()
@@ -203,10 +223,9 @@ fn HomePage() -> impl IntoView {
                                             .filter_map(move |recipe| {
                                                 if recipe.has_tags(&sel_tags) {
                                                     Some(view! {
-                                                        <EditableRecipeSheet
-                                                            recipe=recipe
-                                                            editable=editable_recipe
-                                                            recipe_action=recipe_action
+                                                        <RecipeSheet
+                                                            recipe=         recipe
+                                                            start_expended= false
                                                         />
                                                     })
                                                 } else {
@@ -224,15 +243,21 @@ fn HomePage() -> impl IntoView {
 
                 view! {
                     <div>
-                        {tags_component}
-                    </div>
-                    <ul>
-                        {existing_recipes}
-                    </ul><br/>
+                        <div>
+                            {tags_component}
+                        </div>
 
-                    <NewRecipe
-                        recipe_action=recipe_action
-                    />
+                        <div
+                            class="action-pending-popup"
+                            class:action-pending-hidden = move || !action_pending.get()
+                        >
+                            <p>{"Please Wait..."}</p>
+                        </div>
+
+                        <div class="recipe-list-container">
+                            {existing_recipes}
+                        </div>
+                    </div>
                 }
             }
         }
@@ -240,24 +265,4 @@ fn HomePage() -> impl IntoView {
     }
 }
 
-/// 404 - Not Found
-#[component]
-fn NotFound() -> impl IntoView {
-    // set an HTTP status code 404
-    // this is feature gated because it can only be done during
-    // initial server-side rendering
-    // if you navigate to the 404 page subsequently, the status
-    // code will not be set because there is not a new HTTP request
-    // to the server
-    #[cfg(feature = "ssr")]
-    {
-        // this can be done inline because it's synchronous
-        // if it were async, we'd use a server function
-        let resp = expect_context::<leptos_actix::ResponseOptions>();
-        resp.set_status(actix_web::http::StatusCode::NOT_FOUND);
-    }
 
-    view! {
-        <h1>"Not Found"</h1>
-    }
-}

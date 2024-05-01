@@ -1,0 +1,26 @@
+Home Cook Book
+
+
+	Styling:
+		- fix gradient
+	
+	Features:
+		- Test all add-save-delete functions
+		- Fix bugs
+			- save pending everywhere
+		- New Recipe route
+		- Already selected tags (when list of recipes changes)
+		- Organisation of notes (not a list of strings)
+		- Tag adding system (not a list of strings)
+		- Add Admin Login
+		- Header : have the page name on it
+
+		- REFACTOR:
+			-Edit recipe:
+				- setup param use
+				- put the pending/loading feedbacks
+				- Make special component for this page (no expend/retract)
+				- Add New Recipe setup (if no parameter provided)
+			- Simple Recipe Sheet (HomePage):
+				- Add edit option
+				- Add delete option

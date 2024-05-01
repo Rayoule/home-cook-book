@@ -6,7 +6,7 @@ async fn main() -> std::io::Result<()> {
     use leptos::*;
     use leptos_actix::{generate_route_list, LeptosRoutes};
     use home_cook_book::app::*;
-    use home_cook_book::app::ssr::*;
+    use home_cook_book::app::components::recipe_server_functions::ssr::*;
     let mut conn = db().await.expect("couldn't connect to DB");
     sqlx::migrate!()
         .run(&mut conn)
