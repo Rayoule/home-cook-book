@@ -21,10 +21,10 @@ body {
 
 	overflow-y: scroll;
 
-	--mask: linear-gradient(to bottom, rgb(0, 0, 0, 1) 88%, rgb(0, 0, 0, 0) 98% ) 100% 20% / 100% 100% repeat-x;
+	//--mask: linear-gradient(to bottom, rgb(0, 0, 0, 1) 88%, rgb(0, 0, 0, 0) 98% ) 100% 20% / 100% 100% repeat-x;
 
-	-webkit-mask: var(--mask); 
-  	mask: var(--mask);
+	//-webkit-mask: var(--mask); 
+  	//mask: var(--mask);
 }
 
 .recipe-container {
@@ -56,6 +56,10 @@ body {
 	z-index: 10;
 }
 
+.header-links {
+	padding: 0 15px;
+}
+
 .new-recipe-container {
 	width: var(--recipe-width);
 	height: 70vh;
@@ -79,6 +83,15 @@ body {
 	height: 0px;
 }
 
+.page-name {
+	position: absolute;
+	color: #ffffff;
+	z-index: 10;
+	height: 35px;
+    left: 50%;
+    transform: translate(-50%, -55px);
+}
+
 .new-recipe-cancel-button {
 	bottom: 0;
 }
@@ -87,8 +100,7 @@ body {
 	list-style-type: none;
 	font-size: small;
 	position: absolute;
-    top: 0;
-    right: 0;
+    left: 0;
 	width: 45px;
     background-color: #f0f0f0;
     padding: 10px;
@@ -98,9 +110,14 @@ body {
 	background-color: #f00;
 }
   
-.action-pending-popup {
+.popup {
 	position: fixed;
-	z-index: 9999;
+	z-index: 100000;
+	//pointer-events: all;
+
+	display: flex;
+    justify-content: center;
+    align-items: center; 
 
 	top: 0;
 	bottom: 0;
@@ -111,6 +128,11 @@ body {
 	opacity: 1;
 
 	transition: opacity 0.5s ease;
+}
+
+.popup-window {
+	background-color: #555555;
+	padding: 50px 50px;
 }
 
 .action-pending-popup p {

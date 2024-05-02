@@ -1,7 +1,6 @@
 use leptos::*;
-use serde::{Serialize, Deserialize};
 
-use crate::app::*;
+use crate::app::{elements::popups::DeleteRecipePopup, *};
 
 
 #[component]
@@ -11,10 +10,10 @@ pub fn RecipeName(
     #[prop(optional)]
     recipe_setter: Option<WriteSignal<Recipe>>,
     #[prop(optional)]
-    editable: Option<(ReadSignal<bool>, WriteSignal<bool>)>,
+    editable: Option<RwSignal<bool>>,
 ) -> impl IntoView {
 
-    let editable = editable.unwrap_or_else(|| create_signal(false));
+    let editable = editable.unwrap_or_else(|| create_rw_signal(false));
 
     let name = create_signal( name.unwrap_or_else(|| "".to_owned() ) );
 
@@ -23,7 +22,7 @@ pub fn RecipeName(
     view! { class = style_class,
         <Show
             // Is the entry in edit mode ?
-            when=move || { editable.0.get() }
+            when=move || { editable.get() }
             // If not in edit mode:
             fallback= move || {
                 view! {
@@ -70,7 +69,7 @@ pub fn RecipeName(
                         when=move || { !is_edit.0.get() }
                         fallback=move || {view!{
                             <form on:submit=on_submit>
-                                <input type="text"
+                                <input type="text" id="recipe-name"
                                     // here, we use the `value` *attribute* to set only
                                     // the initial value, letting the browser maintain
                                     // the state after that
@@ -81,6 +80,7 @@ pub fn RecipeName(
                                 /><br/>
                                 <input
                                     type="submit"
+                                    name="name-validation"
                                     value="☑"
                                 />
                             </form>
@@ -110,12 +110,10 @@ pub fn StringEntryList(
     #[prop(optional)]
     recipe_setter: Option<WriteSignal<Recipe>>,
     #[prop(optional)]
-    editable: Option<(ReadSignal<bool>, WriteSignal<bool>)>,
+    editable: Option<RwSignal<bool>>,
 ) -> impl IntoView {
 
-    let editable = editable.unwrap_or_else(|| {
-        create_signal(false)
-    });
+    let editable = editable.unwrap_or_else(|| create_rw_signal(false));
 
     let ingredients_or_instructions = match entry_type {
         RecipeContentType::Tags => "Tags".to_owned(),
@@ -134,13 +132,6 @@ pub fn StringEntryList(
     // Needed
     let entry_type = create_signal(entry_type);
 
-
-    // This dynamic list will use the <For/> component.
-    // <For/> is a keyed list. This means that each row
-    // has a defined key. If the key does not change, the row
-    // will not be re-rendered. When the list changes, only
-    // the minimum number of changes will be made to the DOM.
-
     // Create a unique ID
     let mut unique_id = 0_u16;
 
@@ -155,7 +146,7 @@ pub fn StringEntryList(
                 .map(|s| {
                     let new_id: u16 = unique_id;
                     unique_id += 1;
-                    let is_edit_signal = create_signal(editable.0.get_untracked());
+                    let is_edit_signal = create_signal(false);
                     let content_signal = create_signal(s.clone());
 
                     (new_id, is_edit_signal, content_signal)
@@ -202,7 +193,7 @@ pub fn StringEntryList(
                             <li>
                                 <Show
                                     // Is the entry in edit mode ?
-                                    when=move || { editable.0.get() }
+                                    when=move || { editable.get() }
 
                                     // If not in edit mode:
                                     fallback= move ||
@@ -277,7 +268,7 @@ pub fn StringEntryList(
 
                                                 fallback=move || { view! {
                                                     <form on:submit=on_submit>
-                                                        <input type="text"
+                                                        <input type="text" id="recipe-entry"
                                                             // here, we use the `value` *attribute* to set only
                                                             // the initial value, letting the browser maintain
                                                             // the state after that
@@ -288,6 +279,7 @@ pub fn StringEntryList(
                                                         /><br/>
                                                         <input
                                                             type="submit"
+                                                            id="entry-validation"
                                                             value="☑"
                                                         />
                                                     </form>
@@ -342,12 +334,43 @@ pub fn StringEntryList(
                 />
             </ul>
             <Show
-                when=move || editable.0.get()
+                when=move || editable.get()
             >
                 <button on:click=add_entry>
                     "+"
                 </button>
             </Show>
         </div>
+    }
+}
+
+
+
+#[component]
+pub fn DeleteButton(
+    recipe_getter: ReadSignal<Recipe>,
+    recipe_action: Action<(ReadSignal<Recipe>, RecipeAction), Result<(), ServerFnError>>,
+) -> impl IntoView {
+
+    let (wants_deletion_getter, wants_deletion_setter) = create_signal(false);
+
+    let on_want_delete_click = move |_| {
+        wants_deletion_setter.set(true);
+    };
+
+    view!{
+
+        <Show
+            when=move || { wants_deletion_getter.get() }
+            fallback=move || {view!{
+                <button on:click=on_want_delete_click > {"DELETE"} </button>
+            }}
+        >
+            <DeleteRecipePopup
+                recipe_getter=          recipe_getter
+                wants_deletion_setter=  wants_deletion_setter
+                recipe_action=          recipe_action
+            />
+        </Show>
     }
 }

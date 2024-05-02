@@ -5,22 +5,23 @@ Home Cook Book
 		- fix gradient
 	
 	Features:
-		- Test all add-save-delete functions
+		- Test all add-save-delete functionsw
 		- Fix bugs
 			- save pending everywhere
-		- New Recipe route
+		X New Recipe route
 		- Already selected tags (when list of recipes changes)
 		- Organisation of notes (not a list of strings)
 		- Tag adding system (not a list of strings)
 		- Add Admin Login
 		- Header : have the page name on it
 
-		- REFACTOR:
+		X REFACTOR:
 			-Edit recipe:
-				- setup param use
-				- put the pending/loading feedbacks
-				- Make special component for this page (no expend/retract)
-				- Add New Recipe setup (if no parameter provided)
-			- Simple Recipe Sheet (HomePage):
-				- Add edit option
-				- Add delete option
+				X setup param use
+				X put the pending/loading feedbacks
+				X Make special component for this page (no expend/retract)
+				X Add New Recipe setup
+				X After new recipe saved, give choice to edit (go to edit at this ID) or go to home page.
+			X Simple Recipe Sheet (HomePage):
+				X Add edit option
+				X Add delete option

@@ -1,4 +1,6 @@
 use leptos::*;
+use leptos::logging::log;
+use leptos_router::A;
 use serde::{Serialize, Deserialize};
 
 use crate::app::elements::recipe_elements::*;
@@ -16,12 +18,25 @@ pub struct Recipe {
 }
 
 impl Recipe {
+    /// Check if the recipe is valid to be added/saved (need only a name)
+    pub fn valid_for_save(&self) -> Result<(), String> {
+        if self.name.len() < 1 {
+            Err("Recipe has no name".to_string())
+        } else {
+            Ok(())
+        }
+    }
+
     /// Check if a recipe has a tag in the given tag list
     pub fn has_tags(&self, tags_to_check: &Vec<String>) -> bool {
         
         let mut out = false;
 
-        if let Some(tags) = &self.tags {
+        // if no tags to check, then all recipes valid
+        if tags_to_check.len() < 1 {
+            out = true;
+        // if there are, then check the tags in recipes and then compare them
+        } else if let Some(tags) = &self.tags {
 
             if tags_to_check.len() < 1 { return true }
 
@@ -77,6 +92,7 @@ impl JsonRecipe {
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
 pub struct DbRowRecipe {
     pub id: u16,
+    pub recipe_name: String,
     pub recipe: String,
 }
 
@@ -103,25 +119,15 @@ pub fn NewRecipe(
     recipe_action: Action<(Recipe, RecipeAction), Result<(), ServerFnError>>
 ) -> impl IntoView {
 
-    let create_new = create_signal(true);
-
-    let editable = true;
+    let editable = create_rw_signal(true);
 
     view! {
         <div>
-            <Show
-                when=move || create_new.0.get()
-            >
-                <a href="/" > {"Cancel"} </a>
-            </Show>
-
-            <div>
-                <EditableRecipeSheet
-                    editable=editable
-                    is_new_recipe=true
-                    recipe_action=recipe_action
-                />
-            </div>
+            <EditableRecipeSheet
+                editable=       editable
+                is_new_recipe=  true
+                recipe_action=  recipe_action
+            />
         </div>
     }
 }
@@ -131,7 +137,10 @@ pub fn NewRecipe(
 pub fn RecipeSheet(
     recipe: Recipe,
     start_expended: bool,
+    recipe_action: Action<(ReadSignal<Recipe>, RecipeAction), Result<(), ServerFnError>>,
 ) -> impl IntoView {
+
+    let (recipe_getter, _) = create_signal(recipe.clone());
 
     let is_expended = create_signal(start_expended);
 
@@ -145,6 +154,25 @@ pub fn RecipeSheet(
             class:expended = move || is_expended.0.get()
             on:click=on_div_click
         >
+
+            // Edit button
+            <Show
+                when=move || { recipe_getter.get().id.is_some() }
+                fallback=move || view!{<p>{"ERROR: Recipe has no ID !"}</p>}
+            >
+                {move || {
+                    let id = recipe_getter.get().id.unwrap_or_default();
+                    let path = "/edit-recipe/".to_string() + &id.to_string();
+                    view!{
+                        <A href=path>{"Edit"}</A>
+                        <DeleteButton
+                            recipe_getter=recipe_getter
+                            recipe_action=recipe_action
+                        />
+                    }}}
+            </Show>
+
+            
 
             // Name
             <RecipeName
@@ -185,16 +213,19 @@ pub fn EditableRecipeSheet(
     #[prop(optional)]
     recipe: Option<Recipe>,
     #[prop(optional)]
-    editable: Option<bool>,
+    editable: Option<RwSignal<bool>>,
     #[prop(optional)]
-    is_new_recipe: bool,
+    is_new_recipe: Option<bool>,
     recipe_action: Action<(Recipe, RecipeAction), Result<(), ServerFnError>>,
 ) -> impl IntoView {
 
-    let editable = create_signal(editable.unwrap_or_else(|| false));
+    let editable = editable.unwrap_or_else(|| create_rw_signal(false));
+
+    let is_new_recipe = is_new_recipe.unwrap_or_else(|| false);
 
     // Get the recipe
     let recipe = recipe.unwrap_or_else(|| Recipe::default());
+
     // Create the signal so we can edit the recipe
     let (recipe_getter, recipe_setter) = create_signal(recipe.clone());
 
@@ -208,22 +239,36 @@ pub fn EditableRecipeSheet(
     };
 
     let on_save_click = move |_| {
-        recipe_action.dispatch((
-            recipe_getter.get(),
-            if is_new_recipe { RecipeAction::Add } else { RecipeAction::Save }
-        ));
 
-        editable.1.set(false);
+        // Check the recipe
+        log!("WARNING -> {:?}", recipe_getter.get());
+        let cur_recipe = recipe_getter.get();
+        match cur_recipe.valid_for_save() {
+            Ok(_) => {
+
+                // Execute the action
+                recipe_action.dispatch((
+                    recipe_getter.get(),
+                    if is_new_recipe {
+                        RecipeAction::Add
+                    } else {
+                        RecipeAction::Save
+                    }
+                ));
+        
+                // disable edit mode if new recipe
+                if is_new_recipe {
+                    editable.set(false);
+                }
+            },
+            Err(e) => {
+                log!("{}", e);
+            },
+        }
     };
 
     view! {
         <div class="editable-recipe" >
-
-            <Show
-                when=move || {is_new_recipe}
-            >
-                <p>NEW RECIPE</p>
-            </Show>
 
             // Name
             <RecipeName
@@ -265,7 +310,7 @@ pub fn EditableRecipeSheet(
             />
 
             <Show
-                when=move || !editable.0.get()
+                when=move || !editable.get()
                 fallback=move || {
                     view! {
 
@@ -286,9 +331,6 @@ pub fn EditableRecipeSheet(
                     }
                 }
             >
-                <button on:click=move |_| { editable.1.set(true) } >
-                    "Edit Recipe"
-                </button>
 
                 <Show
                     when=move || {!is_new_recipe}
@@ -299,6 +341,7 @@ pub fn EditableRecipeSheet(
                         "Delete"
                     </button>
                 </Show>
+            
             </Show>
 
         </div>
