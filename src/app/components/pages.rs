@@ -8,7 +8,7 @@ use crate::app::{
         recipe::*, recipe_server_functions::*, tags::*
     },
     elements::{
-        molecules::PageName, popups::PendingPopup, recipe_elements::TestView
+        molecules::PageName, popups::PendingPopup,
     },
 };
 
@@ -159,8 +159,6 @@ pub fn EditRecipePage() -> impl IntoView {
         move |(_, recipe_id)| get_recipe(recipe_id),
     );
 
-    let editable = create_rw_signal(true);
-
     let view_fallback =move || view! {
         <PendingPopup/>
     };
@@ -182,7 +180,6 @@ pub fn EditRecipePage() -> impl IntoView {
                     view! {
                         <EditableRecipeSheet
                             recipe=                 recipe
-                            editable=               editable
                             is_new_recipe=          false
                             recipe_action=          recipe_action
                         />
@@ -227,13 +224,6 @@ pub fn AllRecipes() -> impl IntoView {
         <PageName
             page_name={"Recipes".to_string()}
         />
-
-        /*<TestView
-            recipe_entry= { RecipeNote {
-                    title: "Yolo".to_owned(),
-                    content: "KJAHSdhjbajydGASgysdjhabsuyhj ahjsgdja sakjhsg  akjs jsakjh akjhsaa kdjh.".to_owned(),
-                }}
-        />*/
 
         <Transition fallback=move || view! {<p>"Loading..."</p> }>
             { move || {

@@ -95,6 +95,9 @@ pub struct DbRowRecipe {
 }
 
 
+
+
+
 pub enum RecipeEntryType {
     Tag,
     Ingredients,
@@ -102,6 +105,8 @@ pub enum RecipeEntryType {
     Notes,
 }
 
+
+/// Returns asssociated ( Title ( Class, Editable-Class ))
 impl RecipeEntryType {
     pub fn title_and_class(&self) -> (String, String) {
         (
@@ -112,26 +117,32 @@ impl RecipeEntryType {
                 RecipeEntryType::Notes => "Notes".to_owned(),
             },
             match self {
-                RecipeEntryType::Tag => "recipe-tags".to_owned(),
-                RecipeEntryType::Ingredients => "recipe-ingredients".to_owned(),
-                RecipeEntryType::Instructions => "recipe-instructions".to_owned(),
-                RecipeEntryType::Notes => "recipe-notes".to_owned(),
+                RecipeEntryType::Tag => "tags".to_owned(),
+                RecipeEntryType::Ingredients => "ingredients".to_owned(),
+                RecipeEntryType::Instructions => "instructions".to_owned(),
+                RecipeEntryType::Notes => "notes".to_owned(),
             }
         )
     }
 }
 
+
+
+
+/// RecipeEntry Trait --------
 pub trait RecipeEntry: IntoView + Clone + Default + 'static {
 
     fn get_entry_type() -> RecipeEntryType;
     fn create_inputs_node_refs() -> Vec<NodeRef<Input>>;
-    fn extract_value(node_refs: Vec<NodeRef<Input>>) -> Self;
-    fn into_editable_view(self, node_refs: Vec<NodeRef<Input>>) -> View;
+    fn extract_value(nodes_refs: Vec<NodeRef<Input>>) -> Self;
+    fn into_editable_view(entry: ReadSignal<Self>, nodes_refs: Vec<NodeRef<Input>>) -> View;
     fn update_recipe(entries: Option<Vec<Self>>, recipe: &mut Recipe);
 }
 
 
-/// Tags and implementions -----
+
+
+/// TAGs and implementions -----
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RecipeTag {
     pub name: String,
@@ -155,20 +166,19 @@ impl RecipeEntry for RecipeTag {
         vec![create_node_ref::<Input>()]
     }
 
-    fn extract_value(node_refs: Vec<NodeRef<Input>>) -> Self {
-        if node_refs.len() != 1 { panic!("NodeRefs number is not matching !") }
+    fn extract_value(nodes_refs: Vec<NodeRef<Input>>) -> Self {
+        if nodes_refs.len() != 1 { panic!("NodeRefs number is not matching !") }
         RecipeTag {
-            name: node_refs[0].get().expect("<input> to exist").value(),
+            name: nodes_refs[0].get().expect("<input> to exist").value(),
         }
     }
 
-    fn into_editable_view(self, node_refs: Vec<NodeRef<Input>>) -> View {
+    fn into_editable_view(entry: ReadSignal<Self>, nodes_refs: Vec<NodeRef<Input>>) -> View {
         view! {
-            <input 
-                type="text"
-                id="recipe-entry"
-                placeholder="Instruction content..."
-                node_ref=node_refs[0]
+            <RecipeEntryInput
+                elem_ref=nodes_refs[0]
+                placeholder="Instruction content...".to_owned()
+                input=entry.get().name
             />
         }
         .into_view()
@@ -180,7 +190,12 @@ impl RecipeEntry for RecipeTag {
 }
 
 
-/// Instructions and implementions -----
+
+
+
+
+
+/// INGREDIENTS and implementions -----
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RecipeIngredient {
     pub quantity: u16,
@@ -192,6 +207,8 @@ impl IntoView for RecipeIngredient {
 
     fn into_view(self) -> View {
         view! {
+            <p>{self.quantity.to_string()}</p>
+            <p>{self.unit}</p>
             <p>{self.content}</p>
         }
         .into_view()
@@ -208,29 +225,39 @@ impl RecipeEntry for RecipeIngredient {
             .collect()
     }
 
-    fn extract_value(node_refs: Vec<NodeRef<Input>>) -> Self {
-        if node_refs.len() != 3 { panic!("NodeRefs number is not matching !") }
+    fn extract_value(nodes_refs: Vec<NodeRef<Input>>) -> Self {
+        if nodes_refs.len() != 3 { panic!("NodeRefs number is not matching !") }
         RecipeIngredient {
             quantity:   {
-                node_refs[0]
+                nodes_refs[0]
                     .get()
                     .expect("<input> to exist")
                     .value()
                     .parse::<u16>()
                     .expect("to parse into a number !")
             },
-            unit:       node_refs[1].get().expect("<input> to exist").value(),
-            content:    node_refs[2].get().expect("<input> to exist").value(),
+            unit:       nodes_refs[1].get().expect("<input> to exist").value(),
+            content:    nodes_refs[2].get().expect("<input> to exist").value(),
         }
     }
 
-    fn into_editable_view(self, node_refs: Vec<NodeRef<Input>>) -> View {
+    fn into_editable_view(entry: ReadSignal<Self>, nodes_refs: Vec<NodeRef<Input>>) -> View {
+        let entry = entry.get();
         view! {
-            <input 
-                node_ref=node_refs[0]
-                type="text"
-                id="recipe-entry"
-                placeholder="Instruction content..."
+            <RecipeEntryInput
+                elem_ref=nodes_refs[0]
+                input=entry.quantity.to_string()
+                placeholder="Quantity...".to_owned()
+            />
+            <RecipeEntryInput
+                input=entry.unit
+                placeholder="Unit...".to_owned()
+                elem_ref=nodes_refs[1]
+            />
+            <RecipeEntryInput
+                input=entry.content
+                placeholder="Ingredient Content...".to_owned()
+                elem_ref=nodes_refs[2]
             />
         }
         .into_view()
@@ -242,7 +269,11 @@ impl RecipeEntry for RecipeIngredient {
 }
 
 
-/// Instructions and implementions -----
+
+
+
+
+/// INSTRUCTIONS and implementions -----
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RecipeInstruction {
     pub content: String,
@@ -265,21 +296,20 @@ impl RecipeEntry for RecipeInstruction {
         vec![create_node_ref::<Input>()]
     }
 
-    fn extract_value(node_refs: Vec<NodeRef<Input>>) -> Self {
-        if node_refs.len() != 1 { panic!("NodeRefs number is not matching !") }
+    fn extract_value(nodes_refs: Vec<NodeRef<Input>>) -> Self {
+        if nodes_refs.len() != 1 { panic!("NodeRefs number is not matching !") }
          
         RecipeInstruction {
-            content: node_refs[0].get().expect("<input> to exist").value()
+            content: nodes_refs[0].get().expect("<input> to exist").value()
         }
     }
     
-    fn into_editable_view(self, node_refs: Vec<NodeRef<Input>>) -> View {
+    fn into_editable_view(entry: ReadSignal<Self>, nodes_refs: Vec<NodeRef<Input>>) -> View {
         view! {
-            <input 
-                type={"text"}
-                id={"recipe-entry"}
-                placeholder={"Instruction content..."}
-                node_ref={node_refs[0]}
+            <RecipeEntryInput
+                elem_ref=nodes_refs[0]
+                input=entry.get().content
+                placeholder="Instruction content...".to_owned()
             />
         }
         .into_view()
@@ -291,7 +321,12 @@ impl RecipeEntry for RecipeInstruction {
 }
 
 
-/// Notes and implementions -----
+
+
+
+
+
+/// NoOTES and implementions -----
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RecipeNote {
     pub title: String,
@@ -320,32 +355,30 @@ impl RecipeEntry for RecipeNote {
             .collect()
     }
 
-    fn extract_value(node_refs: Vec<NodeRef<Input>>) -> Self {
+    fn extract_value(nodes_refs: Vec<NodeRef<Input>>) -> Self {
 
-        if node_refs.len() != 2 { panic!("NodeRefs number is not matching !") }
+        if nodes_refs.len() != 2 { panic!("NodeRefs number is not matching !") }
          
         RecipeNote {
-            title:      node_refs[0].get().expect("<input> to exist").value(),
-            content:    node_refs[1].get().expect("<input> to exist").value(),
+            title:      nodes_refs[0].get().expect("<input> to exist").value(),
+            content:    nodes_refs[1].get().expect("<input> to exist").value(),
         }
     }
     
-    fn into_editable_view(self, node_refs: Vec<NodeRef<Input>>) -> View {
+    fn into_editable_view(entry: ReadSignal<Self>, nodes_refs: Vec<NodeRef<Input>>) -> View {
+        let entry = entry.get();
         view! {
-            <input 
-                type="text"
-                id="recipe-entry"
-                placeholder="Note Title..."
-                node_ref=node_refs[0]
+            <RecipeEntryInput
+                elem_ref=nodes_refs[0]
+                input=entry.title
+                placeholder="Note Title...".to_owned()
             />
-            <input
-                type="text"
-                id="recipe-entry"
-                placeholder="Note Content..."
-                node_ref=node_refs[1]
+            <RecipeEntryInput
+                elem_ref=nodes_refs[1]
+                input=entry.content
+                placeholder="Note Content...".to_owned()
             />
-        }
-        .into_view()
+        }.into_view()
     }
     
     fn update_recipe(entries: Option<Vec<Self>>, recipe: &mut Recipe) {
@@ -376,12 +409,9 @@ pub fn NewRecipe(
     recipe_action: Action<(Recipe, RecipeAction), Result<(), ServerFnError>>
 ) -> impl IntoView {
 
-    let editable = create_rw_signal(true);
-
     view! {
         <div>
             <EditableRecipeSheet
-                editable=       editable
                 is_new_recipe=  true
                 recipe_action=  recipe_action
             />
@@ -432,30 +462,30 @@ pub fn RecipeSheet(
             
 
             // Name
-            <RecipeName
+            <EditableRecipeName
                 name=recipe.name
             />
 
             // Tags
-            <EditableEntryList
+            <EntryList
                 entry_list=recipe.tags
                 entry_type=RecipeEntryType::Tag
             />
 
             // Ingredients
-            <EditableEntryList
+            <EntryList
                 entry_list=recipe.ingredients
                 entry_type=RecipeEntryType::Ingredients
             />
 
             // Instructions
-            <EditableEntryList
+            <EntryList
                 entry_list=recipe.instructions
                 entry_type=RecipeEntryType::Instructions
             />
 
             // Notes
-            <EditableEntryList
+            <EntryList
                 entry_list=recipe.notes
                 entry_type=RecipeEntryType::Notes
             />
@@ -470,13 +500,11 @@ pub fn EditableRecipeSheet(
     #[prop(optional)]
     recipe: Option<Recipe>,
     #[prop(optional)]
-    editable: Option<RwSignal<bool>>,
-    #[prop(optional)]
     is_new_recipe: Option<bool>,
     recipe_action: Action<(Recipe, RecipeAction), Result<(), ServerFnError>>,
 ) -> impl IntoView {
 
-    let editable = editable.unwrap_or_else(|| create_rw_signal(false));
+    let editable = true;
 
     let is_new_recipe = is_new_recipe.unwrap_or_else(|| false);
 
@@ -511,11 +539,6 @@ pub fn EditableRecipeSheet(
                         RecipeAction::Save
                     }
                 ));
-        
-                // disable edit mode if new recipe
-                if is_new_recipe {
-                    editable.set(false);
-                }
             },
             Err(e) => {
                 log!("{}", e);
@@ -527,10 +550,10 @@ pub fn EditableRecipeSheet(
         <div class="editable-recipe" >
 
             // Name
-            <RecipeName
+            <EditableRecipeName
                 name=recipe.name
                 recipe_setter=recipe_setter.clone()
-                editable=editable
+                editable=true
             />
 
             // Tags
@@ -538,7 +561,7 @@ pub fn EditableRecipeSheet(
                 entry_list=recipe.tags
                 entry_type=RecipeEntryType::Tag
                 recipe_setter=recipe_setter.clone()
-                editable=editable
+                editable=true
             />
 
             // Ingredients
@@ -546,7 +569,7 @@ pub fn EditableRecipeSheet(
                 entry_list=recipe.ingredients
                 entry_type=RecipeEntryType::Ingredients
                 recipe_setter=recipe_setter.clone()
-                editable=editable
+                editable=true
             />
 
             // Instructions
@@ -554,7 +577,7 @@ pub fn EditableRecipeSheet(
                 entry_list=recipe.instructions
                 entry_type=RecipeEntryType::Instructions
                 recipe_setter=recipe_setter.clone()
-                editable=editable
+                editable=true
             />
 
             // Notes
@@ -562,14 +585,13 @@ pub fn EditableRecipeSheet(
                 entry_list=recipe.notes
                 entry_type=RecipeEntryType::Notes
                 recipe_setter=recipe_setter.clone()
-                editable=editable
+                editable=true
             />
 
-            <Show
-                when=move || !editable.get()
-                fallback=move || {
-                    view! {
+            {
+                if editable {
 
+                    Some(view! {
                         <Show
                             when=move || {save_pending.get()}
                             fallback=move || {view!{
@@ -581,25 +603,22 @@ pub fn EditableRecipeSheet(
                                 </button>
                             }}
                         >
-                            <p>wait for save</p>
+                            <p>"wait for save"</p>
                         </Show>
+                    })
 
-                    }
-                }
-            >
+                } else if is_new_recipe {
 
-                <Show
-                    when=move || {!is_new_recipe}
-                >
-                    <button
-                    on:click=on_delete_click
-                    >
-                        "Delete"
-                    </button>
-                </Show>
-            
-            </Show>
+                    Some(view! {
+                        <button
+                            on:click=on_delete_click
+                        >
+                            "Delete"
+                        </button>
+                    }.into_view())
 
+                } else { None }
+            }
         </div>
     }
 }

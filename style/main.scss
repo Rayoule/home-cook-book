@@ -10,7 +10,7 @@
 }
 
 body {
-	background-color: #ffffff;
+	background-color: #4f4f4f;
 	font-family: sans-serif;
 	text-align: center;
 }
@@ -20,11 +20,6 @@ body {
 	height: var(--header-border);
 
 	overflow-y: scroll;
-
-	//--mask: linear-gradient(to bottom, rgb(0, 0, 0, 1) 88%, rgb(0, 0, 0, 0) 98% ) 100% 20% / 100% 100% repeat-x;
-
-	//-webkit-mask: var(--mask); 
-  	//mask: var(--mask);
 }
 
 .recipe-container {
@@ -48,20 +43,57 @@ body {
 }
 
 
-.recipe-title {
+
+
+
+// RECIPE ---------------------------------------------------------------------------
+
+
+.name {
+	//
+}
+
+.tags {
+	//
+}
+
+.container {
+	display: flex;
+    flex-direction: column; /* Align children vertically */
+    align-items: center; /* Center align children horizontally */
+}
+
+.container, .list {
+	list-style-type: none;
+}
+
+.ingredients {
+	//
+}
+
+.ingredients {
+	margin-bottom: 10px;
+}
+
+.recipe-ingredients {
+	width: 200px; /* Full width inputs */
+    padding: 8px; /* Padding inside the input */
+    border: 2px solid #ccc; /* Border around the input */
+    border-radius: 15px; /* Rounded corners */
+    box-sizing: border-box;
+}
+
+.instructions {
+	//
+}
+
+.notes {
 	//
 }
 
 
-.recipe-note-container {
-	border: #f00;
-	background-color: aquamarine;
-}
 
-.recipe-note {
-	font-size: xx-large;
-	color: red;
-}
+// OTHER -------------------------------------------------
 
 
 .header-menu {
