@@ -104,6 +104,213 @@ pub fn RecipeName(
 
 
 #[component]
+pub fn NotesList(
+    entry_list: Option<Vec<String>>,
+    #[prop(optional)]
+    recipe_setter: Option<WriteSignal<Recipe>>,
+    #[prop(optional)]
+    editable: Option<RwSignal<bool>>,
+) -> impl IntoView {
+    
+    ().into_view()
+}
+
+
+#[component]
+pub fn TestView<T: IntoView>(recipe_entry: T) -> impl IntoView {
+    view! {
+        <p>{recipe_entry}</p>
+    }
+}
+
+
+#[component]
+pub fn EditableEntryList<T: RecipeEntry>(
+    entry_list: Option<Vec<T>>,
+    entry_type: RecipeEntryType,
+    #[prop(optional)]
+    recipe_setter: Option<WriteSignal<Recipe>>,
+    #[prop(optional)]
+    editable: Option<RwSignal<bool>>,
+) -> impl IntoView {
+
+    let editable = editable.unwrap_or_else(|| create_rw_signal(false));
+
+    let (entry_type_title, style_class) = entry_type.title_and_class();
+
+    // Needed
+    //let entry_type = create_signal(entry_type);
+
+    // Create a unique ID
+    let mut unique_id = 0_u16;
+
+    let entry_list = entry_list.unwrap_or_else(|| vec![]);
+
+    // Create the signal of the Vec of signal contents
+    type EntryListTuple<T> = Vec<(u16, (ReadSignal<bool>, WriteSignal<bool>), (ReadSignal<T>, WriteSignal<T>))>;
+    let (get_entries, set_entries): (ReadSignal<EntryListTuple<T>>, WriteSignal<EntryListTuple<T>>) =
+        create_signal(
+            entry_list
+                .iter()
+                .map(|s| {
+                    let new_id: u16 = unique_id;
+                    unique_id += 1;
+                    let is_edit_signal = create_signal(false);
+                    let content_signal = create_signal(s.clone());
+
+                    (new_id, is_edit_signal, content_signal)
+                })
+                .collect()
+        );
+
+    let add_entry = move |_| {
+        let new_entry_signal = create_signal(T::default());
+        let is_edit_signal = create_signal(true);
+        set_entries.update(move |entries| {
+            let new_id: u16 = unique_id;
+
+            entries.push((new_id, is_edit_signal, new_entry_signal));
+        });
+
+        unique_id += 1;
+    };
+
+    view! {
+        <div class={style_class}>
+            <h3>{entry_type_title}</h3>
+            <ul>
+                <For
+                    each=move || get_entries.get()
+                    key=|entry| entry.0
+                    children=move |(id, is_edit, (entry, set_entry))| {
+                        view! {
+                            <li>
+                                <Show
+                                    // Is the entry in edit mode ?
+                                    when=move || { editable.get() }
+                                    fallback= move || entry.into_view()
+                                > // If in edit mode:
+                                    { view! {
+                                        <Show
+                                            when=move || { !is_edit.0.get() }
+                                            fallback=move || {
+
+                                                let node_refs = T::create_inputs_node_refs();
+                                                let node_refs_for_submit = node_refs.clone();
+
+                                                // fires when the form `submit` event happens
+                                                // this will store the value of the <input> in our signal
+                                                let on_submit = move |ev: ev::SubmitEvent| {
+
+                                                    // stop the page from reloading!
+                                                    ev.prevent_default();
+
+                                                    // Extract the value from input and update the signal
+                                                    let value = T::extract_value(node_refs_for_submit.clone());
+                                                    set_entry.set(value);
+                                                    
+                                                    // Removes the edit mode
+                                                    set_entries.update(|entries| {
+                                                        // Set edit mode for this entry
+                                                        entries.iter_mut().for_each(|i| {
+                                                            if i.0 == id {
+                                                                i.1.1.set(false);
+                                                            }
+                                                        });
+                                                    });
+
+                                                    // Update the recipe in the parent
+                                                    let new_entries: Vec<T> =
+                                                        get_entries
+                                                            .get()
+                                                            .into_iter()
+                                                            .map(|e| e.2.0.get()) // entry -> signal -> getter -> value
+                                                            .collect();
+
+                                                    let new_entries: Option<Vec<T>> = if new_entries.len() < 1 {
+                                                        None
+                                                    } else {
+                                                        Some(new_entries)
+                                                    };
+
+                                                    if let Some(recipe_setter) = recipe_setter {
+                                                        recipe_setter.update(|current_recipe| {
+                                                            T::update_recipe(new_entries, current_recipe);
+                                                        });
+                                                    }
+                                                };
+                                                view! {
+                                                    <form on:submit=on_submit>
+                                                        { entry.get().into_editable_view(node_refs) }
+                                                        <br/>
+                                                        <input
+                                                            type="submit"
+                                                            id="entry-validation"
+                                                            value="☑"
+                                                        />
+                                                    </form>
+                                                }
+                                            }
+                                        >
+                                            <p>{entry}</p>
+                                            
+                                            <button
+                                                on:click=move |_| {
+                                                    set_entries.update(|entries| {
+                                                        // Set edit mode for this entry
+                                                        entries.iter_mut().for_each(|i| {
+                                                            if i.0 == id {
+                                                                i.1.1.set(true);
+                                                            }
+                                                        });
+                                                    });
+                                                }
+                                            >
+                                                "Edit"
+                                            </button>
+                                        </Show>
+
+                                        <button
+                                            on:click=move |_| {
+                                                set_entries.update(|entries| {
+                                                    entries.retain(|(entry_id, _, (signal, _))| {
+                                                        // NOTE: in this example, we are creating the signals
+                                                        // in the scope of the parent. This means the memory used to
+                                                        // store them will not be reclaimed until the parent component
+                                                        // is unmounted. Here, we're removing the signal early (i.e, before
+                                                        // the DynamicList is unmounted), so we manually dispose of the signal
+                                                        // to avoid leaking memory.
+                                                        //
+                                                        // This is only necessary with nested signals like this one.
+                                                        if entry_id == &id {
+                                                            signal.dispose();
+                                                        }
+                                                        entry_id != &id
+                                                    })
+                                                });
+                                            }
+                                        >
+                                            "☒"
+                                        </button>
+                                    }}
+                                </Show>
+                            </li>
+                        }
+                    }
+                />
+            </ul>
+            <Show
+                when=move || editable.get()
+            >
+                <button on:click=add_entry>
+                    "+"
+                </button>
+            </Show>
+        </div>
+    }
+}
+
+/*#[component]
 pub fn StringEntryList(
     entry_list: Option<Vec<String>>,
     entry_type: RecipeContentType,
@@ -203,71 +410,74 @@ pub fn StringEntryList(
                                         }
                                     }
                                 > // If in edit mode:
-                                    {
-                                        // we'll use a NodeRef to store a reference to the input element
-                                        // this will be filled when the element is created
-                                        let input_element: NodeRef<html::Input> = create_node_ref();
+                                    { view! {
+                                        <Show
+                                            when=move || { !is_edit.0.get() }
 
-                                        // fires when the form `submit` event happens
-                                        // this will store the value of the <input> in our signal
-                                        let on_submit = move |ev: ev::SubmitEvent| {
-                                            // stop the page from reloading!
-                                            ev.prevent_default();
-                                            
-                                            // here, we'll extract the value from the input
-                                            let value = input_element()
-                                                // event handlers can only fire after the view
-                                                // is mounted to the DOM, so the `NodeRef` will be `Some`
-                                                .expect("<input> to exist")
-                                                // `NodeRef` implements `Deref` for the DOM element type
-                                                // this means we can call`HtmlInputElement::value()`
-                                                // to get the current value of the input
-                                                .value();
-                                            set_entry.set(value);
-                                            
+                                            fallback=move || { view! {
+                                                { 
+                                                // we'll use a NodeRef to store a reference to the input element
+                                                // this will be filled when the element is created
+                                                let input_element: NodeRef<html::Input> = create_node_ref();
 
-                                            // Then remove the edit mode
-                                            set_entries.update(|entries| {
-                                                // Set edit mode for this entry
-                                                entries.iter_mut().for_each(|i| {
-                                                    if i.0 == id {
-                                                        i.1.1.set(false);
+                                                // fires when the form `submit` event happens
+                                                // this will store the value of the <input> in our signal
+                                                let on_submit = move |ev: ev::SubmitEvent| {
+                                                    // stop the page from reloading!
+                                                    ev.prevent_default();
+                                                    
+                                                    // here, we'll extract the value from the input
+                                                    let value = input_element.get()
+                                                        // event handlers can only fire after the view
+                                                        // is mounted to the DOM, so the `NodeRef` will be `Some`
+                                                        .expect("<input> to exist")
+                                                        // `NodeRef` implements `Deref` for the DOM element type
+                                                        // this means we can call`HtmlInputElement::value()`
+                                                        // to get the current value of the input
+                                                        .value();
+                                                    set_entry.set(value);
+                                                    
+
+                                                    // Then remove the edit mode
+                                                    set_entries.update(|entries| {
+                                                        // Set edit mode for this entry
+                                                        entries.iter_mut().for_each(|i| {
+                                                            if i.0 == id {
+                                                                i.1.1.set(false);
+                                                            }
+                                                        });
+                                                    });
+
+                                                    // Update the recipe in the parent
+                                                    let new_entries: Vec<String> =
+                                                        get_entries
+                                                            .get()
+                                                            .into_iter()
+                                                            .map(|e| e.2.0.get()) // We get the entry, then the string content signal, then its getter
+                                                            .collect();
+
+                                                    let new_entries: Option<Vec<String>> = if new_entries.len() < 1 {
+                                                        None
+                                                    } else {
+                                                        Some(new_entries)
+                                                    };
+
+                                                    // START
+                                                    if let Some(recipe_setter) = recipe_setter {
+                                                        recipe_setter.update(|current_recipe| {
+                                                            match entry_type.0.get() {
+                                                                RecipeContentType::Tags => current_recipe.tags = new_entries,
+                                                                RecipeContentType::Ingredients => current_recipe.ingredients = new_entries,
+                                                                RecipeContentType::Instructions => current_recipe.instructions = new_entries,
+                                                                RecipeContentType::Notes => current_recipe.notes = new_entries,
+                                                            }
+                                                        });
                                                     }
-                                                });
-                                            });
-
-                                            // Update the recipe in the parent
-                                            let new_entries: Vec<String> =
-                                                get_entries
-                                                    .get()
-                                                    .into_iter()
-                                                    .map(|e| e.2.0.get()) // We get the entry, then the string content signal, then its getter
-                                                    .collect();
-
-                                            let new_entries: Option<Vec<String>> = if new_entries.len() < 1 {
-                                                None
-                                            } else {
-                                                Some(new_entries)
-                                            };
-
-                                            if let Some(recipe_setter) = recipe_setter {
-                                                recipe_setter.update(|current_recipe| {
-                                                    match entry_type.0.get() {
-                                                        RecipeContentType::Tags => current_recipe.tags = new_entries,
-                                                        RecipeContentType::Ingredients => current_recipe.ingredients = new_entries,
-                                                        RecipeContentType::Instructions => current_recipe.instructions = new_entries,
-                                                        RecipeContentType::Notes => current_recipe.notes = new_entries,
-                                                    }
-                                                });
-                                            }
-                                        };
-                                        
-                                        view! {
-                                            <Show
-                                                when=move || { !is_edit.0.get() }
-
-                                                fallback=move || { view! {
+                                                    // END
+                                                };
+                                                view! {
                                                     <form on:submit=on_submit>
+                                                        // START
                                                         <input type="text" id="recipe-entry"
                                                             // here, we use the `value` *attribute* to set only
                                                             // the initial value, letting the browser maintain
@@ -276,7 +486,9 @@ pub fn StringEntryList(
                                             
                                                             // store a reference to this input in `input_element`
                                                             node_ref=input_element
-                                                        /><br/>
+                                                        />
+                                                        // END
+                                                        <br/>
                                                         <input
                                                             type="submit"
                                                             id="entry-validation"
@@ -284,49 +496,49 @@ pub fn StringEntryList(
                                                         />
                                                     </form>
                                                 }}
-                                            >
-                                                <p>{entry}</p>
-                                                
-                                                <button
-                                                    on:click=move |_| {
-                                                        set_entries.update(|entries| {
-                                                            // Set edit mode for this entry
-                                                            entries.iter_mut().for_each(|i| {
-                                                                if i.0 == id {
-                                                                    i.1.1.set(true);
-                                                                }
-                                                            });
-                                                        });
-                                                    }
-                                                >
-                                                    "Edit"
-                                                </button>
-                                            </Show>
-
+                                            }}
+                                        >
+                                            <p>{entry}</p>
+                                            
                                             <button
                                                 on:click=move |_| {
                                                     set_entries.update(|entries| {
-                                                        entries.retain(|(entry_id, _, (signal, _))| {
-                                                            // NOTE: in this example, we are creating the signals
-                                                            // in the scope of the parent. This means the memory used to
-                                                            // store them will not be reclaimed until the parent component
-                                                            // is unmounted. Here, we're removing the signal early (i.e, before
-                                                            // the DynamicList is unmounted), so we manually dispose of the signal
-                                                            // to avoid leaking memory.
-                                                            //
-                                                            // This is only necessary with nested signals like this one.
-                                                            if entry_id == &id {
-                                                                signal.dispose();
+                                                        // Set edit mode for this entry
+                                                        entries.iter_mut().for_each(|i| {
+                                                            if i.0 == id {
+                                                                i.1.1.set(true);
                                                             }
-                                                            entry_id != &id
-                                                        })
+                                                        });
                                                     });
                                                 }
                                             >
-                                                "☒"
+                                                "Edit"
                                             </button>
-                                        }
-                                    }
+                                        </Show>
+
+                                        <button
+                                            on:click=move |_| {
+                                                set_entries.update(|entries| {
+                                                    entries.retain(|(entry_id, _, (signal, _))| {
+                                                        // NOTE: in this example, we are creating the signals
+                                                        // in the scope of the parent. This means the memory used to
+                                                        // store them will not be reclaimed until the parent component
+                                                        // is unmounted. Here, we're removing the signal early (i.e, before
+                                                        // the DynamicList is unmounted), so we manually dispose of the signal
+                                                        // to avoid leaking memory.
+                                                        //
+                                                        // This is only necessary with nested signals like this one.
+                                                        if entry_id == &id {
+                                                            signal.dispose();
+                                                        }
+                                                        entry_id != &id
+                                                    })
+                                                });
+                                            }
+                                        >
+                                            "☒"
+                                        </button>
+                                    }}
                                 </Show>
                             </li>
                         }
@@ -342,7 +554,7 @@ pub fn StringEntryList(
             </Show>
         </div>
     }
-}
+}*/
 
 
 

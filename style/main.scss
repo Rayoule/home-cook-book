@@ -48,6 +48,22 @@ body {
 }
 
 
+.recipe-title {
+	//
+}
+
+
+.recipe-note-container {
+	border: #f00;
+	background-color: aquamarine;
+}
+
+.recipe-note {
+	font-size: xx-large;
+	color: red;
+}
+
+
 .header-menu {
 	height: 120px;
 
@@ -58,25 +74,6 @@ body {
 
 .header-links {
 	padding: 0 15px;
-}
-
-.new-recipe-container {
-	width: var(--recipe-width);
-	height: 70vh;
-	bottom: calc(100vh - var(--header-border));
-	overflow-y: scroll;
-
-	transition: height 0.5s ease;
-
-	// Center it
-	//transform: translateX(calc(50vw - calc(var(--recipe-width) / 2)));
-
-	// Nice black box
-	background-color: var(--header-color);
-	border-radius: 8px;
-	box-shadow: 0px 0px 20px rgba(0, 0, 0, .2);
-
-	padding: 0px 30px;
 }
 
 .new-recipe-container-hidden {

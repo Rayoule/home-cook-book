@@ -8,7 +8,7 @@ use crate::app::{
         recipe::*, recipe_server_functions::*, tags::*
     },
     elements::{
-        molecules::PageName, popups::PendingPopup
+        molecules::PageName, popups::PendingPopup, recipe_elements::TestView
     },
 };
 
@@ -228,6 +228,13 @@ pub fn AllRecipes() -> impl IntoView {
             page_name={"Recipes".to_string()}
         />
 
+        /*<TestView
+            recipe_entry= { RecipeNote {
+                    title: "Yolo".to_owned(),
+                    content: "KJAHSdhjbajydGASgysdjhabsuyhj ahjsgdja sakjhsg  akjs jsakjh akjhsaa kdjh.".to_owned(),
+                }}
+        />*/
+
         <Transition fallback=move || view! {<p>"Loading..."</p> }>
             { move || {
                 let tags_component = {
@@ -239,6 +246,7 @@ pub fn AllRecipes() -> impl IntoView {
                                     .iter()
                                     .map(|recipe| recipe.tags.clone().unwrap_or_else(|| vec![]) )
                                     .flatten()
+                                    .map(|t| t.name)
                                     .unique()
                                     .collect::<Vec<String>>()
                             } else { vec![] };
