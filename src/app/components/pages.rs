@@ -138,6 +138,8 @@ struct EditRecipeParam {
     id: Option<u16>
 }
 
+
+
 #[component]
 pub fn EditRecipePage() -> impl IntoView {
 
@@ -172,7 +174,7 @@ pub fn EditRecipePage() -> impl IntoView {
             page_name={"Edit Recipe".to_string()}
         />
 
-        <Transition fallback=view_fallback >
+        <Transition fallback=move || view! { <PendingPopup/> } >
             {move || {
                 let recipe = recipe_resource.get();
 

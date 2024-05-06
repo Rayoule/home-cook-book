@@ -6,14 +6,14 @@ Home Cook Book
 	
 	Features:
 		- Test all add-save-delete functionsw
-		- Fix bugs
-			- save pending everywhere
+		X Fix bugs
+			X save pending everywhere
 		X New Recipe route
 		- Already selected tags (when list of recipes changes)
 		- Organisation of notes (not a list of strings)
 		- Tag adding system (not a list of strings)
 		- Add Admin Login
-		- Header : have the page name on it
+		X Header : have the page name on it
 
 		X REFACTOR:
 			-Edit recipe:
