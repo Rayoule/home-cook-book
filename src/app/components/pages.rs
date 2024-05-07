@@ -5,14 +5,16 @@ use itertools::Itertools;
 
 use crate::app::{
     components::{
-        recipe::*, recipe_server_functions::*, tags::*
+        recipe::*, recipe_server_functions::*, tags::*,
+        recipe_sheets::{
+            EditableRecipeSheet,
+            RecipeSheet
+        }
     },
     elements::{
         molecules::PageName, popups::PendingPopup,
     },
 };
-
-
 
 
 /// 404 - Not Found
@@ -71,7 +73,6 @@ pub fn NewRecipePage() -> impl IntoView {
     let submitted_recipe_name = create_signal::<Option<String>>(None);
     create_effect(move |_| {
         if let Some((recipe_submitted, _)) = action_submitted.get() {
-            log!("1/ Submitted recipe stored !");
             submitted_recipe_name.1.set(Some(recipe_submitted.name))
         }
     });
@@ -81,9 +82,7 @@ pub fn NewRecipePage() -> impl IntoView {
     let ready_to_fetch_by_name = create_signal::<Option<String>>(None);
     create_effect(move |_| {
         if action_done_id.get().is_some() {
-            log!("2/ ACTION ID has ARRIVED !");
             if let Some(recipe_name) = submitted_recipe_name.0.get() {
-                log!("3/ Trigger Update");
                 ready_to_fetch_by_name.1.set(Some(recipe_name));
             }
         }
@@ -95,7 +94,6 @@ pub fn NewRecipePage() -> impl IntoView {
             ready_to_fetch_by_name.0.get().unwrap_or_else(|| "".to_string())
         },
         move |name| {
-            log!("4/ Trigger Update with name: {:?}", name.clone());
             get_recipe_id_by_name(name)
         },
     );
@@ -111,10 +109,12 @@ pub fn NewRecipePage() -> impl IntoView {
 
         <A href="/">{"Return to Home Page"}</A>
 
-        <NewRecipe
-            recipe_action=recipe_action
+        <EditableRecipeSheet
+            is_new_recipe=  true
+            recipe_action=  recipe_action
         />
 
+        // Edit button
         <Transition fallback=move || view! { <p>{"Wait for recipe id before edit..."}</p> }>
             {move || {
                 if let Some(Ok(Some(recipe_id))) = submitted_recipe_id.get() {
@@ -158,7 +158,7 @@ pub fn EditRecipePage() -> impl IntoView {
 
     let recipe_resource = create_resource(
         move || (recipe_action.version().get(), get_recipe_id_param()),
-        move |(_, recipe_id)| get_recipe(recipe_id),
+        move |(_, recipe_id)| get_recipe_by_id(recipe_id),
     );
 
     let view_fallback =move || view! {
@@ -208,7 +208,7 @@ pub fn AllRecipes() -> impl IntoView {
     
     let recipes_resource = create_resource(
         move || recipe_action.version().get(),
-        move |_| get_recipes(),
+        move |_| get_all_recipes_light(),
     );
 
     let (all_tags, set_all_tags) = create_signal::<Vec<String>>(vec![]);
@@ -227,6 +227,7 @@ pub fn AllRecipes() -> impl IntoView {
             page_name={"Recipes".to_string()}
         />
 
+        // TagList
         <Transition fallback=move || view! {<p>"Loading..."</p> }>
             { move || {
                 let tags_component = {
@@ -258,6 +259,7 @@ pub fn AllRecipes() -> impl IntoView {
                     }
                 };
 
+                // list of RecipeSheet
                 let existing_recipes = {
                     move || {
                         recipes_resource.get()

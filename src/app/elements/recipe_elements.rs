@@ -69,21 +69,19 @@ pub fn EditableEntryList<T: RecipeEntry>(
     entry_list: Option<Vec<T>>,
     /// Needed if editable
     #[prop(optional)]
-    entry_list_signals: Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>,
+    entry_list_signal: Option<RwSignal<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>>>,
 ) -> impl IntoView {
 
     let (entry_type_title, style_class) = entry_type.title_and_class();
 
     if !editable {
 
-        // Return empty component if entry_list = None or empty
-        let is_empty_or_none: bool =
-            match entry_list.as_ref() {
-                Some(vec) => vec.is_empty(),
-                None => true,
-            };
-        
-        if is_empty_or_none {
+        let is_empty =
+            if let Some(entry_list) = &entry_list {
+                entry_list.len() > 0
+            } else { false };
+
+        if is_empty {
             return ().into_view();
         } else {
 
@@ -111,12 +109,10 @@ pub fn EditableEntryList<T: RecipeEntry>(
         }
     } else {
 
-        // Create the signal of the Vec of signals
-        type EntryListTuple<T> = Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>;
-        let rw_entries: RwSignal<EntryListTuple<T>> =
-            create_rw_signal(
-                entry_list_signals
-            );
+        let rw_entries: RwSignal<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>> =
+            entry_list_signal.unwrap_or_else(|| {
+                create_rw_signal(vec![])
+            });
 
         let add_entry = move |_| {
             let new_entry_signal = create_signal(T::default());
@@ -140,6 +136,9 @@ pub fn EditableEntryList<T: RecipeEntry>(
                         each=move || rw_entries.get()
                         key=|entry| entry.0
                         children=move |(id, (entry, set_entry))| {
+
+                            log!("RENDERING LIST");
+
                             view! {
                                 <li class={style_class.clone()} id="entry-li">
                                     {
@@ -267,7 +266,7 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
     let initial_value = if initial_value.is_empty() { None } else { Some(initial_value) };
 
     if is_input {
-        // Input + max
+        // Input + maxlength
         view! {
             <input
                 class=          class
@@ -280,7 +279,7 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
                 // on input, update entry signal
                 on:input=move |ev| {
                     set_entry_signal.update(|recipe_entry| {
-                        recipe_entry.update_field_from_string_input(field_id, event_target_value(&ev))
+                        recipe_entry.update_field_from_string_input(field_id, event_target_value(&ev));
                     });
                 }
             />

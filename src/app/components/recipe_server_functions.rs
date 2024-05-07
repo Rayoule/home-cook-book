@@ -26,7 +26,7 @@ pub async fn recipe_function(recipe: Recipe, recipe_action: RecipeAction) -> Res
     // fake API delay
     if FAKE_API_DELAY { std::thread::sleep(std::time::Duration::from_millis(1250)); }
 
-    log!("Action {:?} for this -> {:?}", recipe_action.clone(), recipe.clone());
+    log!("Action {:?} for this -> {:?}", &recipe_action, &recipe);
 
     let mut conn = db().await?;
 
@@ -91,7 +91,7 @@ pub async fn recipe_function(recipe: Recipe, recipe_action: RecipeAction) -> Res
 
 
 #[server]
-pub async fn get_recipes() -> Result<Vec<Recipe>, ServerFnError> {
+pub async fn get_all_recipes_light() -> Result<Vec<RecipeLight>, ServerFnError> {
     use self::ssr::*;
 
     log!("Fetch all recipes action.");
@@ -101,14 +101,23 @@ pub async fn get_recipes() -> Result<Vec<Recipe>, ServerFnError> {
     // fake API delay
     if FAKE_API_DELAY { std::thread::sleep(std::time::Duration::from_millis(1250)); }
 
-    let mut recipes: Vec<Recipe> = vec![];
-    let mut rows = sqlx::query_as::<_, DbRowRecipe>("SELECT * FROM recipes").fetch(&mut conn);
+    let mut all_recipe_light: Vec<RecipeLight> = vec![];
+    //let mut rows = sqlx::query_as::<_, DbRowRecipe>("SELECT recipe_name, recipe_tags FROM recipes").fetch(&mut conn);
+    let mut rows = sqlx::query_as::<_, DbRowRecipeLight>("SELECT recipe_name, recipe_tags FROM recipes").fetch(&mut conn);
 
     use futures::TryStreamExt;
     while let Some(row) = rows.try_next().await? {
-        let json_recipe: JsonRecipe = serde_json::from_str(&row.recipe)?;
+        /*let json_recipe: JsonRecipe = serde_json::from_str(&row.recipe)?;
         let recipe = json_recipe.to_recipe(row.id);
-        recipes.push(recipe);
+        recipes.push(recipe);*/
+        let recipe_light: RecipeLight =
+            RecipeLight {
+                id:     row.id,
+                name:   row.recipe_name,
+                tags:   row.recipe.tag,
+            };
+        
+        all_recipe_light.push(recipe_light);
     }
 
     // Sort recipes alphabetically
@@ -118,7 +127,7 @@ pub async fn get_recipes() -> Result<Vec<Recipe>, ServerFnError> {
 }
 
 #[server]
-pub async fn get_recipe(recipe_id: Option<u16>) -> Result<Recipe, ServerFnError> {
+pub async fn get_recipe_by_id(recipe_id: Option<u16>) -> Result<Recipe, ServerFnError> {
     use self::ssr::*;
 
     log!("Get recipe from id: {:?}", recipe_id);
@@ -127,6 +136,7 @@ pub async fn get_recipe(recipe_id: Option<u16>) -> Result<Recipe, ServerFnError>
     if FAKE_API_DELAY { std::thread::sleep(std::time::Duration::from_millis(1250)); }
 
     if let Some(recipe_id) = recipe_id {
+
         let mut conn = db().await?;
 
         let recipe_row =

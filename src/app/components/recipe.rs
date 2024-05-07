@@ -5,7 +5,9 @@ use serde::{Serialize, Deserialize};
 
 use crate::app::elements::recipe_elements::*;
 
-// Main Recipe Format
+use super::recipe_sheets::EditableRecipeSheet;
+
+/// Main Recipe Format
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Recipe {
     // The primary key as it is stored into the database
@@ -47,8 +49,16 @@ impl Recipe {
     }
 }
 
+/// Lightweight recipe format
+#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecipeLight {
+    id: u16,
+    name: String,
+    tags: Vec<RecipeTag>,
+}
 
-// The Recipe format, without the ID, that will be serialize into JSON
+
+/// The Recipe format, without the ID, that will be serialize into JSON
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
 pub struct JsonRecipe {
@@ -89,7 +99,17 @@ impl JsonRecipe {
 pub struct DbRowRecipe {
     pub id: u16,
     pub recipe_name: String,
+    pub recipe_tags: String,
     pub recipe: String,
+}
+
+// All row without the recipe
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
+pub struct DbRowIdNameTags {
+    pub id: u16,
+    pub recipe_name: String,
+    pub recipe_tags: String,
 }
 
 
@@ -127,7 +147,7 @@ impl RecipeEntryType {
 
 
 /// RecipeEntry Trait --------
-pub trait RecipeEntry: IntoView + Clone + Default + 'static {
+pub trait RecipeEntry: IntoView + std::fmt::Debug + Clone + Default + 'static {
 
     fn get_entry_type() -> RecipeEntryType;
     fn extract_value(nodes_refs: Vec<NodeRef<Input>>) -> Self;
@@ -434,287 +454,3 @@ pub enum RecipeAction {
     Delete,
 }
 
-
-#[component]
-pub fn NewRecipe(
-    recipe_action: Action<(Recipe, RecipeAction), Result<(), ServerFnError>>
-) -> impl IntoView {
-
-    view! {
-        <div>
-            <EditableRecipeSheet
-                is_new_recipe=  true
-                recipe_action=  recipe_action
-            />
-        </div>
-    }
-}
-
-
-#[component]
-pub fn RecipeSheet(
-    recipe: Recipe,
-    start_expended: bool,
-    recipe_action: Action<(ReadSignal<Recipe>, RecipeAction), Result<(), ServerFnError>>,
-) -> impl IntoView {
-
-    let (recipe_getter, _) = create_signal(recipe.clone());
-
-    let is_expended = create_signal(start_expended);
-
-    let on_div_click = move |_| {
-        is_expended.1.set(!is_expended.0.get());
-    };
-
-    view! {
-        <div
-            class="recipe-container"
-            class:expended = move || is_expended.0.get()
-            on:click=on_div_click
-        >
-
-            // Edit button
-            <Show
-                when=move || { recipe_getter.get().id.is_some() }
-                fallback=move || view!{<p>{"ERROR: Recipe has no ID !"}</p>}
-            >
-                {move || {
-                    let id = recipe_getter.get().id.unwrap_or_default();
-                    let path = "/edit-recipe/".to_string() + &id.to_string();
-                    view!{
-                        <A href=path>{"Edit"}</A>
-                        <DeleteButton
-                            recipe_getter=recipe_getter
-                            recipe_action=recipe_action
-                        />
-                    }}}
-            </Show>
-
-            
-
-            // Name
-            <EditableRecipeName
-                editable=   false
-                name=       recipe.name
-            />
-
-            // Tags
-            <EditableEntryList
-                editable=   false
-                entry_list= recipe.tags.unwrap_or_default()
-                entry_type= RecipeEntryType::Tag
-            />
-
-            // Ingredients
-            <EditableEntryList
-                editable=   false
-                entry_list= recipe.ingredients.unwrap_or_default()
-                entry_type= RecipeEntryType::Ingredients
-            />
-
-            // Instructions
-            <EditableEntryList
-                editable=   false
-                entry_list= recipe.instructions.unwrap_or_default()
-                entry_type= RecipeEntryType::Instructions
-            />
-
-            // Notes
-            <EditableEntryList
-                editable=   false
-                entry_list= recipe.notes.unwrap_or_default()
-                entry_type= RecipeEntryType::Notes
-            />
-            
-        </div>
-    }
-}
-
-
-
-#[component]
-pub fn EditableRecipeSheet(
-    #[prop(optional)]
-    recipe: Option<Recipe>,
-    #[prop(optional)]
-    is_new_recipe: Option<bool>,
-    recipe_action: Action<(Recipe, RecipeAction), Result<(), ServerFnError>>,
-) -> impl IntoView {
-
-    let is_new_recipe = is_new_recipe.unwrap_or_else(|| false);
-
-    // Create the recipe if None
-    let recipe = recipe.unwrap_or_else(|| Recipe::default());
-
-    // Create signals for each recipe field
-    let name_signal = create_rw_signal(recipe.name);
-
-    // Needed for move into closure view
-    // 0.tags, 1.ingredients, 2.instructions, 3.notes
-    let recipe_signals = create_rw_signal((
-        entries_into_signals(recipe.tags),
-        entries_into_signals(recipe.ingredients),
-        entries_into_signals(recipe.instructions),
-        entries_into_signals(recipe.notes),
-    ));
-
-
-    let save_pending = recipe_action.pending();
-
-    let on_delete_click = move |_| {
-        if let Some(id) = recipe.id {
-            // Make up a ghost recipe that only has the ID
-            let recipe = Recipe {
-                id: Some(id),
-                ..Default::default()
-            };
-            // Then send it
-            recipe_action.dispatch((recipe, RecipeAction::Delete));
-        }
-    };
-
-    let on_save_click = move |_| {
-
-        let signals = recipe_signals.get_untracked();
-
-        // Gather recipe
-        let updated_recipe = Recipe {
-            id:             recipe.id.clone(),
-            name:           name_signal.clone().get_untracked(),
-            tags:           signals_into_entries(signals.0),
-            ingredients:    signals_into_entries(signals.1),
-            instructions:   signals_into_entries(signals.2),
-            notes:          signals_into_entries(signals.3),
-        };
-
-        // Check recipe
-        match updated_recipe.valid_for_save() {
-            Ok(_) => {
-                // Send recipe to db
-                recipe_action.dispatch((
-                    updated_recipe,
-                    if is_new_recipe {
-                        RecipeAction::Add
-                    } else {
-                        RecipeAction::Save
-                    }
-                ));
-            },
-            Err(e) => {
-                log!("{}", e);
-            },
-        }
-    };
-
-    view! {
-        <div class="editable-recipe" >
-
-            {move || {
-
-                log!("EditableRecipeSheet Rendered ----");
-
-                let (
-                    tags_signals,
-                    ingredients_signals,
-                    instructions_signals,
-                    notes_signals
-                ) = recipe_signals.get();
-                
-                view! {
-                    // Name
-                    <EditableRecipeName
-                        name_signal=    name_signal
-                        editable=       true
-                    />
-
-                    // Tags
-                    <EditableEntryList
-                        editable=           true
-                        entry_list_signals= tags_signals.clone().unwrap_or_default()
-                        entry_type=         RecipeEntryType::Tag
-                    />
-
-                    // Ingredients
-                    <EditableEntryList
-                        editable=           true
-                        entry_list_signals= ingredients_signals.clone().unwrap_or_default()
-                        entry_type=         RecipeEntryType::Ingredients
-                    />
-
-                    // Instructions
-                    <EditableEntryList
-                        editable=           true
-                        entry_list_signals= instructions_signals.clone().unwrap_or_default()
-                        entry_type=         RecipeEntryType::Instructions
-                    />
-
-                    // Notes
-                    <EditableEntryList
-                        editable=           true
-                        entry_list_signals= notes_signals.clone().unwrap_or_default()
-                        entry_type=         RecipeEntryType::Notes
-                    />
-                }
-            }}
-
-            // Save Button
-            <Show
-                when=move || { save_pending.get() }
-                fallback=move || view! {
-                    <button
-                        on:click=on_save_click
-                    >
-                        {"Save"}
-                    </button>
-                }.into_view()
-            >
-                <p>"wait for save"</p>
-            </Show>
-            
-
-            {
-                if is_new_recipe {
-                    Some(view! {
-
-                        <button
-                            on:click=on_delete_click
-                        >
-                            "Delete"
-                        </button>
-
-                    }.into_view())
-                } else { None }
-            }
-        </div>
-    }
-}
-
-// helper function for EditableRecipeSheet
-fn entries_into_signals<T: RecipeEntry>(entries: Option<Vec<T>>) -> Option<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>> {
-    if let Some(entries) = entries {
-        let length = entries.len() as u16;
-        Some(
-            entries
-                .into_iter()
-                .zip(0..length)
-                .map(|(entry, id)| { (id, (create_signal(entry))) })
-                .collect()
-        )
-    } else {
-        None
-    }
-}
-
-fn signals_into_entries<T: RecipeEntry>(signals: Option<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>>) -> Option<Vec<T>> {
-    if let Some(signals) = signals {
-
-        if signals.len() > 0 {
-            let entries = signals
-                .iter()
-                .map(|(_, (get_signal, _))| get_signal.get_untracked())
-                .collect();
-            Some(entries)
-
-        } else {  None }
-    } else { None }
-}
