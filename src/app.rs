@@ -36,10 +36,10 @@ pub fn App() -> impl IntoView {
                     outro_back="slideOutBack"
                     intro_back="slideInBack"
                  >
-                    <Route path="/" view=AllRecipes/>
-                    <Route path="/new-recipe" view=NewRecipePage/>
-                    <Route path="/edit-recipe/:id" view=EditRecipePage/>
-                    <Route path="/*any" view=NotFound/>
+                    <Route path="/"                     view=AllRecipes />
+                    <Route path="/new-recipe"           view=NewRecipePage />
+                    <Route path="/edit-recipe/:id"      view=EditRecipePage />
+                    <Route path="/*any"                 view=NotFound />
                 </AnimatedRoutes>
             </main>
         </Router>

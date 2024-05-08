@@ -219,8 +219,7 @@ pub fn EditableEntryList<T: RecipeEntry>(
 
 #[component]
 pub fn DeleteButton(
-    recipe_getter: ReadSignal<Recipe>,
-    recipe_action: Action<(ReadSignal<Recipe>, RecipeAction), Result<(), ServerFnError>>,
+    recipe_action: Action<RecipeActionDescriptor, Result<(), ServerFnError>>,
 ) -> impl IntoView {
 
     let (wants_deletion_getter, wants_deletion_setter) = create_signal(false);
@@ -238,9 +237,8 @@ pub fn DeleteButton(
             }}
         >
             <DeleteRecipePopup
-                recipe_getter=          recipe_getter
-                wants_deletion_setter=  wants_deletion_setter
                 recipe_action=          recipe_action
+                wants_deletion_setter=  wants_deletion_setter
             />
         </Show>
     }
@@ -307,3 +305,4 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
     }
     
 }
+

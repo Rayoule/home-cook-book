@@ -8,7 +8,7 @@ use crate::app::{
         recipe::*, recipe_server_functions::*, tags::*,
         recipe_sheets::{
             EditableRecipeSheet,
-            RecipeSheet
+            RecipeLightSheet
         }
     },
     elements::{
@@ -58,45 +58,66 @@ pub fn HeaderMenu() -> impl IntoView {
 #[component]
 pub fn NewRecipePage() -> impl IntoView {
 
-    // Create the action to add the recipe
-    let recipe_action = create_action(|input: &(Recipe, RecipeAction)| {
-        let (current_recipe, current_action) = input;
-        recipe_function(current_recipe.clone(), current_action.clone())
-    });
-
-    // Keep track of this action
+    // Setup action
+    let recipe_action = 
+        create_action(|desc: &RecipeActionDescriptor| {
+            recipe_function(desc.clone())
+        });
     let action_pending = recipe_action.pending();
     let action_submitted = recipe_action.input();
     let action_done_id = recipe_action.value();
 
-    // First we store the submitted recipe name in a signal as when the recipe is submitted
-    let submitted_recipe_name = create_signal::<Option<String>>(None);
-    create_effect(move |_| {
-        if let Some((recipe_submitted, _)) = action_submitted.get() {
-            submitted_recipe_name.1.set(Some(recipe_submitted.name))
-        }
-    });
 
-    // Then, when the action_id is Some (when the action as ended),
-    // we fetch the recipe id using the name previously stored
-    let ready_to_fetch_by_name = create_signal::<Option<String>>(None);
+    // store the submitted recipe name
+    let submitted_name = create_rw_signal("".to_owned());
     create_effect(move |_| {
-        if action_done_id.get().is_some() {
-            if let Some(recipe_name) = submitted_recipe_name.0.get() {
-                ready_to_fetch_by_name.1.set(Some(recipe_name));
+        if let Some(action_desc) = action_submitted.get() {
+            match action_desc {
+                RecipeActionDescriptor::Add(recipe) => submitted_name.set(recipe.name),
+                _ => (),
             }
         }
     });
 
-    // As soon as 'ready_to_fetch_by_name' is filled, the resource get fetched
-    let submitted_recipe_id = create_resource(
-        move || {
-            ready_to_fetch_by_name.0.get().unwrap_or_else(|| "".to_string())
-        },
-        move |name| {
-            get_recipe_id_by_name(name)
-        },
-    );
+    // Action that takes the recipe name to fetch the recipe ID
+    // and then redirect to the edit page for this recipe
+    let fetch_id_and_redirect = create_action(|name: &String| {
+        let name = name.clone();
+        async move {
+            match get_recipe_id_by_name(name.clone()).await {
+                Ok(id) => {
+                    if let Some(id) = id {
+                        let path = "/edit-recipe/".to_string() + &id.to_string();
+                        let navigate = leptos_router::use_navigate();
+                        navigate(&path, Default::default());
+                    } else {
+                        log!("Error fetching recipe by name, no ID fetched.")
+                    }
+                },
+                Err(_) => log!("Error fetching recipe by name with name: {:?}", name),
+            }
+        }
+    });
+
+    let fetch_and_redirect_pending = fetch_id_and_redirect.pending();
+
+    // Once the recipe submission is done (when 'action_done_id' is Some)
+    // grab the name and launch the 'fetch_id_and_redirect' action
+    create_effect(move |_| {
+        if let Some(r) = action_done_id.get() {
+            match r {
+                Ok(_) => {
+                    let name = submitted_name.get();
+                    if name.len() < 1 {
+                        log!("ERROR: Won't fetch the id with an empty recipe name.");
+                    } else {
+                        fetch_id_and_redirect.dispatch(name);
+                    }
+                },
+                Err(e) => log!("ERROR: Error in getting recipe submission ID: {:?}", e.to_string()),
+            }
+        } else { log!("No action ID yet") }
+    });
 
     view! {
         <PendingPopup
@@ -110,25 +131,15 @@ pub fn NewRecipePage() -> impl IntoView {
         <A href="/">{"Return to Home Page"}</A>
 
         <EditableRecipeSheet
-            is_new_recipe=  true
             recipe_action=  recipe_action
+            is_new_recipe=  true
         />
 
-        // Edit button
-        <Transition fallback=move || view! { <p>{"Wait for recipe id before edit..."}</p> }>
-            {move || {
-                if let Some(Ok(Some(recipe_id))) = submitted_recipe_id.get() {
-                    let path = "/edit-recipe/".to_string() + &recipe_id.to_string();
-                    view! {
-                        <A href={path}>{"Edit"}</A>
-                    }
-                } else if ready_to_fetch_by_name.0.get().is_some() {
-                    view! { <p>{"Wait for recipe id before edit..."}</p> }.into_view()
-                } else {
-                    ().into_view()
-                }
-            }}
-        </Transition>
+        <Show
+            when=fetch_and_redirect_pending
+        >
+            <p>{"Wait for recipe id before edit..."}</p>
+        </Show>
     }
 }
 
@@ -138,26 +149,29 @@ struct EditRecipeParam {
     id: Option<u16>
 }
 
-
-
 #[component]
 pub fn EditRecipePage() -> impl IntoView {
 
-    let recipe_action = create_action(|input: &(Recipe, RecipeAction)| {
-        let (current_recipe, current_action) = input;
-        recipe_function(current_recipe.clone(), current_action.clone())
-    });
-
+    // Setup action
+    let recipe_action = 
+        create_action(|desc: &RecipeActionDescriptor| {
+            recipe_function(desc.clone())
+        });
     let action_pending = recipe_action.pending();
 
-    let get_recipe_id_param =move || {
+    let get_recipe_id_param = move || {
         use_params::<EditRecipeParam>()
             .get()
             .unwrap_or_default().id
     };
 
     let recipe_resource = create_resource(
-        move || (recipe_action.version().get(), get_recipe_id_param()),
+        move || (
+            recipe_action
+                .version()
+                .get(),
+            get_recipe_id_param()
+        ),
         move |(_, recipe_id)| get_recipe_by_id(recipe_id),
     );
 
@@ -181,9 +195,9 @@ pub fn EditRecipePage() -> impl IntoView {
                 if let Some(Ok(recipe)) = recipe {
                     view! {
                         <EditableRecipeSheet
-                            recipe=                 recipe
-                            is_new_recipe=          false
-                            recipe_action=          recipe_action
+                            recipe_action=  recipe_action
+                            recipe=         recipe
+                            is_new_recipe=  false
                         />
                     }
                 } else {
@@ -194,14 +208,12 @@ pub fn EditRecipePage() -> impl IntoView {
     }
 }
 
-
 /// Renders the home page of your application.
 #[component]
 pub fn AllRecipes() -> impl IntoView {
 
-    let recipe_action = create_action(|input: &(ReadSignal<Recipe>, RecipeAction)| {
-        let (current_recipe, current_action) = input;
-        recipe_function(current_recipe.get(), current_action.clone())
+    let recipe_action = create_action(|desc: &RecipeActionDescriptor| {
+        recipe_function(desc.clone())
     });
 
     let recipe_action_pending = recipe_action.pending();
@@ -277,10 +289,8 @@ pub fn AllRecipes() -> impl IntoView {
                                             .filter_map(move |recipe| {
                                                 if recipe.has_tags(&sel_tags) {
                                                     Some( view! {
-                                                        <RecipeSheet
-                                                            recipe=         recipe
-                                                            start_expended= false
-                                                            recipe_action=  recipe_action
+                                                        <RecipeLightSheet
+                                                            recipe_light=   recipe
                                                         />
                                                     })
                                                 } else {

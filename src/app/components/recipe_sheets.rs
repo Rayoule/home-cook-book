@@ -4,86 +4,80 @@ use leptos_router::A;
 use serde::{Serialize, Deserialize};
 
 use crate::app::{
-    elements::recipe_elements::*,
-    Recipe, RecipeAction, RecipeEntry, RecipeEntryType
+    components::recipe_server_functions::recipe_function, elements::recipe_elements::*, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeLight
 };
 
 
+#[derive(Clone)]
+pub struct RecipeIdGetter(pub ReadSignal<u16>);
+#[derive(Clone)]
+pub struct RecipeNameGetter(pub ReadSignal<String>);
 
 #[component]
-pub fn RecipeSheet(
-    recipe: Recipe,
-    start_expended: bool,
-    recipe_action: Action<(ReadSignal<Recipe>, RecipeAction), Result<(), ServerFnError>>,
+pub fn RecipeLightSheet(
+    recipe_light: RecipeLight,
 ) -> impl IntoView {
 
-    let (recipe_getter, _) = create_signal(recipe.clone());
+    // Setup context with the recipe light getter
+    let (recipe_id_getter, _) = create_signal(recipe_light.id.clone());
+    provide_context::<RecipeIdGetter>( RecipeIdGetter(recipe_id_getter) );
+    // Stroe recipe name in context
+    let (recipe_id_getter, _) = create_signal(recipe_light.name.clone());
+    provide_context::<RecipeNameGetter>( RecipeNameGetter(recipe_id_getter) );
 
-    let is_expended = create_signal(start_expended);
-
-    let on_div_click = move |_| {
-        is_expended.1.set(!is_expended.0.get());
-    };
+    let (recipe_id, recipe_name, recipe_tags) = (
+        recipe_light.id,
+        recipe_light.name,
+        recipe_light.tags
+    );
 
     view! {
         <div
-            class="recipe-container"
-            class:expended = move || is_expended.0.get()
-            on:click=on_div_click
+            class="recipe-light-container"
         >
 
             // Edit button
-            <Show
-                when=move || { recipe_getter.get().id.is_some() }
-                fallback=move || view!{<p>{"ERROR: Recipe has no ID !"}</p>}
-            >
-                {move || {
-                    let id = recipe_getter.get().id.unwrap_or_default();
-                    let path = "/edit-recipe/".to_string() + &id.to_string();
-                    view!{
-                        <A href=path>{"Edit"}</A>
-                        <DeleteButton
-                            recipe_getter=recipe_getter
-                            recipe_action=recipe_action
-                        />
-                    }}}
-            </Show>
+            /*{ move || {
+                //let id = recipe_light.id.unwrap_or_default();
+                let path = "/edit-recipe/".to_string() + &recipe_id.to_string();
+                view!{
+                    <A href=path>{"Edit"}</A>
+                    <DeleteButton
+                        recipe_getter=recipe_getter
+                        recipe_delete_action=recipe_delete_action
+                    />
+                }
+            }}*/
 
             
 
             // Name
-            <EditableRecipeName
+            /*<EditableRecipeName
                 editable=   false
-                name=       recipe.name
-            />
+                name=       recipe_name
+            />*/
 
-            // Tags
-            <EditableEntryList
-                editable=   false
-                entry_list= recipe.tags.unwrap_or_else(|| vec![])
-                entry_type= RecipeEntryType::Tag
-            />
+            <h3 class="recipe-light name">{ recipe_name }</h3>
 
-            // Ingredients
-            <EditableEntryList
-                editable=   false
-                entry_list= recipe.ingredients.unwrap_or_else(|| vec![])
-                entry_type= RecipeEntryType::Ingredients
-            />
+            // Tag list
+            {
+                let tag_list =
+                    recipe_tags
+                        .unwrap_or_else(|| vec![])
+                        .into_iter()
+                        .map(move |t| view! {
+                            <li class= "recipe-light" >
+                                <span class= "recipe-light" >{t.name}</span>
+                            </li>
+                        })
+                        .collect_view();
 
-            // Instructions
-            <EditableEntryList
-                editable=   false
-                entry_list= recipe.instructions.unwrap_or_else(|| vec![])
-                entry_type= RecipeEntryType::Instructions
-            />
-
-            // Notes
-            <EditableEntryList
-                editable=   false
-                entry_list= recipe.notes.unwrap_or_else(|| vec![])
-                entry_type= RecipeEntryType::Notes
-            />
+                view!{
+                    <ul class= "recipe-light">
+                        {tag_list}
+                    </ul>
+                }
+            }
             
         </div>
     }
@@ -93,20 +87,17 @@ pub fn RecipeSheet(
 
 #[component]
 pub fn EditableRecipeSheet(
+    recipe_action: Action<RecipeActionDescriptor, Result<(), ServerFnError>>,
     #[prop(optional)]
     recipe: Option<Recipe>,
     #[prop(optional)]
     is_new_recipe: Option<bool>,
-    recipe_action: Action<(Recipe, RecipeAction), Result<(), ServerFnError>>,
 ) -> impl IntoView {
 
     let is_new_recipe = is_new_recipe.unwrap_or_else(|| false);
 
     // Create the recipe if None
     let recipe = recipe.unwrap_or_else(|| Recipe::default());
-
-    // Create signals for each recipe field
-    //let name_signal = create_rw_signal(recipe.name);
 
     // Needed for move into closure view
     // for each category, make a Signal<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>>
@@ -131,13 +122,7 @@ pub fn EditableRecipeSheet(
 
     let on_delete_click = move |_| {
         if let Some(id) = recipe.id {
-            // Make up a ghost recipe that only has the ID
-            let recipe = Recipe {
-                id: Some(id),
-                ..Default::default()
-            };
-            // Then send it
-            recipe_action.dispatch((recipe, RecipeAction::Delete));
+            recipe_action.dispatch(RecipeActionDescriptor::Delete(id));
         }
     };
 
@@ -160,14 +145,13 @@ pub fn EditableRecipeSheet(
         match updated_recipe.valid_for_save() {
             Ok(_) => {
                 // Send recipe to db
-                recipe_action.dispatch((
-                    updated_recipe,
+                recipe_action.dispatch(
                     if is_new_recipe {
-                        RecipeAction::Add
+                        RecipeActionDescriptor::Add(updated_recipe)
                     } else {
-                        RecipeAction::Save
+                        RecipeActionDescriptor::Save(updated_recipe)
                     }
-                ));
+                );
             },
             Err(e) => {
                 log!("{}", e);
@@ -222,7 +206,7 @@ pub fn EditableRecipeSheet(
 
             // Save Button
             <Show
-                when=move || { save_pending.get() }
+                when= save_pending
                 fallback=move || view! {
                     <button
                         on:click=on_save_click

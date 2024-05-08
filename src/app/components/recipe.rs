@@ -5,7 +5,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::app::elements::recipe_elements::*;
 
-use super::recipe_sheets::EditableRecipeSheet;
+use super::{recipe_server_functions::recipe_function, recipe_sheets::EditableRecipeSheet};
 
 /// Main Recipe Format
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -28,7 +28,17 @@ impl Recipe {
             Ok(())
         }
     }
+}
 
+/// Lightweight recipe format
+#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecipeLight {
+    pub id: u16,
+    pub name: String,
+    pub tags: Option<Vec<RecipeTag>>,
+}
+
+impl RecipeLight {
     /// Check if a recipe has a tag in the given tag list
     pub fn has_tags(&self, tags_to_check: &Vec<String>) -> bool {
         let mut out = false;
@@ -47,14 +57,6 @@ impl Recipe {
         }
         out
     }
-}
-
-/// Lightweight recipe format
-#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct RecipeLight {
-    id: u16,
-    name: String,
-    tags: Vec<RecipeTag>,
 }
 
 
@@ -93,6 +95,13 @@ impl JsonRecipe {
     }
 }
 
+/// The Recipe format, without the ID, that will be serialize into JSON
+#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
+pub struct JsonRecipeTags {
+    pub tags: Option<Vec<RecipeTag>>,
+}
+
 // Recipe format when it is stored in the DB
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
@@ -106,12 +115,18 @@ pub struct DbRowRecipe {
 // All row without the recipe
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
-pub struct DbRowIdNameTags {
+pub struct DbRowRecipeLight {
     pub id: u16,
     pub recipe_name: String,
     pub recipe_tags: String,
 }
 
+// Only ID
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
+pub struct DbRowRecipeID {
+    pub id: u16,
+}
 
 
 
@@ -446,11 +461,10 @@ pub enum RecipeContentType {
     Notes,
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum RecipeAction {
-    Add,
-    Save,
-    Delete,
+pub enum RecipeActionDescriptor {
+    Add(Recipe),
+    Save(Recipe),
+    // With recipe ID
+    Delete(u16),
 }
-

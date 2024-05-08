@@ -4,7 +4,7 @@ use leptos::logging::log;
 use crate::app::components::recipe::*;
 
 #[allow(dead_code)]
-const FAKE_API_DELAY: bool = true;
+const FAKE_API_DELAY: bool = false;
 
 
 #[cfg(feature = "ssr")]
@@ -20,44 +20,63 @@ pub mod ssr {
 
 
 #[server]
-pub async fn recipe_function(recipe: Recipe, recipe_action: RecipeAction) -> Result<(), ServerFnError> {
+pub async fn recipe_function(recipe_action_desc: RecipeActionDescriptor) -> Result<(), ServerFnError> {
     use self::ssr::*;
 
     // fake API delay
     if FAKE_API_DELAY { std::thread::sleep(std::time::Duration::from_millis(1250)); }
 
-    log!("Action {:?} for this -> {:?}", &recipe_action, &recipe);
+    match &recipe_action_desc {
+        RecipeActionDescriptor::Add(r) =>       log!("Action received: ADD -> {:?}", r),
+        RecipeActionDescriptor::Save(r) =>      log!("Action received: SAVE -> {:?}", r),
+        RecipeActionDescriptor::Delete(i) =>    log!("Action received: DELETE -> {:?}", i),
+    }
 
     let mut conn = db().await?;
 
-    let id = recipe.id.clone();
-    let name = recipe.name.clone();
-    let json_recipe = JsonRecipe::from_recipe(recipe);
-    let debug_recipe = json_recipe.clone();
-    let serialized_recipe: String = serde_json::to_string(&json_recipe)?;
+    match recipe_action_desc {
 
-    match recipe_action {
+        RecipeActionDescriptor::Add(recipe) => {
 
-        RecipeAction::Add => {
-            match sqlx::query("INSERT INTO recipes (recipe_name, recipe) VALUES ($1, $2)")
-                .bind(name.clone())
-                .bind(serialized_recipe)
+            let recipe_to_serialize =   recipe.clone();
+            let name: String =          recipe.name;
+            let debug_name: String =    name.clone();
+            let json_tags: String =     serde_json::to_string(&recipe.tags).expect("to serialize tags into String");
+            let json_tags: String =     serde_json::to_string(&recipe.tags).expect("to serialize tags into String");
+            let json_recipe =           JsonRecipe::from_recipe(recipe_to_serialize);
+            let debug_recipe =          json_recipe.clone();
+            let ser_recipe: String =    serde_json::to_string(&json_recipe).expect("to serialize JsonRecipe into String");
+
+            match sqlx::query("INSERT INTO recipes (recipe_name, recipe_tags, recipe) VALUES ($1, $2, $3)")
+                .bind(name)
+                .bind(json_tags)
+                .bind(ser_recipe)
                 .execute(&mut conn)
                 .await
             {
                 Ok(_row) => {
-                    log!("The Recipe :\n Name: {:?} // Json: {:?} \n was ADDED Successfully!", name, debug_recipe);
+                    log!("The Recipe :\n Name: {:?} // Json: {:?} \n was ADDED Successfully!", debug_name, debug_recipe);
                     Ok(())
                 },
                 Err(e) => Err(ServerFnError::ServerError(e.to_string())),
             }
         },
 
-        RecipeAction::Save => {
+        RecipeActionDescriptor::Save(recipe) => {
+
+            let recipe_to_serialize =   recipe.clone();
+            let id: Option<u16> =       recipe.id;
+            let name: String =          recipe.name;
+            let json_tags: String =     serde_json::to_string(&recipe.tags).expect("to serialize tags into String");
+            let json_recipe =           JsonRecipe::from_recipe(recipe_to_serialize);
+            let debug_recipe =          json_recipe.clone();
+            let ser_recipe: String =    serde_json::to_string(&json_recipe).expect("to serialize JsonRecipe into String");
+
             if let Some(id) = id {
-                match sqlx::query( "UPDATE recipes SET recipe_name = $1, recipe = $2 WHERE id = $3;" )
+                match sqlx::query( "UPDATE recipes SET recipe_name = $1, recipe_tags = $2, recipe = $3 WHERE id = $4;" )
                     .bind(name)
-                    .bind(serialized_recipe)
+                    .bind(json_tags)
+                    .bind(ser_recipe)
                     .bind(id)
                     .execute(&mut conn)
                     .await
@@ -69,25 +88,32 @@ pub async fn recipe_function(recipe: Recipe, recipe_action: RecipeAction) -> Res
                     Err(e) => Err(ServerFnError::ServerError(e.to_string())),
                 }
             } else {
-                Err(ServerFnError::ServerError("No Recipe ID for recipe deletion".to_owned()))
+                Err(ServerFnError::ServerError("No Recipe ID for recipe save".to_owned()))
             }
         },
 
-        RecipeAction::Delete => {
-            if let Some(id) = id {
-                log!("The Recipe :\n {:?} \n is in DELETE process", debug_recipe);
-                
-                Ok(sqlx::query("DELETE FROM recipes WHERE id = $1")
+        RecipeActionDescriptor::Delete(id) => { 
+
+            match sqlx::query("DELETE FROM recipes WHERE id = $1")
                 .bind(id)
                 .execute(&mut conn)
                 .await
-                .map(|_| ())?)
-            } else {
-                Err(ServerFnError::ServerError("No Recipe ID for recipe deletion".to_owned()))
+            {
+                Ok(_)   => {
+                    log!("The Recipe with ID :\n {:?} \n was DELETED successfully", id);
+                    Ok(())
+                },
+                Err(e)  => Err(ServerFnError::ServerError("No Recipe ID for recipe deletion".to_owned()))
             }
+            
+            
         },
     }
 }
+
+
+
+
 
 
 #[server]
@@ -103,28 +129,31 @@ pub async fn get_all_recipes_light() -> Result<Vec<RecipeLight>, ServerFnError> 
 
     let mut all_recipe_light: Vec<RecipeLight> = vec![];
     //let mut rows = sqlx::query_as::<_, DbRowRecipe>("SELECT recipe_name, recipe_tags FROM recipes").fetch(&mut conn);
-    let mut rows = sqlx::query_as::<_, DbRowRecipeLight>("SELECT recipe_name, recipe_tags FROM recipes").fetch(&mut conn);
+    let mut rows = sqlx::query_as::<_, DbRowRecipeLight>("SELECT id, recipe_name, recipe_tags FROM recipes").fetch(&mut conn);
 
     use futures::TryStreamExt;
     while let Some(row) = rows.try_next().await? {
-        /*let json_recipe: JsonRecipe = serde_json::from_str(&row.recipe)?;
-        let recipe = json_recipe.to_recipe(row.id);
-        recipes.push(recipe);*/
+        let recipe_tags: Option<Vec<RecipeTag>> = serde_json::from_str(&row.recipe_tags)?;
         let recipe_light: RecipeLight =
             RecipeLight {
                 id:     row.id,
                 name:   row.recipe_name,
-                tags:   row.recipe.tag,
+                tags:   recipe_tags,
             };
         
         all_recipe_light.push(recipe_light);
     }
 
     // Sort recipes alphabetically
-    recipes.sort_by_key(|r| r.name.to_lowercase());
+    all_recipe_light.sort_by_key(|r| r.name.to_lowercase());
 
-    Ok(recipes)
+    Ok(all_recipe_light)
 }
+
+
+
+
+
 
 #[server]
 pub async fn get_recipe_by_id(recipe_id: Option<u16>) -> Result<Recipe, ServerFnError> {
@@ -157,6 +186,10 @@ pub async fn get_recipe_by_id(recipe_id: Option<u16>) -> Result<Recipe, ServerFn
 }
 
 
+
+
+
+
 #[server]
 pub async fn get_recipe_id_by_name(name: String) -> Result<Option<u16>, ServerFnError> {
     use self::ssr::*;
@@ -173,7 +206,7 @@ pub async fn get_recipe_id_by_name(name: String) -> Result<Option<u16>, ServerFn
 
     let mut conn = db().await?;
 
-    match sqlx::query_as::<_, DbRowRecipe>("SELECT * FROM recipes WHERE recipe_name = $1")
+    match sqlx::query_as::<_, DbRowRecipeID>("SELECT id FROM recipes WHERE recipe_name = $1")
             .bind(name.clone())
             .fetch_one(&mut conn)
             .await

@@ -1,7 +1,10 @@
 use leptos::*;
 
 use crate::app::{
-    Recipe, RecipeAction
+    components::recipe_sheets::{
+        RecipeIdGetter, RecipeNameGetter
+    },
+    Recipe, RecipeActionDescriptor
 };
 
 
@@ -37,15 +40,30 @@ pub fn PendingPopup(
 
 #[component]
 pub fn DeleteRecipePopup(
-    recipe_getter: ReadSignal<Recipe>,
+    recipe_action: Action<RecipeActionDescriptor, Result<(), ServerFnError>>,
     wants_deletion_setter: WriteSignal<bool>,
-    recipe_action: Action<(ReadSignal<Recipe>, RecipeAction), Result<(), ServerFnError>>,
 ) -> impl IntoView {
 
+    // fetch recipe Name from context
+    let recipe_name =
+        use_context::<RecipeNameGetter>()
+            .expect("to find recipe Name in context.")
+            .0
+            .get();
+
     let on_sure_click = move |_| {
-        recipe_action.dispatch((recipe_getter, RecipeAction::Delete));
+        // fetch recipe ID from context
+        let recipe_id =
+            use_context::<RecipeIdGetter>()
+                .expect("to find Recipe ID in context.")
+                .0
+                .get();
+        // dispatch recipe action with recipe ID
+        recipe_action.dispatch(RecipeActionDescriptor::Delete(recipe_id));
+        // Set signal to end popup
         wants_deletion_setter.set(false);
     };
+
     let on_no_click = move |_| {
         wants_deletion_setter.set(false);
     };
@@ -53,7 +71,7 @@ pub fn DeleteRecipePopup(
     view! {
         <div class="popup">
             <div class="popup-window">
-                <p> { format!("Do you wish to DELETE the recipe {:?}", recipe_getter.get().name) } </p>
+                <p> { format!("Do you wish to DELETE the recipe {:?}", recipe_name) } </p>
                 <button on:click=on_no_click > {"NO, CANCEL"} </button>
                 <button on:click=on_sure_click > {"YES, DELETE"} </button>
             </div>
