@@ -1,7 +1,7 @@
+use std::ops::Not;
+
 use leptos::{
-    *,
-    html::Input,
-    logging::log,
+    html::Input, logging::log, *
 };
 
 use crate::app::{elements::popups::DeleteRecipePopup, *};
@@ -306,3 +306,26 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
     
 }
 
+
+#[component]
+pub fn RecipeLightSubMenu() -> impl IntoView {
+
+    let is_menu = create_rw_signal(false);
+
+    let on_click = move |ev: ev::MouseEvent| {
+        ev.stop_propagation();
+        is_menu.update(|b| *b = b.not());
+    };
+    
+    view! {
+        <div
+            class="recipe-light-sub-menu"
+            class:into-menu=is_menu
+            on:click=on_click
+        >
+            <div class="sub-menu-dot"></div>
+            <div class="sub-menu-dot"></div>
+            <div class="sub-menu-dot"></div>
+        </div>
+    }
+}

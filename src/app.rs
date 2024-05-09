@@ -11,12 +11,16 @@ pub mod components;
 pub mod elements;
 
 
-
+#[derive(Clone)]
+pub struct PageNameSetter(WriteSignal<String>);
 
 #[component]
 pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
+
+    let (get_page_name, set_page_name) = create_signal("".to_owned());
+    provide_context(PageNameSetter(set_page_name));
 
     view! {
         // injects a stylesheet into the document <head>
@@ -29,7 +33,9 @@ pub fn App() -> impl IntoView {
         // content for this welcome page
         <Router>
             <main>
-                <HeaderMenu/>
+                <HeaderMenu
+                    page_name=get_page_name
+                />
                 <AnimatedRoutes
                     outro="slideOut"
                     intro="slideIn"
@@ -38,7 +44,8 @@ pub fn App() -> impl IntoView {
                  >
                     <Route path="/"                     view=AllRecipes />
                     <Route path="/new-recipe"           view=NewRecipePage />
-                    <Route path="/edit-recipe/:id"      view=EditRecipePage />
+                    <Route path="/display-recipe/:id"   view=|| view! { <RecipePage editable=false /> }/>
+                    <Route path="/edit-recipe/:id"      view=|| view! { <RecipePage editable=true /> }/>
                     <Route path="/*any"                 view=NotFound />
                 </AnimatedRoutes>
             </main>
@@ -46,3 +53,10 @@ pub fn App() -> impl IntoView {
     }
 }
 
+
+pub fn set_page_name(name: &str) {
+    use_context::<PageNameSetter>()
+        .expect("to find PageNameSetter in context!")
+        .0
+        .set(name.to_owned());
+}

@@ -31,9 +31,16 @@ pub fn RecipeLightSheet(
         recipe_light.tags
     );
 
+    let on_click = move |_| {
+        let path = "/display-recipe/".to_string() + &recipe_id.to_string();
+        let navigate = leptos_router::use_navigate();
+        navigate(&path, Default::default());
+    };
+
     view! {
         <div
             class="recipe-light-container"
+            on:click=on_click
         >
 
             // Edit button
@@ -56,6 +63,7 @@ pub fn RecipeLightSheet(
                 editable=   false
                 name=       recipe_name
             />*/
+            <RecipeLightSubMenu/>
 
             <h3 class="recipe-light name">{ recipe_name }</h3>
 
@@ -79,6 +87,117 @@ pub fn RecipeLightSheet(
                 }
             }
             
+        </div>
+    }
+}
+
+
+
+
+#[component]
+pub fn RecipeSheet(
+    recipe: Recipe,
+) -> impl IntoView {
+    //
+    
+
+    let tag_list = {
+        recipe
+            .tags
+            .unwrap_or_else(|| vec![])
+            .into_iter()
+            .map(|tag| {
+                view! {
+                    <li class="display-recipe tags">
+                        <span class="display-recipe tags">{tag.name}</span>
+                    </li>
+                }
+            })
+            .collect_view()
+    };
+    
+    let ingredient_list = {
+        recipe
+            .ingredients
+            .unwrap_or_else(|| vec![])
+            .into_iter()
+            .map(|ingredient| {
+                view! {
+                    <li class="display-recipe ingredients">
+                        <span class="display-recipe ingredients">{ingredient.quantity} {ingredient.unit}</span>
+                        <br/>
+                        <span class="display-recipe ingredients">{ingredient.content}</span>
+                    </li>
+                }
+            })
+            .collect_view()
+    };
+
+    let instruction_list = {
+        recipe
+            .instructions
+            .unwrap_or_else(|| vec![])
+            .into_iter()
+            .map(|instruction| {
+                view! {
+                    <li class="display-recipe instructions">
+                        <span class="display-recipe instructions">{instruction.content}</span>
+                    </li>
+                }
+            })
+            .collect_view()
+    };
+
+    let note_list = {
+        recipe
+            .notes
+            .unwrap_or_else(|| vec![])
+            .into_iter()
+            .map(|note| {
+                view! {
+                    <li class="display-recipe notes">
+                        <h4 class="display-recipe notes">{note.title}</h4>
+                        <br/>
+                        <span class="display-recipe notes">{note.content}</span>
+                    </li>
+                }
+            })
+            .collect_view()
+    };
+
+    view! {
+        <div class="display-recipe-continer">
+
+            <h2 class="display-recipe name">{recipe.name}</h2>
+
+            <div class="display-recipe tags container">
+                <h3 class="display-recipe tags">"Tags"</h3>
+                <ul class="display-recipe tags">
+                    {tag_list}
+                </ul>
+            </div>
+
+            <div class="display-recipe ingredients container">
+                <h3 class="display-recipe ingredients">"Ingredients"</h3>
+                <ul class="display-recipe ingredients">
+                    {ingredient_list}
+                </ul>
+            </div>
+
+            <div class="display-recipe instructions container">
+                <h3 class="display-recipe instructions">"Instructions"</h3>
+                <ul class="display-recipe instructions">
+                    {instruction_list}
+                </ul>
+            </div>
+
+            <div class="display-recipe notes container">
+                <h3 class="display-recipe notes">"Notes"</h3>
+                <ul class="display-recipe notes">
+                    {note_list}
+                </ul>
+            </div>
+
         </div>
     }
 }

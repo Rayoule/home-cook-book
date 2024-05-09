@@ -17,6 +17,16 @@ body {
 }
 
 
+.sub-header {
+	display: block;
+
+	background-color:#282828;
+
+	height: 50px;
+	width: 100%;
+
+	margin-top: 0;
+}
 
 
 
@@ -52,9 +62,11 @@ body {
 
 
 
-
+// RECIPE LIGHT ----------------------------------------------
 
 .recipe-light-container {
+	position: relative;
+
 	background-color: #ffffff;
 
 	width: 200px;
@@ -101,6 +113,64 @@ li.recipe-light {
 }
 
 
+.recipe-light-sub-menu {
+	position: absolute;
+    top: 5px; /* Adjusted to give some padding from the top */
+    right: 5px; /* Adjusted to give some padding from the right */
+
+    width: 13px; /* Width of the menu icon */
+	height: 20px; /* Height enough to show three dots with spacing */
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+	align-items: center;
+    
+    z-index: 10;
+
+	background-color: white;
+
+	border: 1px solid #b5b5b5;
+    border-radius: 7px;
+	box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+
+	transition:
+		transform 0.1s ease-out,
+		box-shadow 0.1s ease-out,
+		background-color 0.1s ease-out,
+		height 0.1s ease-out,
+		width 0.1s ease-out
+	;
+}
+.recipe-light-sub-menu:hover {
+	transform: scale(1.2);
+	box-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+}
+.recipe-light-sub-menu:active {
+	transform: scale(0.9);
+	box-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+	background-color: #525252;
+}
+.recipe-light-sub-menu.into-menu {
+	width: 60px;
+	height: 60px;
+
+	background-color: #f00;
+}
+.sub-menu-dot {
+	height: 4px;
+    width: 4px;
+    background-color: #333; /* Dark color for the dots */
+    border-radius: 50%; /* Makes the dots circular */
+
+	margin: 0px 0px;
+}
+.sub-menu-dot:first-child {
+	margin-top: 2px;
+}
+.sub-menu-dot:last-child {
+	margin-bottom: 2px;
+}
 
 
 
@@ -182,8 +252,7 @@ li:last-child {
     border-radius: 15px;
     box-sizing: border-box;
 
-	transition: border 0.1s ease-out;
-	transition: transform 0.1 ease-out;
+	transition: border 0.1s ease-out, transform 0.1 ease-out;
 }
 #text-input:hover {
 	transform: scale(1.01);
@@ -304,10 +373,7 @@ ul.notes {
 	text-align: center;
 	cursor: pointer;
 	
-	transition: box-shadow 0.3s;
-	transition: background-color 0.3s ease;
-	transition: color 0.5s ease;
-	transition: transform 0.1s ease-out;
+	transition: box-shadow 0.3s, background-color 0.3s ease, color 0.5s ease, transform 0.1s ease-out;
     
     border-radius: 10px;
     outline: none;

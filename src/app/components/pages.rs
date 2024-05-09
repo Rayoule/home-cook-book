@@ -5,58 +5,19 @@ use itertools::Itertools;
 
 use crate::app::{
     components::{
-        recipe::*, recipe_server_functions::*, tags::*,
-        recipe_sheets::{
-            EditableRecipeSheet,
-            RecipeLightSheet
-        }
+        recipe::*, recipe_server_functions::*, recipe_sheets::{
+            EditableRecipeSheet, RecipeLightSheet, RecipeSheet
+        }, tags::*
     },
-    elements::{
-        molecules::PageName, popups::PendingPopup,
-    },
+    elements::popups::PendingPopup, set_page_name,
 };
-
-
-/// 404 - Not Found
-#[component]
-pub fn NotFound() -> impl IntoView {
-    // set an HTTP status code 404
-    // this is feature gated because it can only be done during
-    // initial server-side rendering
-    // if you navigate to the 404 page subsequently, the status
-    // code will not be set because there is not a new HTTP request
-    // to the server
-    #[cfg(feature = "ssr")]
-    {
-        // this can be done inline because it's synchronous
-        // if it were async, we'd use a server function
-        let resp = expect_context::<leptos_actix::ResponseOptions>();
-        resp.set_status(actix_web::http::StatusCode::NOT_FOUND);
-    }
-
-    view! {
-        <h1>"Not Found"</h1>
-    }
-}
-
-
-#[component]
-pub fn HeaderMenu() -> impl IntoView {
-    view! {
-        <header class="header-menu">
-            <h1>{"Home Cook Book"}</h1>
-            <nav>
-                <A class="header-links" href="">"Recipes"</A>
-                <A class="header-links" href="/new-recipe">"New Recipe"</A>
-            </nav>
-        </header>
-    }
-}
 
 
 
 #[component]
 pub fn NewRecipePage() -> impl IntoView {
+
+    set_page_name("New Recipe");
 
     // Setup action
     let recipe_action = 
@@ -120,12 +81,12 @@ pub fn NewRecipePage() -> impl IntoView {
     });
 
     view! {
+
+        <div class="sub-header">
+        </div>
+
         <PendingPopup
             get_signal=action_pending
-        />
-
-        <PageName
-            page_name={"New Recipe".to_string()}
         />
 
         <A href="/">{"Return to Home Page"}</A>
@@ -144,13 +105,32 @@ pub fn NewRecipePage() -> impl IntoView {
 }
 
 
+
+
+
 #[derive(Params, PartialEq, Clone, Default)]
-struct EditRecipeParam {
+struct RecipeIdParam {
     id: Option<u16>
 }
 
 #[component]
-pub fn EditRecipePage() -> impl IntoView {
+pub fn RecipePage(
+    editable: bool,
+) -> impl IntoView {
+
+    let page_name = if editable {
+        "Edit Recipe"
+    } else {
+        "Recipe"
+    };
+    set_page_name(page_name);
+
+    // fetch param
+    let get_recipe_id_param = move || {
+        use_params::<RecipeIdParam>()
+            .get()
+            .unwrap_or_default().id
+    };
 
     // Setup action
     let recipe_action = 
@@ -159,11 +139,6 @@ pub fn EditRecipePage() -> impl IntoView {
         });
     let action_pending = recipe_action.pending();
 
-    let get_recipe_id_param = move || {
-        use_params::<EditRecipeParam>()
-            .get()
-            .unwrap_or_default().id
-    };
 
     let recipe_resource = create_resource(
         move || (
@@ -180,12 +155,12 @@ pub fn EditRecipePage() -> impl IntoView {
     };
 
     view! {
+
+        <div class="sub-header">
+        </div>
+
         <PendingPopup
             get_signal=action_pending
-        />
-
-        <PageName
-            page_name={"Edit Recipe".to_string()}
         />
 
         <Transition fallback=move || view! { <PendingPopup/> } >
@@ -193,12 +168,23 @@ pub fn EditRecipePage() -> impl IntoView {
                 let recipe = recipe_resource.get();
 
                 if let Some(Ok(recipe)) = recipe {
-                    view! {
-                        <EditableRecipeSheet
-                            recipe_action=  recipe_action
-                            recipe=         recipe
-                            is_new_recipe=  false
-                        />
+
+                    if editable {
+                        // Editable Recipe
+                        view! {
+                            <EditableRecipeSheet
+                                recipe_action=  recipe_action
+                                recipe=         recipe
+                                is_new_recipe=  false
+                            />
+                        }
+                    } else {
+                        // Display Recipe
+                        view! {
+                            <RecipeSheet
+                                recipe=recipe
+                            />
+                        }
                     }
                 } else {
                     view_fallback().into_view()
@@ -211,6 +197,8 @@ pub fn EditRecipePage() -> impl IntoView {
 /// Renders the home page of your application.
 #[component]
 pub fn AllRecipes() -> impl IntoView {
+
+    set_page_name("Recipes");
 
     let recipe_action = create_action(|desc: &RecipeActionDescriptor| {
         recipe_function(desc.clone())
@@ -229,15 +217,15 @@ pub fn AllRecipes() -> impl IntoView {
 
 
     view! {
+
+        <div class="sub-header">
+        </div>
+
         <Show
             when=move || recipe_action_pending.get()
         >
             <PendingPopup/>
         </Show>
-
-        <PageName
-            page_name={"Recipes".to_string()}
-        />
 
         // TagList
         <Transition fallback=move || view! {<p>"Loading..."</p> }>
@@ -271,7 +259,7 @@ pub fn AllRecipes() -> impl IntoView {
                     }
                 };
 
-                // list of RecipeSheet
+                // list of RecipeLightSheet
                 let existing_recipes = {
                     move || {
                         recipes_resource.get()
@@ -319,5 +307,45 @@ pub fn AllRecipes() -> impl IntoView {
                 }
             }}
         </Transition>
+    }
+}
+
+
+/// 404 - Not Found
+#[component]
+pub fn NotFound() -> impl IntoView {
+    // set an HTTP status code 404
+    // this is feature gated because it can only be done during
+    // initial server-side rendering
+    // if you navigate to the 404 page subsequently, the status
+    // code will not be set because there is not a new HTTP request
+    // to the server
+    #[cfg(feature = "ssr")]
+    {
+        // this can be done inline because it's synchronous
+        // if it were async, we'd use a server function
+        let resp = expect_context::<leptos_actix::ResponseOptions>();
+        resp.set_status(actix_web::http::StatusCode::NOT_FOUND);
+    }
+
+    view! {
+        <h1>"Not Found"</h1>
+    }
+}
+
+
+#[component]
+pub fn HeaderMenu(
+    page_name: ReadSignal<String>
+) -> impl IntoView {
+    view! {
+        <header class="header-menu">
+            <h2>{"Home Cook Book"}</h2>
+            <h1>{page_name}</h1>
+            <nav>
+                <A class="header-links" href="">"Recipes"</A>
+                <A class="header-links" href="/new-recipe">"New Recipe"</A>
+            </nav>
+        </header>
     }
 }
