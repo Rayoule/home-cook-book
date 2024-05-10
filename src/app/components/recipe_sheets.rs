@@ -4,26 +4,19 @@ use leptos_router::A;
 use serde::{Serialize, Deserialize};
 
 use crate::app::{
-    components::recipe_server_functions::recipe_function, elements::recipe_elements::*, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeLight
+    components::recipe_server_functions::recipe_function, elements::{popups::DeletePopupInfo, recipe_elements::*}, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeLight
 };
 
-
-#[derive(Clone)]
-pub struct RecipeIdGetter(pub ReadSignal<u16>);
-#[derive(Clone)]
-pub struct RecipeNameGetter(pub ReadSignal<String>);
 
 #[component]
 pub fn RecipeLightSheet(
     recipe_light: RecipeLight,
+    recipe_action: Action<RecipeActionDescriptor, Result<(), ServerFnError>>,
+    delete_info: WriteSignal<Option<DeletePopupInfo>>,
 ) -> impl IntoView {
 
     // Setup context with the recipe light getter
     let (recipe_id_getter, _) = create_signal(recipe_light.id.clone());
-    provide_context::<RecipeIdGetter>( RecipeIdGetter(recipe_id_getter) );
-    // Stroe recipe name in context
-    let (recipe_id_getter, _) = create_signal(recipe_light.name.clone());
-    provide_context::<RecipeNameGetter>( RecipeNameGetter(recipe_id_getter) );
 
     let (recipe_id, recipe_name, recipe_tags) = (
         recipe_light.id,
@@ -43,27 +36,11 @@ pub fn RecipeLightSheet(
             on:click=on_click
         >
 
-            // Edit button
-            /*{ move || {
-                //let id = recipe_light.id.unwrap_or_default();
-                let path = "/edit-recipe/".to_string() + &recipe_id.to_string();
-                view!{
-                    <A href=path>{"Edit"}</A>
-                    <DeleteButton
-                        recipe_getter=recipe_getter
-                        recipe_delete_action=recipe_delete_action
-                    />
-                }
-            }}*/
-
-            
-
-            // Name
-            /*<EditableRecipeName
-                editable=   false
-                name=       recipe_name
-            />*/
-            <RecipeLightSubMenu/>
+            <RecipeLightSubMenu
+                recipe_id=      recipe_id_getter
+                recipe_action=  recipe_action
+                delete_info=    delete_info
+            />
 
             <h3 class="recipe-light name">{ recipe_name }</h3>
 
@@ -97,6 +74,7 @@ pub fn RecipeLightSheet(
 #[component]
 pub fn RecipeSheet(
     recipe: Recipe,
+    print: bool,
 ) -> impl IntoView {
     //
     

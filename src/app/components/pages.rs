@@ -9,7 +9,8 @@ use crate::app::{
             EditableRecipeSheet, RecipeLightSheet, RecipeSheet
         }, tags::*
     },
-    elements::popups::PendingPopup, set_page_name,
+    elements::popups::*,
+    set_page_name,
 };
 
 
@@ -113,17 +114,28 @@ struct RecipeIdParam {
     id: Option<u16>
 }
 
+#[derive(Clone)]
+pub enum RecipePageMode {
+    Display,
+    Editable,
+    Print,
+}
+
 #[component]
 pub fn RecipePage(
-    editable: bool,
+    editable: RecipePageMode,
 ) -> impl IntoView {
 
-    let page_name = if editable {
-        "Edit Recipe"
-    } else {
-        "Recipe"
-    };
-    set_page_name(page_name);
+    let editable = create_rw_signal(editable);
+
+    create_effect(move |_| {
+        let page_name = match editable.get() {
+            RecipePageMode::Display => "Recipe",
+            RecipePageMode::Editable => "Edit Recipe",
+            RecipePageMode::Print => "Recipe",
+        };
+        set_page_name(page_name);
+    });
 
     // fetch param
     let get_recipe_id_param = move || {
@@ -169,22 +181,35 @@ pub fn RecipePage(
 
                 if let Some(Ok(recipe)) = recipe {
 
-                    if editable {
-                        // Editable Recipe
-                        view! {
-                            <EditableRecipeSheet
-                                recipe_action=  recipe_action
-                                recipe=         recipe
-                                is_new_recipe=  false
-                            />
-                        }
-                    } else {
-                        // Display Recipe
-                        view! {
-                            <RecipeSheet
-                                recipe=recipe
-                            />
-                        }
+                    match editable.get() {
+                        RecipePageMode::Display => {
+                            // Display Recipe
+                            view! {
+                                <RecipeSheet
+                                    recipe= recipe
+                                    print=  false
+                                />
+                            }
+                        },
+                        RecipePageMode::Editable => {
+                            // Editable Recipe
+                            view! {
+                                <EditableRecipeSheet
+                                    recipe_action=  recipe_action
+                                    recipe=         recipe
+                                    is_new_recipe=  false
+                                />
+                            }
+                        },
+                        RecipePageMode::Print => {
+                            // Display Recipe
+                            view! {
+                                <RecipeSheet
+                                    recipe= recipe
+                                    print=  true
+                                />
+                            }
+                        },
                     }
                 } else {
                     view_fallback().into_view()
@@ -193,6 +218,10 @@ pub fn RecipePage(
         </Transition>
     }
 }
+
+
+
+
 
 /// Renders the home page of your application.
 #[component]
@@ -215,6 +244,10 @@ pub fn AllRecipes() -> impl IntoView {
     let (selected_tags, set_selected_tags) = create_signal::<Vec<String>>(vec![]);
     let (already_selected_tags, set_already_selected_tags) = create_signal::<Vec<String>>(vec![]);
 
+    let delete_popup_info = create_signal::<Option<DeletePopupInfo>>(None);
+    create_effect(move |_| {
+        log!("Delete Popup Info has changed to -> {:?}", delete_popup_info.0.get());
+    });
 
     view! {
 
@@ -279,6 +312,8 @@ pub fn AllRecipes() -> impl IntoView {
                                                     Some( view! {
                                                         <RecipeLightSheet
                                                             recipe_light=   recipe
+                                                            recipe_action=  recipe_action
+                                                            delete_info=    delete_popup_info.1.clone()
                                                         />
                                                     })
                                                 } else {
@@ -300,6 +335,11 @@ pub fn AllRecipes() -> impl IntoView {
                             {tags_component}
                         </div>
 
+                        <DeleteRecipePopup
+                            recipe_action=  recipe_action
+                            info=           delete_popup_info.0
+                        />
+
                         <div class="recipe-list-container">
                             {existing_recipes}
                         </div>
@@ -309,6 +349,8 @@ pub fn AllRecipes() -> impl IntoView {
         </Transition>
     }
 }
+
+
 
 
 /// 404 - Not Found

@@ -467,4 +467,6 @@ pub enum RecipeActionDescriptor {
     Save(Recipe),
     // With recipe ID
     Delete(u16),
+    // With recipe ID
+    Duplicate(u16),
 }

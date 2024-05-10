@@ -69,8 +69,8 @@ body {
 
 	background-color: #ffffff;
 
-	width: 200px;
-	height: 100px;
+	width: 235px;
+	height: 120px;
 
 	margin: 10px auto;
 	padding: 10px;
@@ -84,7 +84,7 @@ body {
 	box-shadow: 0px 0px 7px rgba(0, 0, 0, .13);
 }
 .recipe-light-container:hover {
-	transform: scale(1.2);
+	transform: scale(1.02);
 }
 .recipe-light.name {
 	text-align: left;
@@ -112,18 +112,20 @@ li.recipe-light {
     box-sizing: border-box;
 }
 
-
+// Sub Menu
 .recipe-light-sub-menu {
+	cursor: pointer;
+
 	position: absolute;
     top: 5px; /* Adjusted to give some padding from the top */
     right: 5px; /* Adjusted to give some padding from the right */
 
     width: 13px; /* Width of the menu icon */
-	height: 20px; /* Height enough to show three dots with spacing */
+	height: 22px; /* Height enough to show three dots with spacing */
 
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: center;
 	align-items: center;
     
     z-index: 10;
@@ -137,6 +139,7 @@ li.recipe-light {
 	transition:
 		transform 0.1s ease-out,
 		box-shadow 0.1s ease-out,
+		border-radius 0.1s ease-out,
 		background-color 0.1s ease-out,
 		height 0.1s ease-out,
 		width 0.1s ease-out
@@ -152,24 +155,130 @@ li.recipe-light {
 	background-color: #525252;
 }
 .recipe-light-sub-menu.into-menu {
-	width: 60px;
-	height: 60px;
+	top: 0;
+	right: 0;
 
-	background-color: #f00;
+	width: 100px;
+	height: 100px;
+
+	//background-color: #f00;
+
+	border-radius: 15px;
+}
+.recipe-light-sub-menu.into-menu:active {
+	transform: inherit;
+	box-shadow: inherit;
+	background-color: inherit;
+}
+.recipe-light-sub-menu.into-menu:hover {
+	// Disable upscale when into-menu
+	transform: scale(1.0);
 }
 .sub-menu-dot {
+	display: block;
+
 	height: 4px;
     width: 4px;
+
     background-color: #333; /* Dark color for the dots */
     border-radius: 50%; /* Makes the dots circular */
 
-	margin: 0px 0px;
+	margin: auto auto;
+	opacity: 100%;
+
+	transition: opacity 0.1s ease-out;
 }
 .sub-menu-dot:first-child {
 	margin-top: 2px;
 }
 .sub-menu-dot:last-child {
 	margin-bottom: 2px;
+}
+.sub-menu-dot.into-menu {
+	display: none;
+	opacity: 0%;
+}
+.close-sub-menu {
+	position: absolute;
+
+	font-size: small;
+
+	top: 3px;
+	right: 3px;
+
+	height: 0px;
+	width: 0px;
+
+	overflow: hidden;
+
+	background-color: white;
+
+	border: none;
+    border-radius: 8px;
+	box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+
+	transition: transform 0.1s ease-out;
+}
+.close-sub-menu.into-menu {
+	display: flex;
+    flex-direction: column;
+    justify-content: center;
+	align-items: center;
+
+	height: 22px;
+	width: 13px;
+
+	border: 1px solid #b5b5b5;
+
+	transform: scale(1.0);
+
+	transition:
+		transform 0.1s ease-out,
+		box-shadow 0.1s ease-out,
+		background-color 0.1s ease-out,
+	;
+}
+.close-sub-menu.into-menu:hover {
+	transform: scale(1.2);
+	box-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+}
+.close-sub-menu.into-menu:active {
+	transform: scale(0.9);
+	box-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+	background-color: #525252;
+}
+.sub-menu-buttons {
+	//text-align: left;
+
+	opacity: 0%;
+
+	top: 0;
+	right: 0;
+
+	height: 0;
+	transform: scale(0.0);
+
+	top: 0;
+	bottom: 0;
+
+	transition: transform 0.1s ease-out;
+}
+.sub-menu-buttons.into-menu {
+	display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+	align-items: baseline;
+
+	height: 100px;
+	transform: scale(1.0);
+
+	//margin: auto;
+
+	opacity: 100%;
+}
+.sub-menu-option {
+	margin-left: 0;
+	//margin: 0px auto;
 }
 
 
@@ -482,24 +591,46 @@ ul.notes {
 .tag-selected {
 	background-color: #f00;
 }
-  
-.popup {
+
+
+
+/*.popup {
 	position: fixed;
 	z-index: 100000;
+
+	top: 0;
+	left: 0;
+	height: 100vh;
+	width: 100vw;
 
 	display: flex;
     justify-content: center;
     align-items: center; 
 
-	top: 0;
-	bottom: 0;
-	right: 0;
-	left: 0;
-
 	background-color: rgba(1, 1, 1, .75);
 	opacity: 1;
 
 	transition: opacity 0.5s ease;
+}*/
+
+
+.popup {
+	display: none;
+	position: fixed;
+	z-index: 9999;
+
+    justify-content: center;
+    align-items: center; 
+
+	top: 0;
+	left: 0;
+	height: 100vh;
+	width: 100vw;
+
+	background-color: #00000062;
+}
+.popup.displayed {
+	display: flex;
 }
 
 .popup-window {

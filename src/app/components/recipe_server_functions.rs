@@ -30,6 +30,7 @@ pub async fn recipe_function(recipe_action_desc: RecipeActionDescriptor) -> Resu
         RecipeActionDescriptor::Add(r) =>       log!("Action received: ADD -> {:?}", r),
         RecipeActionDescriptor::Save(r) =>      log!("Action received: SAVE -> {:?}", r),
         RecipeActionDescriptor::Delete(i) =>    log!("Action received: DELETE -> {:?}", i),
+        RecipeActionDescriptor::Duplicate(i) => log!("Action received: DUPLICATE -> {:?}", i),
     }
 
     let mut conn = db().await?;
@@ -106,6 +107,26 @@ pub async fn recipe_function(recipe_action_desc: RecipeActionDescriptor) -> Resu
                 Err(e)  => Err(ServerFnError::ServerError("No Recipe ID for recipe deletion".to_owned()))
             }
             
+            
+        },
+
+        RecipeActionDescriptor::Duplicate(id) => {
+            match sqlx::query(
+                "INSERT INTO recipes (recipe_name, recipe_tags, recipe)
+                SELECT recipe_name, recipe_tags, recipe
+                FROM recipes
+                WHERE id = $1;"
+            )
+                .bind(id)
+                .execute(&mut conn)
+                .await
+            {
+                Ok(_)   => {
+                    log!("The Recipe with ID :\n {:?} \n was DUPLICATED successfully", id);
+                    Ok(())
+                },
+                Err(e)  => Err(ServerFnError::ServerError("No Recipe ID for recipe duplication".to_owned()))
+            }
             
         },
     }

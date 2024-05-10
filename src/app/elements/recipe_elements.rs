@@ -4,7 +4,7 @@ use leptos::{
     html::Input, logging::log, *
 };
 
-use crate::app::{elements::popups::DeleteRecipePopup, *};
+use crate::app::{*, elements::popups::*};
 
 
 #[component]
@@ -220,27 +220,39 @@ pub fn EditableEntryList<T: RecipeEntry>(
 #[component]
 pub fn DeleteButton(
     recipe_action: Action<RecipeActionDescriptor, Result<(), ServerFnError>>,
+    recipe_id: ReadSignal<u16>,
+    delete_info: WriteSignal<Option<DeletePopupInfo>>,
 ) -> impl IntoView {
 
-    let (wants_deletion_getter, wants_deletion_setter) = create_signal(false);
+    let wants_deletion = create_rw_signal(false);
 
     let on_want_delete_click = move |_| {
-        wants_deletion_setter.set(true);
+        wants_deletion.set(true);
+        delete_info.set(Some(
+            DeletePopupInfo {
+                wants_deletion: wants_deletion,
+                recipe_id:      recipe_id,
+            }
+        ));
     };
 
     view!{
+        <span on:click=on_want_delete_click > {"Delete"} </span>
+    }
+}
 
-        <Show
-            when=move || { wants_deletion_getter.get() }
-            fallback=move || {view!{
-                <button on:click=on_want_delete_click > {"DELETE"} </button>
-            }}
-        >
-            <DeleteRecipePopup
-                recipe_action=          recipe_action
-                wants_deletion_setter=  wants_deletion_setter
-            />
-        </Show>
+#[component]
+pub fn DuplicateButton(
+    recipe_action: Action<RecipeActionDescriptor, Result<(), ServerFnError>>,
+    recipe_id: ReadSignal<u16>,
+) -> impl IntoView {
+
+    let on_duplicate_click = move |_| {
+        recipe_action.dispatch(RecipeActionDescriptor::Duplicate(recipe_id.get()));
+    };
+
+    view!{
+        <span on:click=on_duplicate_click >{"Duplicate"}</span>
     }
 }
 
@@ -308,24 +320,77 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
 
 
 #[component]
-pub fn RecipeLightSubMenu() -> impl IntoView {
+pub fn RecipeLightSubMenu(
+    recipe_id: ReadSignal<u16>,
+    recipe_action: Action<RecipeActionDescriptor, Result<(), ServerFnError>>,
+    delete_info: WriteSignal<Option<DeletePopupInfo>>,
+) -> impl IntoView {
 
     let is_menu = create_rw_signal(false);
 
-    let on_click = move |ev: ev::MouseEvent| {
+    let edit_path: String = "/edit-recipe/".to_owned() + &recipe_id.get_untracked().to_string();
+    let print_path: String = "/print-recipe/".to_owned() + &recipe_id.get_untracked().to_string();
+
+    let on_sub_menu_click = move |ev: ev::MouseEvent| {
         ev.stop_propagation();
-        is_menu.update(|b| *b = b.not());
+        is_menu.update(|im| if im.not() { *im = true; });
+    };
+
+    let on_close_sub_menu_click = move |ev: ev::MouseEvent| {
+        ev.stop_propagation();
+        is_menu.set(false);
     };
     
     view! {
         <div
             class="recipe-light-sub-menu"
             class:into-menu=is_menu
-            on:click=on_click
+            on:click=on_sub_menu_click
         >
-            <div class="sub-menu-dot"></div>
-            <div class="sub-menu-dot"></div>
-            <div class="sub-menu-dot"></div>
+            <div
+                class="sub-menu-dot"
+                class:into-menu=is_menu
+            ></div>
+            <div
+                class="sub-menu-dot"
+                class:into-menu=is_menu
+            ></div>
+            <div
+                class="sub-menu-dot"
+                class:into-menu=is_menu
+            ></div>
+
+            <div
+                class= "sub-menu-buttons"
+                class:into-menu=is_menu
+            >
+                <A
+                    class= "sub-menu-option"
+                    href=edit_path
+                >{"Edit"}</A>
+
+                <DuplicateButton
+                    recipe_action=  recipe_action
+                    recipe_id=      recipe_id
+                />
+
+                <A
+                    class= "sub-menu-option"
+                    href=print_path
+                >{"Print"}</A>
+
+                <DeleteButton
+                    recipe_action=  recipe_action
+                    recipe_id=      recipe_id
+                    delete_info=    delete_info
+                />
+            </div>
+
+            <div
+                class="close-sub-menu"
+                class:into-menu=is_menu
+                on:click=on_close_sub_menu_click
+            >{"X"}</div>
         </div>
     }
 }

@@ -44,8 +44,9 @@ pub fn App() -> impl IntoView {
                  >
                     <Route path="/"                     view=AllRecipes />
                     <Route path="/new-recipe"           view=NewRecipePage />
-                    <Route path="/display-recipe/:id"   view=|| view! { <RecipePage editable=false /> }/>
-                    <Route path="/edit-recipe/:id"      view=|| view! { <RecipePage editable=true /> }/>
+                    <Route path="/display-recipe/:id"   view=|| view! { <RecipePage editable=RecipePageMode::Display /> }/>
+                    <Route path="/edit-recipe/:id"      view=|| view! { <RecipePage editable=RecipePageMode::Editable /> }/>
+                    <Route path="/print-recipe/:id"     view=|| view! { <RecipePage editable=RecipePageMode::Print /> }/>
                     <Route path="/*any"                 view=NotFound />
                 </AnimatedRoutes>
             </main>
