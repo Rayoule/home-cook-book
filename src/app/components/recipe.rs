@@ -4,7 +4,7 @@ use leptos_router::A;
 use regex::Replacer;
 use serde::{Serialize, Deserialize};
 
-use crate::app::elements::recipe_elements::*;
+use crate::app::{components::recipe, elements::recipe_elements::*};
 
 use super::{recipe_server_functions::recipe_function, recipe_sheets::EditableRecipeSheet};
 
@@ -37,6 +37,7 @@ pub struct RecipeLight {
     pub id: u16,
     pub name: String,
     pub tags: Option<Vec<RecipeTag>>,
+    pub ingredients: Option<Vec<RecipeIngredient>>,
 }
 
 impl RecipeLight {
@@ -66,14 +67,41 @@ impl RecipeLight {
         // gather all recipe text
         let mut recipe_text: String = "".to_string();
         // add name
+        log!("Name: {:?}", self.name.clone());
         recipe_text += self.name.as_str();
         // add tags
         if let Some(tags) = &self.tags {
-            let _ = tags.iter().map(|t| {
+            log!("Bim tags");
+            /*let _ = tags.iter().map(|t| {
+                log!("Tags: {:?}", t.name.clone());
                 recipe_text += " ";
                 recipe_text += t.name.as_str();
-            });
+            });*/
+            for t in tags {
+                log!("Tags: {:?}", t.name.clone());
+                recipe_text += " ";
+                recipe_text += t.name.as_str();
+            }
         }
+        // add ingredients
+        if let Some(ingrs) = &self.ingredients {
+            log!("Bim Ings");
+            /*let _ = ingrs.iter().map(|t| {
+                log!("Ingredient: {:?}", t.content.clone());
+                recipe_text += " ";
+                recipe_text += t.content.as_str();
+            });*/
+            for i in ingrs {
+                log!("Ingredient: {:?}", i.content.clone());
+                recipe_text += " ";
+                recipe_text += i.content.as_str();
+            }
+        }
+
+        // to lowercase to match the
+        recipe_text = recipe_text.to_lowercase();
+
+        log!("RecipeText: {:?}", recipe_text.clone());
 
         // separate text into words
         let recipe_words: Vec<&str> =
@@ -124,29 +152,31 @@ impl JsonRecipe {
 }
 
 /// The Recipe format, without the ID, that will be serialize into JSON
-#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+/*#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
 pub struct JsonRecipeTags {
     pub tags: Option<Vec<RecipeTag>>,
-}
+}*/
 
 // Recipe format when it is stored in the DB
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
 pub struct DbRowRecipe {
-    pub id: u16,
-    pub recipe_name: String,
-    pub recipe_tags: String,
-    pub recipe: String,
+    pub id:                 u16,
+    pub recipe_name:        String,
+    pub recipe_tags:        String,
+    pub recipe_ingredients: String,
+    pub recipe:             String,
 }
 
 // All row without the recipe
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
 pub struct DbRowRecipeLight {
-    pub id: u16,
-    pub recipe_name: String,
-    pub recipe_tags: String,
+    pub id:                 u16,
+    pub recipe_name:        String,
+    pub recipe_tags:        String,
+    pub recipe_ingredients: String,
 }
 
 // Only ID
@@ -241,7 +271,7 @@ impl RecipeEntry for RecipeTag {
         .into_view()
     }
     
-    fn update_field_from_string_input(&mut self, field_id: Option<usize>, input: String) {
+    fn update_field_from_string_input(&mut self, _field_id: Option<usize>, input: String) {
         self.name = input;
     }
 }
@@ -302,6 +332,7 @@ impl RecipeEntry for RecipeIngredient {
                 set_entry_signal=   set_entry
                 field_id=           {0}
                 is_input=           true
+                is_only_numbers=    true
             />
             <RecipeEntryInput
                 class=              "ingredients unit".to_owned()
@@ -337,6 +368,8 @@ impl RecipeEntry for RecipeIngredient {
             },
 
             Some(1) => self.unit = input,
+
+            Some(2) => self.content = input,
 
             None => {
                 log!("ERROR: No ID provided.")
@@ -394,7 +427,7 @@ impl RecipeEntry for RecipeInstruction {
         .into_view()
     }
     
-    fn update_field_from_string_input(&mut self, field_id: Option<usize>, input: String) {
+    fn update_field_from_string_input(&mut self, _field_id: Option<usize>, input: String) {
         self.content = input;
     }
 }

@@ -15,7 +15,8 @@ pub fn RecipeSearchBar(
         // here, we'll extract the value from the input
         let value = input_element()
             .expect("<input> should be mounted")
-            .value();
+            .value()
+            .to_lowercase();
 
 
         use regex::Regex;

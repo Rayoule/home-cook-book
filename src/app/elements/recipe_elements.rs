@@ -219,7 +219,6 @@ pub fn EditableEntryList<T: RecipeEntry>(
 
 #[component]
 pub fn DeleteButton(
-    recipe_action: Action<RecipeActionDescriptor, Result<(), ServerFnError>>,
     recipe_id: ReadSignal<u16>,
     delete_info: WriteSignal<Option<DeletePopupInfo>>,
 ) -> impl IntoView {
@@ -275,9 +274,12 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
     field_id: Option<usize>,
     #[prop(optional)]
     is_input: Option<bool>,
+    #[prop(optional)]
+    is_only_numbers: Option<bool>,
 ) -> impl IntoView {
 
     let is_input = is_input.unwrap_or_default();
+    let is_only_numbers = is_only_numbers.unwrap_or_default();
 
     let initial_value = if initial_value.is_empty() { None } else { Some(initial_value) };
 
@@ -286,7 +288,7 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
         view! {
             <input
                 class=          class
-                type=           "text"
+                type=           { if is_only_numbers {"number"} else {"text"} }
                 id=             "text-input"
                 value=          initial_value
                 placeholder=    placeholder
@@ -382,7 +384,6 @@ pub fn RecipeLightSubMenu(
                 >{"Print"}</A>
 
                 <DeleteButton
-                    recipe_action=  recipe_action
                     recipe_id=      recipe_id
                     delete_info=    delete_info
                 />

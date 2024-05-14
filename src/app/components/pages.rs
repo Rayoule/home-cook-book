@@ -54,7 +54,7 @@ pub fn NewRecipePage() -> impl IntoView {
             match get_recipe_id_by_name(name.clone()).await {
                 Ok(id) => {
                     if let Some(id) = id {
-                        let path = "/recipe/".to_string() + &id.to_string() + "/" + "edit";
+                        let path = "/recipe/".to_string() + &id.to_string() + "/display";
                         let navigate = leptos_router::use_navigate();
                         navigate(&path, Default::default());
                     } else {
@@ -246,7 +246,7 @@ pub fn RecipePage(
                 get_recipe_id_param()
         ),
         move |(_, recipe_id)| {
-            get_recipe_by_id(Some(get_recipe_id_param()))
+            get_recipe_by_id(Some(recipe_id))
         },
     );
 
@@ -350,7 +350,7 @@ pub fn AllRecipes() -> impl IntoView {
 
     let (all_tags, set_all_tags) = create_signal::<Vec<String>>(vec![]);
     let (selected_tags, set_selected_tags) = create_signal::<Vec<String>>(vec![]);
-    let (already_selected_tags, set_already_selected_tags) = create_signal::<Vec<String>>(vec![]);
+    let (already_selected_tags, _set_already_selected_tags) = create_signal::<Vec<String>>(vec![]);
 
     let (get_search_input, set_search_input) = create_signal::<Vec<String>>(vec![]);
     
