@@ -1,6 +1,7 @@
 use leptos::{ ev::MouseEvent, html::Input, logging::log, *
 };
 use leptos_router::A;
+use regex::Replacer;
 use serde::{Serialize, Deserialize};
 
 use crate::app::elements::recipe_elements::*;
@@ -56,6 +57,33 @@ impl RecipeLight {
             }
         }
         out
+    }
+
+    pub fn is_in_search(&self, search_words: &Vec<String>) -> bool {
+        use regex::Regex;
+        let re = Regex::new(r"\b\w+\b").unwrap();
+
+        // gather all recipe text
+        let mut recipe_text: String = "".to_string();
+        // add name
+        recipe_text += self.name.as_str();
+        // add tags
+        if let Some(tags) = &self.tags {
+            let _ = tags.iter().map(|t| {
+                recipe_text += " ";
+                recipe_text += t.name.as_str();
+            });
+        }
+
+        // separate text into words
+        let recipe_words: Vec<&str> =
+            re
+                .find_iter(&recipe_text)
+                .map(|mat| mat.as_str())
+                .collect();
+        
+        // check if recipe_words contains any of search_words
+        search_words.iter().any(|item| recipe_words.contains(&item.as_str()))
     }
 }
 

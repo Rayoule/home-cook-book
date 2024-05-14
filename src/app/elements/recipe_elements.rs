@@ -237,7 +237,10 @@ pub fn DeleteButton(
     };
 
     view!{
-        <span on:click=on_want_delete_click > {"Delete"} </span>
+        <span
+            class= "sub-menu-option"
+            on:click=on_want_delete_click
+        > {"Delete"} </span>
     }
 }
 
@@ -252,7 +255,10 @@ pub fn DuplicateButton(
     };
 
     view!{
-        <span on:click=on_duplicate_click >{"Duplicate"}</span>
+        <span
+            class= "sub-menu-option"
+            on:click=on_duplicate_click
+        >{"Duplicate"}</span>
     }
 }
 
@@ -328,17 +334,12 @@ pub fn RecipeLightSubMenu(
 
     let is_menu = create_rw_signal(false);
 
-    let edit_path: String = "/edit-recipe/".to_owned() + &recipe_id.get_untracked().to_string();
-    let print_path: String = "/print-recipe/".to_owned() + &recipe_id.get_untracked().to_string();
+    let edit_path: String = "/recipe/".to_owned() + &recipe_id.get_untracked().to_string() + "/editable";
+    let print_path: String = "/recipe/".to_owned() + &recipe_id.get_untracked().to_string() + "/print";
 
     let on_sub_menu_click = move |ev: ev::MouseEvent| {
         ev.stop_propagation();
-        is_menu.update(|im| if im.not() { *im = true; });
-    };
-
-    let on_close_sub_menu_click = move |ev: ev::MouseEvent| {
-        ev.stop_propagation();
-        is_menu.set(false);
+        is_menu.set(!is_menu.get());
     };
     
     view! {
@@ -350,19 +351,20 @@ pub fn RecipeLightSubMenu(
             <div
                 class="sub-menu-dot"
                 class:into-menu=is_menu
-            ></div>
+            >{"•"}</div>
             <div
                 class="sub-menu-dot"
                 class:into-menu=is_menu
-            ></div>
+            >{"•"}</div>
             <div
                 class="sub-menu-dot"
                 class:into-menu=is_menu
-            ></div>
+            >{"•"}</div>
 
             <div
                 class= "sub-menu-buttons"
                 class:into-menu=is_menu
+                //on:click
             >
                 <A
                     class= "sub-menu-option"
@@ -389,7 +391,7 @@ pub fn RecipeLightSubMenu(
             <div
                 class="close-sub-menu"
                 class:into-menu=is_menu
-                on:click=on_close_sub_menu_click
+                on:click=on_sub_menu_click
             >{"X"}</div>
         </div>
     }

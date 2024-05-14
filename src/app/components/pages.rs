@@ -1,4 +1,6 @@
-use leptos::*;
+use std::{error::Error, sync::Arc};
+
+use leptos::{ev::MouseEvent, *};
 use leptos_router::*;
 use leptos::logging::log;
 use itertools::Itertools;
@@ -9,8 +11,9 @@ use crate::app::{
             EditableRecipeSheet, RecipeLightSheet, RecipeSheet
         }, tags::*
     },
-    elements::popups::*,
-    set_page_name,
+    elements::{molecules::*, popups::*},
+    set_page_name, RoundMenu, RoundMenuButton, RoundMenuInfo,
+
 };
 
 
@@ -29,6 +32,8 @@ pub fn NewRecipePage() -> impl IntoView {
     let action_submitted = recipe_action.input();
     let action_done_id = recipe_action.value();
 
+
+    let round_menu_info = create_signal(RoundMenuInfo::default());
 
     // store the submitted recipe name
     let submitted_name = create_rw_signal("".to_owned());
@@ -49,7 +54,7 @@ pub fn NewRecipePage() -> impl IntoView {
             match get_recipe_id_by_name(name.clone()).await {
                 Ok(id) => {
                     if let Some(id) = id {
-                        let path = "/edit-recipe/".to_string() + &id.to_string();
+                        let path = "/recipe/".to_string() + &id.to_string() + "/" + "edit";
                         let navigate = leptos_router::use_navigate();
                         navigate(&path, Default::default());
                     } else {
@@ -83,8 +88,9 @@ pub fn NewRecipePage() -> impl IntoView {
 
     view! {
 
-        <div class="sub-header">
-        </div>
+        <RoundMenu
+            info=round_menu_info.0
+        />
 
         <PendingPopup
             get_signal=action_pending
@@ -111,65 +117,154 @@ pub fn NewRecipePage() -> impl IntoView {
 
 #[derive(Params, PartialEq, Clone, Default)]
 struct RecipeIdParam {
-    id: Option<u16>
+    id: Option<u16>,
 }
 
-#[derive(Clone)]
+#[derive(Params, PartialEq, Clone, Default)]
+struct RecipeModeParam {
+    mode: Option<RecipePageMode>,
+}
+
+// Implement the error type for failed conversion
+#[derive(Debug, Clone)]
+struct ParseRecipePageModeError;
+// Implement Display for your error type
+impl std::fmt::Display for ParseRecipePageModeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "invalid input for RecipePageMode")
+    }
+}
+impl serde::ser::StdError for ParseRecipePageModeError {}
+
+#[derive(Clone, PartialEq, Debug)]
 pub enum RecipePageMode {
     Display,
     Editable,
     Print,
 }
 
+impl std::str::FromStr for RecipePageMode {
+    type Err = ParamsError;
+    
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "display" => Ok(RecipePageMode::Display),
+            "editable" => Ok(RecipePageMode::Editable),
+            "print" => Ok(RecipePageMode::Print),
+            _ => Err(ParamsError::Params(Arc::new(ParseRecipePageModeError))),
+        }
+    }
+}
+
 #[component]
 pub fn RecipePage(
-    editable: RecipePageMode,
+    //editable: RecipePageMode,
 ) -> impl IntoView {
 
-    let editable = create_rw_signal(editable);
-
-    create_effect(move |_| {
-        let page_name = match editable.get() {
-            RecipePageMode::Display => "Recipe",
-            RecipePageMode::Editable => "Edit Recipe",
-            RecipePageMode::Print => "Recipe",
-        };
-        set_page_name(page_name);
-    });
-
-    // fetch param
-    let get_recipe_id_param = move || {
-        use_params::<RecipeIdParam>()
-            .get()
-            .unwrap_or_default().id
+    // Get params functions
+    let get_recipe_id_param =move || {
+        use_params::<RecipeIdParam>().get().unwrap_or_default().id.expect("To get RecipeIdParam")
+    };
+    let get_recipe_mode = move || {
+        use_params::<RecipeModeParam>().get().unwrap_or_default().mode.expect("To get RecipeModeParam")
     };
 
-    // Setup action
+    // Page Name setup
+    set_page_name("Recipes");
+    // Update Page Name
+    create_effect(move |_| {
+        set_page_name(
+            match get_recipe_mode() {
+                RecipePageMode::Display => "Display Recipe",
+                RecipePageMode::Editable => "Edit Recipe",
+                RecipePageMode::Print => "Print Recipe",
+            }
+        );
+    });
+
+    // Delete Popup infos
+    let delete_popup_info = create_signal::<Option<DeletePopupInfo>>(None);
+    create_effect(move |_| {
+        log!("Delete Popup Info has changed to -> {:?}", delete_popup_info.0.get());
+    });
+
+    // Setup recipe action
     let recipe_action = 
         create_action(|desc: &RecipeActionDescriptor| {
             recipe_function(desc.clone())
         });
     let action_pending = recipe_action.pending();
 
+    // RoundMenu setup for this page
+    let round_menu_info = create_signal(
+        RoundMenuInfo {
+            recipe_action: recipe_action.into(),
+            delete_info: delete_popup_info.1.into(),
+            ..Default::default()
+        }
+    );
+    // Update RoundMenu recipe_id
+    create_effect(move |_| {
+        round_menu_info.1.update(|rmi| rmi.recipe_id = Some(get_recipe_id_param()));
+    });
+    // Update RoundMenu buttons
+    create_effect(move |_| {
+        round_menu_info.1.update(|rmi| {
+            rmi.buttons = {
+                match get_recipe_mode() {
+                    RecipePageMode::Display => vec![
+                        RoundMenuButton::HomePage,
+                        RoundMenuButton::New,
+                        RoundMenuButton::Edit,
+                        RoundMenuButton::Duplicate,
+                        RoundMenuButton::Print,
+                        RoundMenuButton::Delete,
+                    ].into(),
+                    RecipePageMode::Editable => vec![
+                        RoundMenuButton::HomePage,
+                        RoundMenuButton::Delete,
+                    ].into(),
+                    RecipePageMode::Print => vec![
+                        RoundMenuButton::HomePage,
+                        RoundMenuButton::New,
+                        RoundMenuButton::Display,
+                        RoundMenuButton::Edit,
+                        RoundMenuButton::Duplicate,
+                        RoundMenuButton::Delete,
+                    ].into(),
+                }
+            }
+        });
+    });
 
+    // Recipe resource
     let recipe_resource = create_resource(
         move || (
             recipe_action
                 .version()
                 .get(),
-            get_recipe_id_param()
+                get_recipe_id_param()
         ),
-        move |(_, recipe_id)| get_recipe_by_id(recipe_id),
+        move |(_, recipe_id)| {
+            get_recipe_by_id(Some(get_recipe_id_param()))
+        },
     );
 
     let view_fallback =move || view! {
         <PendingPopup/>
     };
 
+
     view! {
 
-        <div class="sub-header">
-        </div>
+        <RoundMenu
+            info=round_menu_info.0
+        />
+
+        <DeleteRecipePopup
+            recipe_action=  recipe_action
+            info=           delete_popup_info.0
+        />
 
         <PendingPopup
             get_signal=action_pending
@@ -181,7 +276,7 @@ pub fn RecipePage(
 
                 if let Some(Ok(recipe)) = recipe {
 
-                    match editable.get() {
+                    match get_recipe_mode() {
                         RecipePageMode::Display => {
                             // Display Recipe
                             view! {
@@ -229,9 +324,22 @@ pub fn AllRecipes() -> impl IntoView {
 
     set_page_name("Recipes");
 
+    let delete_popup_info = create_signal::<Option<DeletePopupInfo>>(None);
+    create_effect(move |_| {
+        log!("Delete Popup Info has changed to -> {:?}", delete_popup_info.0.get());
+    });
+
     let recipe_action = create_action(|desc: &RecipeActionDescriptor| {
         recipe_function(desc.clone())
     });
+
+    // Round Menu setup for this page
+    let round_menu_info = create_signal(
+        RoundMenuInfo {
+            buttons: vec![ RoundMenuButton::New ].into(),
+            ..Default::default()
+        }
+    );
 
     let recipe_action_pending = recipe_action.pending();
     
@@ -244,15 +352,17 @@ pub fn AllRecipes() -> impl IntoView {
     let (selected_tags, set_selected_tags) = create_signal::<Vec<String>>(vec![]);
     let (already_selected_tags, set_already_selected_tags) = create_signal::<Vec<String>>(vec![]);
 
-    let delete_popup_info = create_signal::<Option<DeletePopupInfo>>(None);
-    create_effect(move |_| {
-        log!("Delete Popup Info has changed to -> {:?}", delete_popup_info.0.get());
-    });
-
+    let (get_search_input, set_search_input) = create_signal::<Vec<String>>(vec![]);
+    
     view! {
 
-        <div class="sub-header">
-        </div>
+        <RecipeSearchBar
+            set_search_input=set_search_input
+        />
+
+        <RoundMenu
+            info=round_menu_info.0
+        />
 
         <Show
             when=move || recipe_action_pending.get()
@@ -300,26 +410,31 @@ pub fn AllRecipes() -> impl IntoView {
                                 Err(e) => {
                                     view! { <pre class="error">"Server Error: " {e.to_string()}</pre>}.into_view()
                                 }
-                                Ok(recipes) => {
+                                Ok(mut recipes) => {
                                     if recipes.is_empty() {
                                         view! { <p>"No recipes were found."</p> }.into_view()
                                     } else {
                                         let sel_tags = selected_tags.get();
+                                        let search_input = get_search_input.get();
+                                        // filter tags
+                                        if sel_tags.len() > 0 {
+                                            recipes.retain(|recipe| recipe.has_tags(&sel_tags));
+                                        }
+                                        // filter search
+                                        if search_input.len() > 0 {
+                                            recipes.retain(|recipe| recipe.is_in_search(&search_input));
+                                        }
+                                        // collect views
                                         recipes
                                             .into_iter()
-                                            .filter_map(move |recipe| {
-                                                if recipe.has_tags(&sel_tags) {
-                                                    Some( view! {
-                                                        <RecipeLightSheet
-                                                            recipe_light=   recipe
-                                                            recipe_action=  recipe_action
-                                                            delete_info=    delete_popup_info.1.clone()
-                                                        />
-                                                    })
-                                                } else {
-                                                    None
+                                            .map(move |recipe| {
+                                                view! {
+                                                    <RecipeLightSheet
+                                                        recipe_light=   recipe
+                                                        recipe_action=  recipe_action
+                                                        delete_info=    delete_popup_info.1.clone()
+                                                    />
                                                 }
-                                                
                                             })
                                             .collect_view()
                                     }
@@ -382,12 +497,13 @@ pub fn HeaderMenu(
 ) -> impl IntoView {
     view! {
         <header class="header-menu">
-            <h2>{"Home Cook Book"}</h2>
-            <h1>{page_name}</h1>
-            <nav>
-                <A class="header-links" href="">"Recipes"</A>
-                <A class="header-links" href="/new-recipe">"New Recipe"</A>
-            </nav>
+            <h3
+                class="logo"
+            >{"Home Cook Book"}</h3>
+            <h4
+                class="page-name"
+            >{move || page_name.get()}</h4>
         </header>
     }
 }
+

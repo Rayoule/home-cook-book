@@ -25,7 +25,7 @@ pub fn RecipeLightSheet(
     );
 
     let on_click = move |_| {
-        let path = "/display-recipe/".to_string() + &recipe_id.to_string();
+        let path = "/recipe/".to_string() + &recipe_id.to_string() + "/display";
         let navigate = leptos_router::use_navigate();
         navigate(&path, Default::default());
     };
@@ -67,6 +67,7 @@ pub fn RecipeLightSheet(
         </div>
     }
 }
+
 
 
 
