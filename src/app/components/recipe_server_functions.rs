@@ -179,6 +179,46 @@ pub async fn get_all_recipes_light() -> Result<Vec<RecipeLight>, ServerFnError> 
 
 
 
+/*#[server]
+pub async fn get_all_tags() -> Result<Vec<RecipeTag>, ServerFnError> {
+    use self::ssr::*;
+
+    log!("Fetch all recipes action.");
+
+    let mut conn = db().await?;
+
+    // fake API delay
+    if FAKE_API_DELAY { std::thread::sleep(std::time::Duration::from_millis(1250)); }
+
+    let mut all_recipe_tags: Vec<RecipeTag> = vec![];
+    let mut rows = sqlx::query_as::<_, RecipeTag>("SELECT recipe_tags FROM recipes").fetch(&mut conn);
+
+    use futures::TryStreamExt;
+    while let Some(row) = rows.try_next().await? {
+        let recipe_tags: Option<Vec<RecipeTag>> = serde_json::from_str(&row)?;
+        if let Some(tags) = recipe_tags {
+            
+        }
+        let recipe_light: RecipeLight =
+            RecipeLight {
+                id:             row.id,
+                name:           row.recipe_name,
+                tags:           recipe_tags,
+                ingredients:    recipe_ingredients,
+            };
+        
+        all_recipe_light.push(recipe_light);
+    }
+
+    // Sort recipes alphabetically
+    all_recipe_light.sort_by_key(|r| r.name.to_lowercase());
+
+    Ok(all_recipe_light)
+}*/
+
+
+
+
 
 
 #[server]

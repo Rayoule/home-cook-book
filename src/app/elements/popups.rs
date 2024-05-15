@@ -1,36 +1,34 @@
 use leptos::{*, ev::MouseEvent, logging::log};
 
 use crate::app::{
-    Recipe, RecipeActionDescriptor
+    Recipe, RecipeActionDescriptor, RecipeServerAction
 };
 
 
 #[component]
-pub fn PendingPopup(
-    #[prop(optional)]
-    get_signal: Option<ReadSignal<bool>>,
-)  -> impl IntoView {
-    if let Some(get_signal) = get_signal {
-        view! {
+pub fn ServerActionPendingPopup()  -> impl IntoView {
+
+    let action_pending =
+        use_context::<RecipeServerAction>()
+            .expect("To find RecipeServerAction in context.")
+            .0
+            .pending();
+    
+    view! {
+        <Show
+            when=move || action_pending.get()
+        >
             <div
                 class="popup"
-                class:action-pending-hidden = move || !get_signal.get()
+                on:click= move |ev: MouseEvent| {
+                    ev.stop_propagation();
+                }
             >
                 <div class="popup-window">
                     <p>{"Please Wait..."}</p>
                 </div>
             </div>
-        }
-    } else {
-        view! {
-            <div
-                class="popup"
-            >
-                <div class="popup-window">
-                    <p>{"Please Wait..."}</p>
-                </div>
-            </div>
-        }
+        </Show>
     }
 }
 
@@ -45,17 +43,21 @@ pub struct DeleteInfoSetter(pub WriteSignal<Option<DeletePopupInfo>>);
 
 #[component]
 pub fn DeleteRecipePopup(
-    recipe_action: Action<RecipeActionDescriptor, Result<(), ServerFnError>>,
     info: ReadSignal<Option<DeletePopupInfo>>,
 ) -> impl IntoView {
+
+    let recipe_action =
+        use_context::<RecipeServerAction>()
+            .expect("To find RecipeServerAction in context.")
+            .0;
 
     let on_sure_click = move |ev: MouseEvent| {
         ev.stop_propagation();
         if let Some(info) = info.get() {
-            // dispatch recipe action with recipe ID
-            recipe_action.dispatch(RecipeActionDescriptor::Delete(info.recipe_id.get_untracked()));
             // Set signal to end popup
             info.wants_deletion.set(false);
+            // dispatch recipe action with recipe ID
+            recipe_action.dispatch(RecipeActionDescriptor::Delete(info.recipe_id.get_untracked()));
         } else {
             log!("ERROR: DeletePopupInfo is None!");
         }
@@ -71,24 +73,27 @@ pub fn DeleteRecipePopup(
     };
 
     view! {
-        <div
-            class="popup"
-            class:displayed=move || {
+        <Show
+            when=move || {
                 if let Some(info) = info.get() {
                     info.wants_deletion.get()
                 } else {
                     false
                 }
             }
-            on:click=move |ev| {
-                ev.stop_propagation();
-            }
         >
-            <div class="popup-window">
-                <p> { "Do you wish to DELETE this recipe ?" } </p>
-                <button on:click=on_no_click > {"NO, CANCEL"} </button>
-                <button on:click=on_sure_click > {"YES, DELETE"} </button>
+            <div
+                class="popup"
+                on:click=move |ev| {
+                    ev.stop_propagation();
+                }
+            >
+                <div class="popup-window">
+                    <p> { "Do you wish to DELETE this recipe ?" } </p>
+                    <button on:click=on_no_click > {"NO, CANCEL"} </button>
+                    <button on:click=on_sure_click > {"YES, DELETE"} </button>
+                </div>
             </div>
-        </div>
+        </Show>
     }
 }

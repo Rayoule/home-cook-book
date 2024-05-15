@@ -751,38 +751,19 @@ ul.notes {
     background-color: #f0f0f0;
     padding: 10px;
 }
-
 .tag-selected {
 	background-color: #f00;
 }
-
-
-
-/*.popup {
-	position: fixed;
-	z-index: 100000;
-
-	top: 0;
-	left: 0;
-	height: 100vh;
-	width: 100vw;
-
-	display: flex;
-    justify-content: center;
-    align-items: center; 
-
-	background-color: rgba(1, 1, 1, .75);
-	opacity: 1;
-
-	transition: opacity 0.5s ease;
-}*/
+.clear-tags-button{
+	background-color: rgb(255, 187, 0);
+}
 
 
 .popup {
-	display: none;
 	position: fixed;
 	z-index: 9999;
 
+	display: flex;
     justify-content: center;
     align-items: center; 
 
@@ -791,10 +772,10 @@ ul.notes {
 	height: 100vh;
 	width: 100vw;
 
-	background-color: #00000062;
+	background-color: #000000ea;
 }
-.popup.displayed {
-	display: flex;
+.popup.popup-hidden {
+	display: none;
 }
 
 .popup-window {

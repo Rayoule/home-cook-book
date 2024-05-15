@@ -4,14 +4,13 @@ use leptos_router::A;
 use serde::{Serialize, Deserialize};
 
 use crate::app::{
-    components::recipe_server_functions::recipe_function, elements::{popups::DeletePopupInfo, recipe_elements::*}, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeLight
+    components::recipe_server_functions::recipe_function, elements::{popups::DeletePopupInfo, recipe_elements::*}, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeLight, RecipeServerAction
 };
 
 
 #[component]
 pub fn RecipeLightSheet(
     recipe_light: RecipeLight,
-    recipe_action: Action<RecipeActionDescriptor, Result<(), ServerFnError>>,
     delete_info: WriteSignal<Option<DeletePopupInfo>>,
 ) -> impl IntoView {
 
@@ -38,7 +37,6 @@ pub fn RecipeLightSheet(
 
             <RecipeLightSubMenu
                 recipe_id=      recipe_id_getter
-                recipe_action=  recipe_action
                 delete_info=    delete_info
             />
 
@@ -185,12 +183,16 @@ pub fn RecipeSheet(
 
 #[component]
 pub fn EditableRecipeSheet(
-    recipe_action: Action<RecipeActionDescriptor, Result<(), ServerFnError>>,
     #[prop(optional)]
     recipe: Option<Recipe>,
     #[prop(optional)]
     is_new_recipe: Option<bool>,
 ) -> impl IntoView {
+
+    let recipe_action =
+        use_context::<RecipeServerAction>()
+            .expect("To find RecipeServerAction in context.")
+            .0;
 
     let is_new_recipe = is_new_recipe.unwrap_or_else(|| false);
 

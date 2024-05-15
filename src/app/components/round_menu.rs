@@ -2,7 +2,7 @@ use leptos::{
     *,
     ev::MouseEvent, logging::log};
 
-use crate::app::{elements::popups::DeletePopupInfo, RecipeActionDescriptor};
+use crate::app::{elements::popups::DeletePopupInfo, RecipeActionDescriptor, RecipeServerAction};
 
 
 #[derive(Clone)]
@@ -18,7 +18,6 @@ pub enum RoundMenuButton {
 
 #[derive(Clone, Default)]
 pub struct RoundMenuInfo {
-    pub recipe_action: Option<Action<RecipeActionDescriptor, Result<(), ServerFnError>>>,
     pub buttons: Option<Vec<RoundMenuButton>>,
     pub recipe_id: Option<u16>,
     pub delete_info: Option<WriteSignal<Option<DeletePopupInfo>>>,
@@ -34,6 +33,11 @@ pub fn RoundMenu(
 ) -> impl IntoView {
 
     log!("Rendering round menu");
+
+    let recipe_action =
+        use_context::<RecipeServerAction>()
+            .expect("To find RecipeServerAction in context.")
+            .0;
 
     // Unfolded Signal
     let is_unfolded = create_signal(false);
@@ -162,16 +166,12 @@ pub fn RoundMenu(
                                     ev.stop_propagation();
                                     let info = info.get();
                                     let recipe_id = info.recipe_id.expect("to find recipe_id for button Duplicate.");
-                                    let recipe_action = info.recipe_action.expect("to find recipe_action for button Duplicate.");
                                     recipe_action.dispatch(RecipeActionDescriptor::Duplicate(recipe_id));
                                 };
 
                                 view! {
                                     <Show
-                                        when=move || {
-                                            let info = info.get();
-                                            info.recipe_id.is_some() && info.recipe_action.is_some()
-                                        }
+                                        when=move || info.get().recipe_id.is_some()
                                         fallback=move || ().into_view()
                                     >
                                         <div

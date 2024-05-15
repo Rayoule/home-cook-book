@@ -6,13 +6,13 @@ use leptos::logging::log;
 use itertools::Itertools;
 
 use crate::app::{
+    *,
     components::{
         recipe::*, recipe_server_functions::*, recipe_sheets::{
             EditableRecipeSheet, RecipeLightSheet, RecipeSheet
         }, tags::*
-    },
-    elements::{molecules::*, popups::*},
-    set_page_name, RoundMenu, RoundMenuButton, RoundMenuInfo,
+    }, elements::{molecules::*, popups::*},
+    //set_page_name, AllTagsMemo, RecipeServerAction, RecipesLightResource, RoundMenu, RoundMenuButton, RoundMenuInfo, SelectedTagsRwSignal
 
 };
 
@@ -24,11 +24,10 @@ pub fn NewRecipePage() -> impl IntoView {
     set_page_name("New Recipe");
 
     // Setup action
-    let recipe_action = 
-        create_action(|desc: &RecipeActionDescriptor| {
-            recipe_function(desc.clone())
-        });
-    let action_pending = recipe_action.pending();
+    let recipe_action =
+        use_context::<RecipeServerAction>()
+            .expect("To find RecipeServerAction in context.")
+            .0;
     let action_submitted = recipe_action.input();
     let action_done_id = recipe_action.value();
 
@@ -92,14 +91,9 @@ pub fn NewRecipePage() -> impl IntoView {
             info=round_menu_info.0
         />
 
-        <PendingPopup
-            get_signal=action_pending
-        />
-
         <A href="/">{"Return to Home Page"}</A>
 
         <EditableRecipeSheet
-            recipe_action=  recipe_action
             is_new_recipe=  true
         />
 
@@ -188,17 +182,15 @@ pub fn RecipePage(
         log!("Delete Popup Info has changed to -> {:?}", delete_popup_info.0.get());
     });
 
-    // Setup recipe action
-    let recipe_action = 
-        create_action(|desc: &RecipeActionDescriptor| {
-            recipe_function(desc.clone())
-        });
-    let action_pending = recipe_action.pending();
-
+    // Get recipe
+    let recipe_action =
+        use_context::<RecipeServerAction>()
+            .expect("To find RecipeServerAction in context.")
+            .0;
+    
     // RoundMenu setup for this page
     let round_menu_info = create_signal(
         RoundMenuInfo {
-            recipe_action: recipe_action.into(),
             delete_info: delete_popup_info.1.into(),
             ..Default::default()
         }
@@ -250,10 +242,6 @@ pub fn RecipePage(
         },
     );
 
-    let view_fallback =move || view! {
-        <PendingPopup/>
-    };
-
 
     view! {
 
@@ -262,15 +250,10 @@ pub fn RecipePage(
         />
 
         <DeleteRecipePopup
-            recipe_action=  recipe_action
             info=           delete_popup_info.0
         />
 
-        <PendingPopup
-            get_signal=action_pending
-        />
-
-        <Transition fallback=move || view! { <PendingPopup/> } >
+        <Transition fallback=move || view! { "Waiting for resource..." } >
             {move || {
                 let recipe = recipe_resource.get();
 
@@ -290,7 +273,6 @@ pub fn RecipePage(
                             // Editable Recipe
                             view! {
                                 <EditableRecipeSheet
-                                    recipe_action=  recipe_action
                                     recipe=         recipe
                                     is_new_recipe=  false
                                 />
@@ -307,7 +289,7 @@ pub fn RecipePage(
                         },
                     }
                 } else {
-                    view_fallback().into_view()
+                    {"waiting for resource..."}.into_view()
                 }
             }}
         </Transition>
@@ -329,10 +311,6 @@ pub fn AllRecipes() -> impl IntoView {
         log!("Delete Popup Info has changed to -> {:?}", delete_popup_info.0.get());
     });
 
-    let recipe_action = create_action(|desc: &RecipeActionDescriptor| {
-        recipe_function(desc.clone())
-    });
-
     // Round Menu setup for this page
     let round_menu_info = create_signal(
         RoundMenuInfo {
@@ -341,18 +319,22 @@ pub fn AllRecipes() -> impl IntoView {
         }
     );
 
-    let recipe_action_pending = recipe_action.pending();
-    
-    let recipes_resource = create_resource(
-        move || recipe_action.version().get(),
-        move |_| get_all_recipes_light(),
-    );
-
-    let (all_tags, set_all_tags) = create_signal::<Vec<String>>(vec![]);
-    let (selected_tags, set_selected_tags) = create_signal::<Vec<String>>(vec![]);
-    let (already_selected_tags, _set_already_selected_tags) = create_signal::<Vec<String>>(vec![]);
+    let selected_tags_signal =
+        use_context::<SelectedTagsRwSignal>()
+            .expect("To find SelectedTagsRwSignal in context.")
+            .0;
 
     let (get_search_input, set_search_input) = create_signal::<Vec<String>>(vec![]);
+
+    let all_recipes_light =
+        use_context::<RecipesLightResource>()
+            .expect("To find RecipesLightResource in context.")
+            .0;
+
+    let all_tags_memo =
+        use_context::<AllTagsMemo>()
+            .expect("To find AllTagsMemo in context.")
+            .0;
     
     view! {
 
@@ -364,39 +346,20 @@ pub fn AllRecipes() -> impl IntoView {
             info=round_menu_info.0
         />
 
-        <Show
-            when=move || recipe_action_pending.get()
-        >
-            <PendingPopup/>
-        </Show>
-
         // TagList
         <Transition fallback=move || view! {<p>"Loading..."</p> }>
             { move || {
                 let tags_component = {
                     move || {
-                        let recipes = recipes_resource.get();
-                        let mut tag_list =
-                            if let Some(Ok(recipes)) = recipes {
-                                recipes
-                                    .iter()
-                                    .map(|recipe| recipe.tags.clone().unwrap_or_else(|| vec![]) )
-                                    .flatten()
-                                    .map(|t| t.name)
-                                    .unique()
-                                    .collect::<Vec<String>>()
-                            } else { vec![] };
-                        tag_list.sort_by_key(|t| t.to_lowercase().clone());
-                        set_all_tags.set(tag_list);
 
                         view! {
                             <TagList
-                                tags=all_tags
+                                tags=all_tags_memo.get()
                                 // Tags that are selected
-                                selected_tags_signal=set_selected_tags
+                                selected_tags_signal=selected_tags_signal
                                 // Tags that are already checked (needed because the component might redraw if tags are added or removed)
                                 // This needs to be updated ONLY if tags are added or removed (through addind/removing recipes)
-                                already_selected_tags=already_selected_tags 
+                                //already_selected_tags=already_selected_tags 
                             />
                         }
                     }
@@ -405,7 +368,7 @@ pub fn AllRecipes() -> impl IntoView {
                 // list of RecipeLightSheet
                 let existing_recipes = {
                     move || {
-                        recipes_resource.get()
+                        all_recipes_light.get()
                             .map(move |recipes| match recipes {
                                 Err(e) => {
                                     view! { <pre class="error">"Server Error: " {e.to_string()}</pre>}.into_view()
@@ -414,7 +377,7 @@ pub fn AllRecipes() -> impl IntoView {
                                     if recipes.is_empty() {
                                         view! { <p>"No recipes were found."</p> }.into_view()
                                     } else {
-                                        let sel_tags = selected_tags.get();
+                                        let sel_tags = selected_tags_signal.get();
                                         let search_input = get_search_input.get();
                                         // filter tags
                                         if sel_tags.len() > 0 {
@@ -431,7 +394,6 @@ pub fn AllRecipes() -> impl IntoView {
                                                 view! {
                                                     <RecipeLightSheet
                                                         recipe_light=   recipe
-                                                        recipe_action=  recipe_action
                                                         delete_info=    delete_popup_info.1.clone()
                                                     />
                                                 }
@@ -451,7 +413,6 @@ pub fn AllRecipes() -> impl IntoView {
                         </div>
 
                         <DeleteRecipePopup
-                            recipe_action=  recipe_action
                             info=           delete_popup_info.0
                         />
 

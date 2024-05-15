@@ -245,9 +245,13 @@ pub fn DeleteButton(
 
 #[component]
 pub fn DuplicateButton(
-    recipe_action: Action<RecipeActionDescriptor, Result<(), ServerFnError>>,
     recipe_id: ReadSignal<u16>,
 ) -> impl IntoView {
+
+    let recipe_action =
+        use_context::<RecipeServerAction>()
+            .expect("To find RecipeServerAction in context.")
+            .0;
 
     let on_duplicate_click = move |_| {
         recipe_action.dispatch(RecipeActionDescriptor::Duplicate(recipe_id.get()));
@@ -330,7 +334,6 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
 #[component]
 pub fn RecipeLightSubMenu(
     recipe_id: ReadSignal<u16>,
-    recipe_action: Action<RecipeActionDescriptor, Result<(), ServerFnError>>,
     delete_info: WriteSignal<Option<DeletePopupInfo>>,
 ) -> impl IntoView {
 
@@ -366,7 +369,6 @@ pub fn RecipeLightSubMenu(
             <div
                 class= "sub-menu-buttons"
                 class:into-menu=is_menu
-                //on:click
             >
                 <A
                     class= "sub-menu-option"
@@ -374,7 +376,6 @@ pub fn RecipeLightSubMenu(
                 >{"Edit"}</A>
 
                 <DuplicateButton
-                    recipe_action=  recipe_action
                     recipe_id=      recipe_id
                 />
 
