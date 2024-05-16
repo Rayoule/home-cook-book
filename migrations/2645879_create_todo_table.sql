@@ -4,5 +4,6 @@ CREATE TABLE IF NOT EXISTS recipes
   recipe_name         TEXT,
   recipe_tags         TEXT,
   recipe_ingredients  TEXT,
-  recipe              TEXT
+  recipe_instructions TEXT,
+  recipe_notes        TEXT
 );

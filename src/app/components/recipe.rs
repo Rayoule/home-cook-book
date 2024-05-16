@@ -120,58 +120,181 @@ impl RecipeLight {
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
 pub struct JsonRecipe {
-    pub name: String,
-    pub tags:Option<Vec<RecipeTag>>,
-    pub ingredients: Option<Vec<RecipeIngredient>>,
-    pub instructions: Option<Vec<RecipeInstruction>>,
-    pub notes: Option<Vec<RecipeNote>>,
+    pub name:           String,
+    pub tags:           JsonRecipeTags,
+    pub ingredients:    JsonRecipeIngredients,
+    pub instructions:   JsonRecipeInstructions,
+    pub notes:          JsonRecipeNotes,
 }
-
 impl JsonRecipe {
-
-    pub fn from_recipe(recipe: Recipe) -> Self {
-        JsonRecipe {
-            name:           recipe.name,
-            tags:           recipe.tags,
-            ingredients:    recipe.ingredients,
-            instructions:   recipe.instructions,
-            notes:          recipe.notes,
-        }
-    }
-
     pub fn to_recipe(self, id: u16) -> Recipe {
         Recipe {
-            id: Some(id),
+            id:             Some(id),
             name:           self.name,
-            tags:           self.tags,
-            ingredients:    self.ingredients,
-            instructions:   self.instructions,
-            notes:          self.notes,
+            tags:           self.tags.to_recipe_tags(),
+            ingredients:    self.ingredients.to_recipe_ingredients(),
+            instructions:   self.instructions.to_recipe_instructions(),
+            notes:          self.notes.to_recipe_notes(),
+        }
+    }
+    pub fn from_recipe(recipe: Recipe) -> JsonRecipe {
+        JsonRecipe {
+            name:           recipe.name,
+            tags:           JsonRecipeTags::from_recipe_tags(recipe.tags),
+            ingredients:    JsonRecipeIngredients::from_recipe_ingredients(recipe.ingredients),
+            instructions:   JsonRecipeInstructions::from_recipe_instructions(recipe.instructions),
+            notes:          JsonRecipeNotes::from_recipe_notes(recipe.notes),
         }
     }
 }
 
-
-
-/// The Recipe format, without the ID, that will be serialize into JSON
-/*#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
-pub struct JsonRecipeTags {
-    pub tags: Option<Vec<RecipeTag>>,
-}*/
+pub struct JsonRecipeTags(Option<Vec<String>>);
+impl JsonRecipeTags {
+    pub fn to_recipe_tags(self) -> Option<Vec<RecipeTag>> {
+        if let Some(tags) = self.0 {
+            Some(
+                tags
+                    .into_iter()
+                    .map(|t| RecipeTag { name: t })
+                    .collect()
+            )
+        } else {
+            None
+        }
+    }
+    pub fn from_recipe_tags(recipe_tags: Option<Vec<RecipeTag>>) -> Self {
+        JsonRecipeTags(
+            if let Some(recipe_tags) = recipe_tags {
+                Some(
+                    recipe_tags
+                        .into_iter()
+                        .map(|t| t.name)
+                        .collect()
+                )
+            } else {
+                None
+            }
+        )
+    }
+}
+
+#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
+pub struct JsonRecipeIngredients(Option<Vec<(u16, String, String)>>);
+impl JsonRecipeIngredients {
+    pub fn to_recipe_ingredients(self) -> Option<Vec<RecipeIngredient>> {
+        if let Some(ingrs) = self.0 {
+            Some(
+                ingrs
+                    .into_iter()
+                    .map(|(qty, unit, content)| RecipeIngredient {
+                        quantity: qty,
+                        unit: unit,
+                        content: content,
+                    })
+                    .collect()
+            )
+        } else {
+            None
+        }
+    }
+    pub fn from_recipe_ingredients(recipe_ingrs: Option<Vec<RecipeIngredient>>) -> Self {
+        JsonRecipeIngredients(
+            if let Some(recipe_ingrs) = recipe_ingrs {
+                Some(
+                    recipe_ingrs
+                        .into_iter()
+                        .map(|i| (i.quantity, i.unit, i.content))
+                        .collect()
+                )
+            } else {
+                None
+            }
+        )
+    }
+}
+
+#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
+pub struct JsonRecipeInstructions(Option<Vec<String>>);
+impl JsonRecipeInstructions {
+    pub fn to_recipe_instructions(self) -> Option<Vec<RecipeInstruction>> {
+        if let Some(instrs) = self.0 {
+            Some(
+                instrs
+                    .into_iter()
+                    .map(|i| RecipeInstruction { content: i })
+                    .collect()
+            )
+        } else {
+            None
+        }
+    }
+    pub fn from_recipe_instructions(recipe_instrs: Option<Vec<RecipeInstruction>>) -> Self {
+        JsonRecipeInstructions(
+            if let Some(recipe_instrs) = recipe_instrs {
+                Some(
+                    recipe_instrs
+                        .into_iter()
+                        .map(|i| i.content)
+                        .collect()
+                )
+            } else {
+                None
+            }
+        )
+    }
+}
+
+#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
+pub struct JsonRecipeNotes(Option<Vec<(String, String)>>);
+impl JsonRecipeNotes {
+    pub fn to_recipe_notes(self) -> Option<Vec<RecipeNote>> {
+        if let Some(notes) = self.0 {
+            Some(
+                notes
+                    .into_iter()
+                    .map(|(title, content)| RecipeNote { title, content })
+                    .collect()
+            )
+        } else {
+            None
+        }
+    }
+    pub fn from_recipe_notes(recipe_notes: Option<Vec<RecipeNote>>) -> Self {
+        JsonRecipeNotes(
+            if let Some(recipe_notes) = recipe_notes {
+                Some(
+                    recipe_notes
+                        .into_iter()
+                        .map(|t| (t.title, t.content))
+                        .collect()
+                )
+            } else {
+                None
+            }
+        )
+    }
+}
+
+
 
 // Recipe format when it is stored in the DB
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
 pub struct DbRowRecipe {
-    pub id:                 u16,
-    pub recipe_name:        String,
-    pub recipe_tags:        String,
-    pub recipe_ingredients: String,
-    pub recipe:             String,
+    pub id:                     u16,
+    pub recipe_name:            String,
+    pub recipe_tags:            String,
+    pub recipe_ingredients:     String,
+    pub recipe_instructions:    String,
+    pub recipe_notes:           String,
 }
 
-// All row without the recipe
+// All infos needed for AllRecipe page
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
 pub struct DbRowRecipeLight {

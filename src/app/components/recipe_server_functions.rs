@@ -39,25 +39,30 @@ pub async fn recipe_function(recipe_action_desc: RecipeActionDescriptor) -> Resu
 
         RecipeActionDescriptor::Add(recipe) => {
 
-            let recipe_to_serialize =           recipe.clone();
-            let name: String =                  recipe.name;
-            let debug_name: String =            name.clone();
-            let json_tags: String =             serde_json::to_string(&recipe.tags).expect("to serialize tags into String");
-            let json_ingredients: String =      serde_json::to_string(&recipe.ingredients).expect("to serialize tags into String");
-            let json_recipe =                   JsonRecipe::from_recipe(recipe_to_serialize);
-            let debug_recipe =                  json_recipe.clone();
-            let ser_recipe: String =            serde_json::to_string(&json_recipe).expect("to serialize JsonRecipe into String");
+            let string_name =           recipe.name;
+            let string_tags =           serde_json::to_string(&JsonRecipeTags::from_recipe_tags(recipe.tags)).expect("to serialize JsonRecipeTags into String");
+            let string_ingredients =    serde_json::to_string(&JsonRecipeIngredients::from_recipe_ingredients(recipe.ingredients)).expect("to serialize JsonRecipeIngredients into String");
+            let string_instructions =   serde_json::to_string(&JsonRecipeInstructions::from_recipe_instructions(recipe.instructions)).expect("to serialize JsonRecipeInstructions into String");
+            let string_notes =          serde_json::to_string(&JsonRecipeNotes::from_recipe_notes(recipe.notes)).expect("to serialize JsonRecipeNotes into String");
 
-            match sqlx::query("INSERT INTO recipes (recipe_name, recipe_tags, recipe_ingredients, recipe) VALUES ($1, $2, $3, $4)")
-                .bind(name)
-                .bind(json_tags)
-                .bind(json_ingredients)
-                .bind(ser_recipe)
+            match sqlx::query("INSERT INTO recipes (recipe_name, recipe_tags, recipe_ingredients, recipe_instructions, recipe_notes) VALUES ($1, $2, $3, $4, $5)")
+                .bind(string_name.clone())
+                .bind(string_tags.clone())
+                .bind(string_ingredients.clone())
+                .bind(string_instructions.clone())
+                .bind(string_notes.clone())
                 .execute(&mut conn)
                 .await
             {
                 Ok(_row) => {
-                    log!("The Recipe :\n Name: {:?} // Json: {:?} \n was ADDED Successfully!", debug_name, debug_recipe);
+                    log!(
+                        "\n\nThe Recipe : \nName: {:?} \nTags: {:?} \nIngredients: {:?} \nInstructions: {:?} \nNotes: {:?} \nWas ADDED Successfully!\n\n",
+                        string_name,
+                        string_tags,
+                        string_ingredients,
+                        string_instructions,
+                        string_notes
+                    );
                     Ok(())
                 },
                 Err(e) => Err(ServerFnError::ServerError(e.to_string())),
@@ -66,27 +71,34 @@ pub async fn recipe_function(recipe_action_desc: RecipeActionDescriptor) -> Resu
 
         RecipeActionDescriptor::Save(recipe) => {
 
-            let recipe_to_serialize =           recipe.clone();
-            let id: Option<u16> =               recipe.id;
-            let name: String =                  recipe.name;
-            let json_tags: String =             serde_json::to_string(&recipe.tags).expect("to serialize tags into String");
-            let json_ingredients: String =      serde_json::to_string(&recipe.ingredients).expect("to serialize tags into String");
-            let json_recipe =                   JsonRecipe::from_recipe(recipe_to_serialize);
-            let debug_recipe =                  json_recipe.clone();
-            let ser_recipe: String =            serde_json::to_string(&json_recipe).expect("to serialize JsonRecipe into String");
+            let id: Option<u16> =       recipe.id;
+            let string_name =           recipe.name;
+            let string_tags =           serde_json::to_string(&JsonRecipeTags::from_recipe_tags(recipe.tags)).expect("to serialize JsonRecipeTags into String");
+            let string_ingredients =    serde_json::to_string(&JsonRecipeIngredients::from_recipe_ingredients(recipe.ingredients)).expect("to serialize JsonRecipeIngredients into String");
+            let string_instructions =   serde_json::to_string(&JsonRecipeInstructions::from_recipe_instructions(recipe.instructions)).expect("to serialize JsonRecipeInstructions into String");
+            let string_notes =          serde_json::to_string(&JsonRecipeNotes::from_recipe_notes(recipe.notes)).expect("to serialize JsonRecipeNotes into String");
 
             if let Some(id) = id {
-                match sqlx::query( "UPDATE recipes SET recipe_name = $1, recipe_tags = $2, recipe_ingredients = $3, recipe = $4 WHERE id = $5;" )
-                    .bind(name)
-                    .bind(json_tags)
-                    .bind(json_ingredients)
-                    .bind(ser_recipe)
-                    .bind(id)
+                match sqlx::query( "UPDATE recipes SET recipe_name = $1, recipe_tags = $2, recipe_ingredients = $3, recipe_instructions = $4, recipe_notes = $5 WHERE id = $6;" )
+                    .bind(string_name.clone())
+                    .bind(string_tags.clone())
+                    .bind(string_ingredients.clone())
+                    .bind(string_instructions.clone())
+                    .bind(string_notes.clone())
+                    .bind(id.clone())
                     .execute(&mut conn)
                     .await
                 {
                     Ok(_row) => {
-                        log!("The Recipe :\n {:?} \n was SAVED Successfully!", debug_recipe);
+                        log!(
+                            "\n\nThe Recipe : \nId: {:?} \nName: {:?} \nTags: {:?} \nIngredients: {:?} \nInstructions: {:?} \nNotes: {:?} \nWas ADDED Successfully!\n\n",
+                            id,
+                            string_name,
+                            string_tags,
+                            string_ingredients,
+                            string_instructions,
+                            string_notes
+                        );
                         Ok(())
                     },
                     Err(e) => Err(ServerFnError::ServerError(e.to_string())),
@@ -115,8 +127,8 @@ pub async fn recipe_function(recipe_action_desc: RecipeActionDescriptor) -> Resu
 
         RecipeActionDescriptor::Duplicate(id) => {
             match sqlx::query(
-                "INSERT INTO recipes (recipe_name, recipe_tags, recipe_ingredients, recipe)
-                SELECT recipe_name, recipe_tags, recipe_ingredients, recipe
+                "INSERT INTO recipes (recipe_name, recipe_tags, recipe_ingredients, recipe_instructions, recipe_notes)
+                SELECT recipe_name, recipe_tags, recipe_ingredients, recipe_instructions, recipe_notes
                 FROM recipes
                 WHERE id = $1;"
             )
@@ -157,12 +169,17 @@ pub async fn get_all_recipes_light() -> Result<Vec<RecipeLight>, ServerFnError> 
 
     use futures::TryStreamExt;
     while let Some(row) = rows.try_next().await? {
-        let recipe_tags: Option<Vec<RecipeTag>> = serde_json::from_str(&row.recipe_tags)?;
-        let recipe_ingredients: Option<Vec<RecipeIngredient>> = serde_json::from_str(&row.recipe_ingredients)?;
+        let recipe_name: String = row.recipe_name;
+        let recipe_tags: Option<Vec<RecipeTag>> =
+            serde_json::from_str::<JsonRecipeTags>(&row.recipe_tags)?
+            .to_recipe_tags();
+        let recipe_ingredients: Option<Vec<RecipeIngredient>> =
+            serde_json::from_str::<JsonRecipeIngredients>(&row.recipe_ingredients)?
+            .to_recipe_ingredients();
         let recipe_light: RecipeLight =
             RecipeLight {
                 id:             row.id,
-                name:           row.recipe_name,
+                name:           recipe_name,
                 tags:           recipe_tags,
                 ingredients:    recipe_ingredients,
             };
@@ -175,48 +192,6 @@ pub async fn get_all_recipes_light() -> Result<Vec<RecipeLight>, ServerFnError> 
 
     Ok(all_recipe_light)
 }
-
-
-
-
-/*#[server]
-pub async fn get_all_tags() -> Result<Vec<RecipeTag>, ServerFnError> {
-    use self::ssr::*;
-
-    log!("Fetch all recipes action.");
-
-    let mut conn = db().await?;
-
-    // fake API delay
-    if FAKE_API_DELAY { std::thread::sleep(std::time::Duration::from_millis(1250)); }
-
-    let mut all_recipe_tags: Vec<RecipeTag> = vec![];
-    let mut rows = sqlx::query_as::<_, RecipeTag>("SELECT recipe_tags FROM recipes").fetch(&mut conn);
-
-    use futures::TryStreamExt;
-    while let Some(row) = rows.try_next().await? {
-        let recipe_tags: Option<Vec<RecipeTag>> = serde_json::from_str(&row)?;
-        if let Some(tags) = recipe_tags {
-            
-        }
-        let recipe_light: RecipeLight =
-            RecipeLight {
-                id:             row.id,
-                name:           row.recipe_name,
-                tags:           recipe_tags,
-                ingredients:    recipe_ingredients,
-            };
-        
-        all_recipe_light.push(recipe_light);
-    }
-
-    // Sort recipes alphabetically
-    all_recipe_light.sort_by_key(|r| r.name.to_lowercase());
-
-    Ok(all_recipe_light)
-}*/
-
-
 
 
 
@@ -240,7 +215,13 @@ pub async fn get_recipe_by_id(recipe_id: Option<u16>) -> Result<Recipe, ServerFn
                 .fetch_one(&mut conn)
                 .await?;
 
-        let json_recipe: JsonRecipe = serde_json::from_str(&recipe_row.recipe)?;
+        let json_recipe = JsonRecipe {
+            name:           recipe_row.recipe_name,
+            tags:           serde_json::from_str::<JsonRecipeTags>(&recipe_row.recipe_tags)?,
+            ingredients:    serde_json::from_str::<JsonRecipeIngredients>(&recipe_row.recipe_ingredients)?,
+            instructions:   serde_json::from_str::<JsonRecipeInstructions>(&recipe_row.recipe_instructions)?,
+            notes:          serde_json::from_str::<JsonRecipeNotes>(&recipe_row.recipe_notes)?,
+        };
         let recipe = json_recipe.to_recipe(recipe_row.id);
 
         Ok(recipe)
