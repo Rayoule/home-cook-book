@@ -1,5 +1,5 @@
 :root {
-	--header-border: 80vh;
+	--header-height: 26px;
 	--header-color: #1f1f1f;
 
 	--recipe-width: 600px;
@@ -23,7 +23,7 @@ body {
 
 .header-menu {
 	color: white;
-	height: 26px;
+	height: var(--header-height);
 	text-align: left;
 	background-color: var(--header-color);
 
@@ -741,15 +741,45 @@ ul.notes {
 
 
 
-
-.tag-list {
-	list-style-type: none;
-	font-size: small;
+.tags-container {
 	position: absolute;
-    left: 0;
-	width: 45px;
-    background-color: #f0f0f0;
-    padding: 10px;
+    left: 10px;
+	top: var(--header-height);
+
+	background-color: #c4c4c4;
+}
+.unrollable-tag-panel {
+	display: block;
+	overflow: hidden;
+	height: 0vh;
+
+	transition:
+		height 0.1s ease-out
+	;
+}
+.unrollable-tag-panel.unrolled {
+	height: 50px;
+}
+.tag-list {
+	display:block;
+	font-size: small;
+
+	width: 100px;
+	max-height: 0;
+
+	overflow-y: hidden;
+
+	transition:
+		max-height 0.15s ease-out
+	;
+}
+.tag-list.unrolled {
+	max-height: 80vh;
+	overflow-y: auto;
+}
+.tag-list::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
 }
 .tag-selected {
 	background-color: #f00;
@@ -757,6 +787,39 @@ ul.notes {
 .clear-tags-button{
 	background-color: rgb(255, 187, 0);
 }
+.tag-list-entry {
+	margin-left: 5px;
+	text-align: left;
+}
+.tag-button {
+	//
+}
+.unroll-tags-button {
+	position: absolute;
+
+	top: -25px;
+	right: -20px;
+
+	width: 15px;
+	height: 60px;
+
+	background-color: white;
+
+	transition:
+		transform 0.1s ease-out,
+		background-color 0.1s ease-out
+	;
+}
+.unroll-tags-button:hover {
+	transform: translateY(20px);
+}
+.unroll-tags-button:active {
+	transform: translateY(25px);
+}
+.unroll-tags-button.is-enabled {
+	background-color: red;
+}
+
 
 
 .popup {

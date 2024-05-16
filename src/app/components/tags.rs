@@ -29,13 +29,28 @@ pub fn TagList(
 
     // Iterate over to make the collect_view
     let tag_elems =move || {
+        // get the signals
+        let mut tags_states_signals = tags_states_signals.get();
+        // sort with selected in front, then in alphabetical order
         tags_states_signals
-            .get()
+            .sort_by(|a, b| {
+                let a = a.0.get();
+                let b = b.0.get();
+
+                if a.0 != b.0 {
+                    b.0.cmp(&a.0)
+                } else {
+                    a.1.cmp(&b.1)
+                }
+            });
+        // then generate the buttons
+        tags_states_signals
             .into_iter()
             .map(|(tag_state, set_tag_state)| {
                 view! {
-                    <li>
+                    <li class="tag-list-entry">
                         <button
+                            class="tag-button"
                             class:tag-selected = move || tag_state.get().0
                             on:click = move |_| {
                                 // update the signal
@@ -77,15 +92,46 @@ pub fn TagList(
                 });
             });
     };
+
+    let is_unrolled = create_rw_signal(false);
+
+    let on_unroll_click = move |ev:MouseEvent| {
+        ev.stop_propagation();
+        is_unrolled.set(!is_unrolled.get())
+    };
     
     view! {
-        <div class="tag-list">
-            <p>Tags</p>
+        <div class="tags-container">
+
             <button
-                class="clear-tags-button"
-                on:click=on_clear_tags_click
-            >{"Clear Tags"}</button>
-            <div>{tag_elems}</div>
+                class="unroll-tags-button"
+                class:is-enabled=is_unrolled
+                on:click=on_unroll_click
+            >
+            </button>
+
+            <div
+                class="unrollable-tag-panel"
+                class:unrolled=is_unrolled
+            >
+
+                <p>{"Tags"}</p>
+
+                <button
+                    class="clear-tags-button"
+                    on:click=on_clear_tags_click
+                >
+                    {"Clear Tags"}
+                </button>
+            </div>
+
+            <ul
+                class="tag-list"
+                class:unrolled=is_unrolled
+            >
+                {tag_elems}
+            </ul>
+
         </div>
     }
 }

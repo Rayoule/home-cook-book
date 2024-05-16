@@ -1,4 +1,4 @@
-use leptos::{logging::log, ev::SubmitEvent, *};
+use leptos::{ev::{MouseEvent, SubmitEvent}, logging::log, *};
 
 
 // Will display on top of each page in the header
@@ -49,5 +49,73 @@ pub fn RecipeSearchBar(
                 {"🔍"}
             </button>
         </form>
+    }
+}
+
+
+
+/// Component that display a clickable list of suggestions
+#[component]
+pub fn SuggestionList(
+    /// the current input filled-in bu the user
+    text_input: ReadSignal<String>,
+    /// all possible values for this entry
+    possible_values: ReadSignal<Vec<String>>,
+    /// the setter so the SuggestionList can fill it
+    option_setter: WriteSignal<String>,
+) -> impl IntoView {
+
+    view! {
+        {move || {
+            let text_input = text_input.get();
+
+            let mut possible_values = possible_values.get();
+
+            possible_values.retain(|s| s.as_str().contains(&text_input));
+                    
+            let options = possible_values
+                .clone()
+                .into_iter()
+                .map(|s| {
+                    let s_cloned = s.clone();
+                    view! {
+                        <li
+                            class="options-list-entry"
+                            on:click=move |ev:MouseEvent| {
+                                ev.stop_propagation();
+                                option_setter.set(s_cloned.clone());
+                            }
+                        >
+                            {s}
+                        </li>
+                    }
+                })
+                .collect_view();
+
+            let should_show_menu =
+                if possible_values.len() < 1 {
+                    // if no suggestions, no menu
+                    false
+                } else {
+                    // if the only suggestion is the one that is already written, no menu
+                    if possible_values.len() == 1 && possible_values[0] == text_input {
+                        false
+                    } else {
+                        true
+                    }
+                };
+
+            if should_show_menu {
+                view! {
+                    <ul
+                        class="options-list"
+                    >
+                        {options}
+                    </ul>
+                }.into_view()
+            } else {
+                ().into_view()
+            }
+        }}
     }
 }
