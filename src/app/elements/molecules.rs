@@ -57,63 +57,79 @@ pub fn RecipeSearchBar(
 /// Component that display a clickable list of suggestions
 #[component]
 pub fn SuggestionList(
+    is_input_focused: RwSignal<bool>,
     /// the current input filled-in bu the user
     text_input: ReadSignal<String>,
     /// all possible values for this entry
-    possible_values: ReadSignal<Vec<String>>,
+    possible_values: Option<RwSignal<Vec<String>>>,
     /// the setter so the SuggestionList can fill it
-    option_setter: WriteSignal<String>,
+    suggestion_setter: WriteSignal<String>,
 ) -> impl IntoView {
 
     view! {
         {move || {
-            let text_input = text_input.get();
 
-            let mut possible_values = possible_values.get();
+            // return nothing if the input is not focused AND the suggestion menu is not hoverred
+            if !is_input_focused.get() {
+                ().into_view()
+            } else if let Some(possible_values) = possible_values {
 
-            possible_values.retain(|s| s.as_str().contains(&text_input));
-                    
-            let options = possible_values
-                .clone()
-                .into_iter()
-                .map(|s| {
-                    let s_cloned = s.clone();
-                    view! {
-                        <li
-                            class="options-list-entry"
-                            on:click=move |ev:MouseEvent| {
-                                ev.stop_propagation();
-                                option_setter.set(s_cloned.clone());
-                            }
-                        >
-                            {s}
-                        </li>
-                    }
-                })
-                .collect_view();
+                let text_input = text_input.get();
 
-            let should_show_menu =
-                if possible_values.len() < 1 {
-                    // if no suggestions, no menu
-                    false
-                } else {
-                    // if the only suggestion is the one that is already written, no menu
-                    if possible_values.len() == 1 && possible_values[0] == text_input {
+                let mut possible_values = possible_values.get();
+
+                possible_values.retain(|s| s.as_str().contains(&text_input));
+                        
+                let suggestions = possible_values
+                    .clone()
+                    .into_iter()
+                    .map(|s| {
+                        let s_cloned = s.clone();
+                        view! {
+                            <li
+                                class="suggestions-list-entry"
+                                on:click=move |ev:MouseEvent| {
+                                    ev.stop_propagation();
+                                    // update the input with the selected suggestion
+                                    suggestion_setter.set(s_cloned.clone());
+                                    // then close the suggestion menu
+                                    is_input_focused.set(false);
+                                }
+                            >
+                                {s}
+                            </li>
+                        }
+                    })
+                    .collect_view();
+
+                let should_show_menu =
+                    if possible_values.len() == 0 || text_input.len() == 0 {
+                        // if no suggestions or no input -> no menu
                         false
                     } else {
-                        true
-                    }
-                };
+                        // if the only suggestion is the one that is already written, no menu
+                        if possible_values.len() == 1 && possible_values[0] == text_input {
+                            false
+                        } else {
+                            true
+                        }
+                    };
 
-            if should_show_menu {
-                view! {
-                    <ul
-                        class="options-list"
-                    >
-                        {options}
-                    </ul>
-                }.into_view()
+                if should_show_menu {
+                    view! {
+                        <div>
+                            <ul
+                                class="suggestions-list"
+                            >
+                                {suggestions}
+                            </ul>
+                        </div>
+                    }.into_view()
+                } else {
+                    ().into_view()
+                }
             } else {
+                log!("not valuuuues :(");
                 ().into_view()
             }
         }}

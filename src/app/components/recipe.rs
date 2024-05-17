@@ -346,7 +346,6 @@ impl RecipeEntryType {
 
 /// RecipeEntry Trait --------
 pub trait RecipeEntry: IntoView + std::fmt::Debug + Clone + Default + 'static {
-
     fn get_entry_type() -> RecipeEntryType;
     fn extract_value(nodes_refs: Vec<NodeRef<Input>>) -> Self;
     fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View;
@@ -429,7 +428,7 @@ impl IntoView for RecipeIngredient {
 
 impl RecipeEntry for RecipeIngredient {
 
-    fn get_entry_type() -> RecipeEntryType { RecipeEntryType::Instructions }
+    fn get_entry_type() -> RecipeEntryType { RecipeEntryType::Ingredients }
 
     fn extract_value(nodes_refs: Vec<NodeRef<Input>>) -> Self {
         if nodes_refs.len() != 3 { panic!("NodeRefs number is not matching !") }

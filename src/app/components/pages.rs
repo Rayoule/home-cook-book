@@ -332,7 +332,7 @@ pub fn AllRecipes() -> impl IntoView {
             .0;
 
     let all_tags_memo =
-        use_context::<AllTagsMemo>()
+        use_context::<AllTagsSignal>()
             .expect("To find AllTagsMemo in context.")
             .0;
     

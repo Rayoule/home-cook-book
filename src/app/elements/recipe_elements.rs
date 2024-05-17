@@ -1,10 +1,15 @@
-use std::ops::Not;
-
 use leptos::{
-    html::Input, logging::log, *
+    ev::FocusEvent, html::Input, logging::log, *
 };
 
-use crate::app::{*, elements::popups::*};
+use gloo_timers::callback::Timeout;
+
+use crate::app::{
+    *,
+    elements::{
+        popups::*, molecules::*
+    }
+};
 
 
 #[component]
@@ -287,24 +292,94 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
 
     let initial_value = if initial_value.is_empty() { None } else { Some(initial_value) };
 
+    // setup for the SuggestionList
+    let is_input_focused = create_rw_signal(false);
+    let (get_input, set_input) = create_signal("".to_string());
+    let all_possible_values =
+        match T::get_entry_type() {
+            RecipeEntryType::Tag => {
+                Some(
+                    use_context::<AllTagsSignal>()
+                        .expect("to find AllTagsMemo in context.")
+                        .0
+                )
+            },
+            RecipeEntryType::Ingredients => {
+                Some(
+                    use_context::<AllIngredientsSignal>()
+                        .expect("to find AllIngredientsSignal in context.")
+                        .0
+                )
+            },
+            _ => None,
+        };
+        
+    let (get_suggestion, set_suggestion) = create_signal("".to_string());
+    let input_element: NodeRef<html::Input> = create_node_ref();
+    create_effect( move |_| {
+        let new_suggestion = get_suggestion.get();
+        if new_suggestion.len() > 0 {
+            input_element()
+                .expect("<input> should be mounted")
+                .set_value(&new_suggestion);
+        }
+    });
+
     if is_input {
         // Input + maxlength
         view! {
-            <input
-                class=          class
-                type=           { if is_only_numbers {"number"} else {"text"} }
-                id=             "text-input"
-                value=          initial_value
-                placeholder=    placeholder
-                maxlength=      "20"
-    
-                // on input, update entry signal
-                on:input=move |ev| {
-                    set_entry_signal.update(|recipe_entry| {
-                        recipe_entry.update_field_from_string_input(field_id, event_target_value(&ev));
-                    });
+            <div
+                on:focusin=move |_| {
+                    set_input.set(
+                        input_element()
+                            .expect("<input> should be mounted")
+                            .value()
+                    );
+                    is_input_focused.set(true);
                 }
-            />
+                on:focusout=move |_| {
+                    let timeout = Timeout::new(250, move || {
+                        is_input_focused.set(false);
+                    });
+                    timeout.forget();
+                }
+            >
+                <input
+                    class=          class
+                    type=           { if is_only_numbers {"number"} else {"text"} }
+                    id=             "text-input"
+                    value=          initial_value
+                    placeholder=    placeholder
+                    maxlength=      "20"
+                    node_ref=       input_element
+                    on:input=       move |ev| {
+                        // on input, update entry signal
+                        let current_input = event_target_value(&ev);
+                        set_input.set(current_input.clone());
+                        set_entry_signal.update(|recipe_entry| {
+                            recipe_entry.update_field_from_string_input(field_id, current_input);
+                        });
+                    }
+                />
+                {move || {
+
+                    set_input.set(
+                        input_element()
+                            .expect("<input> should be mounted")
+                            .value()
+                    );
+
+                    view! {
+                        <SuggestionList
+                            is_input_focused=       is_input_focused
+                            text_input=             get_input
+                            possible_values=        all_possible_values
+                            suggestion_setter=      set_suggestion
+                        />
+                    }
+                    .into_view()
+                }}
+            </div>
         }
         .into_view()
     } else {

@@ -25,7 +25,9 @@ pub struct RecipeServerAction(Action<RecipeActionDescriptor, Result<(), ServerFn
 #[derive(Clone)]
 pub struct RecipesLightResource(Resource<usize, Result<Vec<RecipeLight>, ServerFnError>>);
 #[derive(Clone)]
-pub struct AllTagsMemo(Memo<Vec<String>>);
+pub struct AllTagsSignal(RwSignal<Vec<String>>);
+#[derive(Clone)]
+pub struct AllIngredientsSignal(RwSignal<Vec<String>>);
 #[derive(Clone)]
 pub struct SelectedTagsRwSignal(RwSignal<Vec<String>>);
 
@@ -49,12 +51,36 @@ pub fn App() -> impl IntoView {
     // All RecipeLight resource
     let all_recipe_light = create_local_resource(
         move || recipe_action.version().get(),
-        move |_| get_all_recipes_light(),
+        move |_| {
+            log!("Fetching all resources!");
+            get_all_recipes_light()
+        },
     );
     provide_context(RecipesLightResource(all_recipe_light));
 
-    // All Tags resource
-    let all_tags = create_memo(move |_| {
+    // All Ingredients signal
+    let all_ingredients_signal = create_rw_signal::<Vec<String>>(vec![]);
+    create_effect(move |_| {
+        let recipes = all_recipe_light.get();
+        let mut ingr_list =
+            if let Some(Ok(recipes)) = recipes {
+                recipes
+                    .iter()
+                    .map(|recipe| recipe.ingredients.clone().unwrap_or_else(|| vec![]) )
+                    .flatten()
+                    .map(|t| t.content)
+                    .unique()
+                    .collect::<Vec<String>>()
+            } else { vec![] };
+        ingr_list.sort_by_key(|t| t.to_lowercase().clone());
+        log!("All Ingredients:\n{:?}", &ingr_list);
+        all_ingredients_signal.set(ingr_list);
+    });
+    provide_context(AllIngredientsSignal(all_ingredients_signal));
+
+    // All Tags signal
+    let all_tags_signal = create_rw_signal::<Vec<String>>(vec![]);
+    create_effect( move |_| {
         let recipes = all_recipe_light.get();
         let mut tag_list =
             if let Some(Ok(recipes)) = recipes {
@@ -67,9 +93,10 @@ pub fn App() -> impl IntoView {
                     .collect::<Vec<String>>()
             } else { vec![] };
         tag_list.sort_by_key(|t| t.to_lowercase().clone());
-        tag_list
+        log!("All Tags:\n{:?}", &tag_list);
+        all_tags_signal.set(tag_list);
     });
-    provide_context(AllTagsMemo(all_tags));
+    provide_context(AllTagsSignal(all_tags_signal));
 
     // Selected Tags
     let selected_tags = create_rw_signal::<Vec<String>>(vec![]);

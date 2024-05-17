@@ -661,6 +661,39 @@ ul.notes {
 // OTHER -------------------------------------------------
 
 
+// SUGGESTIONS LIST
+.suggestions-list {
+
+	position: absolute;
+	list-style:	none;
+	align-items: left;
+
+	overflow-y: auto;
+
+	max-width: 150px;
+	max-height: 250px;
+	transform: translate(175px, -25px);
+
+	background-color: white;
+	color: black;
+	border: 1px solid grey;
+	border-radius: 15px;
+
+	//
+}
+.suggestions-list-entry {
+	text-align: left;
+	margin: 1px 2px;
+}
+.suggestions-list-entry:hover {
+	background-color: rgb(70, 70, 255);
+	color: white;
+}
+.suggestions-list-entry:active {
+	background-color: rgb(0, 0, 109);
+	color: white;
+}
+
 // BUTTONS
 #fake-button {
 	display: inline-block;
