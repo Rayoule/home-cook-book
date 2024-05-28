@@ -1,4 +1,4 @@
-use leptos::{ev::{MouseEvent, SubmitEvent}, logging::log, *};
+use leptos::{ev::{MouseEvent, InputEvent}, logging::log, *};
 
 
 // Will display on top of each page in the header
@@ -40,6 +40,12 @@ pub fn RecipeSearchBar(
             <input
                 class="search-bar-input"
                 node_ref=input_element
+                // On Input, if empty -> clear search
+                on:input=move |ev| {
+                    if event_target_value(&ev).len() < 1 {
+                        set_search_input.set(vec![]);
+                    }
+                }
             >
             </input>
             <button

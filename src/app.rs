@@ -30,6 +30,8 @@ pub struct AllTagsSignal(RwSignal<Vec<String>>);
 pub struct AllIngredientsSignal(RwSignal<Vec<String>>);
 #[derive(Clone)]
 pub struct SelectedTagsRwSignal(RwSignal<Vec<String>>);
+#[derive(Clone)]
+pub struct DeleteInfoSignal(RwSignal<Option<DeletePopupInfo>>);
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -104,7 +106,10 @@ pub fn App() -> impl IntoView {
         log!("Selected tags changed:\n{:?}", selected_tags.get());
     });
     provide_context(SelectedTagsRwSignal(selected_tags));
-    
+
+    // Delete Infos: If this is Some(id), then display the popup that will delete the recipe with this id
+    let delete_popup_info = create_rw_signal::<Option<DeletePopupInfo>>(None);
+    provide_context(DeleteInfoSignal(delete_popup_info));
 
     view! {
         // injects a stylesheet into the document <head>

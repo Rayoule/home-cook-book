@@ -225,19 +225,15 @@ pub fn EditableEntryList<T: RecipeEntry>(
 #[component]
 pub fn DeleteButton(
     recipe_id: ReadSignal<u16>,
-    delete_info: WriteSignal<Option<DeletePopupInfo>>,
 ) -> impl IntoView {
 
-    let wants_deletion = create_rw_signal(false);
+    let delete_info_signal =
+        use_context::<DeleteInfoSignal>()
+            .expect("To find DeleteInfoReadSignal in context.")
+            .0;
 
     let on_want_delete_click = move |_| {
-        wants_deletion.set(true);
-        delete_info.set(Some(
-            DeletePopupInfo {
-                wants_deletion: wants_deletion,
-                recipe_id:      recipe_id,
-            }
-        ));
+        delete_info_signal.set(Some(DeletePopupInfo(recipe_id.get())));
     };
 
     view!{
@@ -409,7 +405,6 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
 #[component]
 pub fn RecipeLightSubMenu(
     recipe_id: ReadSignal<u16>,
-    delete_info: WriteSignal<Option<DeletePopupInfo>>,
 ) -> impl IntoView {
 
     let is_menu = create_rw_signal(false);
@@ -460,8 +455,7 @@ pub fn RecipeLightSubMenu(
                 >{"Print"}</A>
 
                 <DeleteButton
-                    recipe_id=      recipe_id
-                    delete_info=    delete_info
+                    recipe_id=recipe_id
                 />
             </div>
 

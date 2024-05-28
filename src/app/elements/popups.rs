@@ -1,7 +1,7 @@
 use leptos::{*, ev::MouseEvent, logging::log};
 
 use crate::app::{
-    Recipe, RecipeActionDescriptor, RecipeServerAction
+    DeleteInfoSignal, RecipeActionDescriptor, RecipeServerAction
 };
 
 
@@ -34,30 +34,30 @@ pub fn ServerActionPendingPopup()  -> impl IntoView {
 
 
 #[derive(Clone, Debug)]
-pub struct DeletePopupInfo {
-    pub wants_deletion: RwSignal<bool>,
-    pub recipe_id: ReadSignal<u16>,
-}
-#[derive(Clone)]
-pub struct DeleteInfoSetter(pub WriteSignal<Option<DeletePopupInfo>>);
+pub struct DeletePopupInfo(pub u16);
 
 #[component]
-pub fn DeleteRecipePopup(
-    info: ReadSignal<Option<DeletePopupInfo>>,
-) -> impl IntoView {
+pub fn DeleteRecipePopup() -> impl IntoView {
 
     let recipe_action =
         use_context::<RecipeServerAction>()
             .expect("To find RecipeServerAction in context.")
             .0;
 
+    let delete_info_signal =
+        use_context::<DeleteInfoSignal>()
+            .expect("To find DeleteInfoSignal in context.")
+            .0;
+
     let on_sure_click = move |ev: MouseEvent| {
         ev.stop_propagation();
-        if let Some(info) = info.get() {
-            // Set signal to end popup
-            info.wants_deletion.set(false);
+        if let Some(info) = delete_info_signal.get() {
             // dispatch recipe action with recipe ID
-            recipe_action.dispatch(RecipeActionDescriptor::Delete(info.recipe_id.get_untracked()));
+            let recipe_id = info.0;
+            delete_info_signal.set(None);
+            recipe_action.dispatch(RecipeActionDescriptor::Delete(recipe_id));
+            let navigate = leptos_router::use_navigate();
+            navigate("/", Default::default());
         } else {
             log!("ERROR: DeletePopupInfo is None!");
         }
@@ -65,22 +65,12 @@ pub fn DeleteRecipePopup(
 
     let on_no_click = move |ev: MouseEvent| {
         ev.stop_propagation();
-        if let Some(info) = info.get() {
-            info.wants_deletion.set(false)
-        } else {
-            log!("ERROR: DeletePopupInfo is None!");
-        }
+        delete_info_signal.set(None);
     };
 
     view! {
         <Show
-            when=move || {
-                if let Some(info) = info.get() {
-                    info.wants_deletion.get()
-                } else {
-                    false
-                }
-            }
+            when=move || { delete_info_signal.get().is_some() }
         >
             <div
                 class="popup"

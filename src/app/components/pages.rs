@@ -91,7 +91,7 @@ pub fn NewRecipePage() -> impl IntoView {
             info=round_menu_info.0
         />
 
-        <A href="/">{"Return to Home Page"}</A>
+        //<A href="/">{"Return to Home Page"}</A>
 
         <EditableRecipeSheet
             is_new_recipe=  true
@@ -176,12 +176,6 @@ pub fn RecipePage(
         );
     });
 
-    // Delete Popup infos
-    let delete_popup_info = create_signal::<Option<DeletePopupInfo>>(None);
-    create_effect(move |_| {
-        log!("Delete Popup Info has changed to -> {:?}", delete_popup_info.0.get());
-    });
-
     // Get recipe
     let recipe_action =
         use_context::<RecipeServerAction>()
@@ -189,12 +183,8 @@ pub fn RecipePage(
             .0;
     
     // RoundMenu setup for this page
-    let round_menu_info = create_signal(
-        RoundMenuInfo {
-            delete_info: delete_popup_info.1.into(),
-            ..Default::default()
-        }
-    );
+    let round_menu_info = create_signal(RoundMenuInfo::default());
+
     // Update RoundMenu recipe_id
     create_effect(move |_| {
         round_menu_info.1.update(|rmi| rmi.recipe_id = Some(get_recipe_id_param()));
@@ -205,22 +195,17 @@ pub fn RecipePage(
             rmi.buttons = {
                 match get_recipe_mode() {
                     RecipePageMode::Display => vec![
-                        RoundMenuButton::HomePage,
-                        RoundMenuButton::New,
                         RoundMenuButton::Edit,
                         RoundMenuButton::Duplicate,
                         RoundMenuButton::Print,
                         RoundMenuButton::Delete,
                     ].into(),
                     RecipePageMode::Editable => vec![
-                        RoundMenuButton::HomePage,
                         RoundMenuButton::Delete,
                     ].into(),
                     RecipePageMode::Print => vec![
-                        RoundMenuButton::HomePage,
-                        RoundMenuButton::New,
-                        RoundMenuButton::Display,
                         RoundMenuButton::Edit,
+                        RoundMenuButton::Display,
                         RoundMenuButton::Duplicate,
                         RoundMenuButton::Delete,
                     ].into(),
@@ -249,9 +234,7 @@ pub fn RecipePage(
             info=round_menu_info.0
         />
 
-        <DeleteRecipePopup
-            info=           delete_popup_info.0
-        />
+        <DeleteRecipePopup/>
 
         <Transition fallback=move || view! { "Waiting for resource..." } >
             {move || {
@@ -306,15 +289,11 @@ pub fn AllRecipes() -> impl IntoView {
 
     set_page_name("Recipes");
 
-    let delete_popup_info = create_signal::<Option<DeletePopupInfo>>(None);
-    create_effect(move |_| {
-        log!("Delete Popup Info has changed to -> {:?}", delete_popup_info.0.get());
-    });
-
     // Round Menu setup for this page
     let round_menu_info = create_signal(
         RoundMenuInfo {
             buttons: vec![ RoundMenuButton::New ].into(),
+            hide_return_button: true,
             ..Default::default()
         }
     );
@@ -393,8 +372,7 @@ pub fn AllRecipes() -> impl IntoView {
                                             .map(move |recipe| {
                                                 view! {
                                                     <RecipeLightSheet
-                                                        recipe_light=   recipe
-                                                        delete_info=    delete_popup_info.1.clone()
+                                                        recipe_light=recipe
                                                     />
                                                 }
                                             })
@@ -412,9 +390,7 @@ pub fn AllRecipes() -> impl IntoView {
                             {tags_component}
                         </div>
 
-                        <DeleteRecipePopup
-                            info=           delete_popup_info.0
-                        />
+                        <DeleteRecipePopup/>
 
                         <div class="recipe-list-container">
                             {existing_recipes}

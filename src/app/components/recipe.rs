@@ -72,11 +72,6 @@ impl RecipeLight {
         // add tags
         if let Some(tags) = &self.tags {
             log!("Bim tags");
-            /*let _ = tags.iter().map(|t| {
-                log!("Tags: {:?}", t.name.clone());
-                recipe_text += " ";
-                recipe_text += t.name.as_str();
-            });*/
             for t in tags {
                 log!("Tags: {:?}", t.name.clone());
                 recipe_text += " ";
@@ -86,11 +81,6 @@ impl RecipeLight {
         // add ingredients
         if let Some(ingrs) = &self.ingredients {
             log!("Bim Ings");
-            /*let _ = ingrs.iter().map(|t| {
-                log!("Ingredient: {:?}", t.content.clone());
-                recipe_text += " ";
-                recipe_text += t.content.as_str();
-            });*/
             for i in ingrs {
                 log!("Ingredient: {:?}", i.content.clone());
                 recipe_text += " ";
@@ -98,7 +88,7 @@ impl RecipeLight {
             }
         }
 
-        // to lowercase to match the
+        // lowercase all recipe text
         recipe_text = recipe_text.to_lowercase();
 
         log!("RecipeText: {:?}", recipe_text.clone());

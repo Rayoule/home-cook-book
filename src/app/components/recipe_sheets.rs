@@ -11,7 +11,6 @@ use crate::app::{
 #[component]
 pub fn RecipeLightSheet(
     recipe_light: RecipeLight,
-    delete_info: WriteSignal<Option<DeletePopupInfo>>,
 ) -> impl IntoView {
 
     // Setup context with the recipe light getter
@@ -36,8 +35,7 @@ pub fn RecipeLightSheet(
         >
 
             <RecipeLightSubMenu
-                recipe_id=      recipe_id_getter
-                delete_info=    delete_info
+                recipe_id=recipe_id_getter
             />
 
             <h3 class="recipe-light name">{ recipe_name }</h3>
@@ -244,14 +242,17 @@ pub fn EditableRecipeSheet(
         // Check recipe
         match updated_recipe.valid_for_save() {
             Ok(_) => {
-                // Send recipe to db
-                recipe_action.dispatch(
-                    if is_new_recipe {
-                        RecipeActionDescriptor::Add(updated_recipe)
-                    } else {
-                        RecipeActionDescriptor::Save(updated_recipe)
+                if is_new_recipe {
+                    recipe_action.dispatch(RecipeActionDescriptor::Add(updated_recipe));
+                } else {
+                    let id = updated_recipe.id;
+                    recipe_action.dispatch(RecipeActionDescriptor::Save(updated_recipe));
+                    if let Some(id) = id {
+                        let path = "/recipe/".to_string() + &id.to_string() + "/display";
+                        let navigate = leptos_router::use_navigate();
+                        navigate(&path, Default::default());
                     }
-                );
+                }
             },
             Err(e) => {
                 log!("{}", e);
@@ -308,11 +309,16 @@ pub fn EditableRecipeSheet(
             <Show
                 when= save_pending
                 fallback=move || view! {
-                    <button
-                        on:click=on_save_click
+                    <div
+                        class="save-button-container"
                     >
-                        {"Save"}
-                    </button>
+                        <button
+                            class="round-menu-first-button"
+                            on:click=on_save_click
+                        >
+                            {"Save"}
+                        </button>
+                    </div>
                 }.into_view()
             >
                 <p>"wait for save"</p>

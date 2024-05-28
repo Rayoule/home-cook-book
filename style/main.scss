@@ -92,14 +92,18 @@ body {
 
 }
 .round-menu-other-buttons {
+	display: none;
+
 	position: absolute;
 
 	bottom: 80px;
 
 	width: var(--round-menu-first-button-size);
 
-	display: flex;
 	flex-direction: column-reverse;
+}
+.round-menu-other-buttons.unfolded {
+	display: flex;
 }
 .round-menu-first-button {
 	background-color: rgb(102, 158, 59);
@@ -199,6 +203,17 @@ body {
 .not-needed {
 	display: none;
 }
+.round-menu-return-button {
+	position: absolute;
+	top: calc(var(--header-height) + 20px);
+	left: 0;
+}
+
+.save-button-container {
+	position: absolute;
+	bottom: 100px;
+	right: 100px;
+}
 
 
 
@@ -278,14 +293,8 @@ ul.recipe-light {
 	height: 50%;
 
 	text-align: center;
-
-	//width: 100px;
 }
 li.recipe-light {
-	/*display: flex;
-	align-items: flex-start;  // Aligns children to the top of the container
-    justify-content: flex-start;*/
-
 	display : inline-block;
 	
 	text-align: left;
@@ -319,6 +328,8 @@ li.recipe-light {
 	//margin: auto auto;
     
     z-index: 10;
+
+	overflow: hidden;
 
 	background-color: white;
 

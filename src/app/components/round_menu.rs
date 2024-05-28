@@ -2,12 +2,11 @@ use leptos::{
     *,
     ev::MouseEvent, logging::log};
 
-use crate::app::{elements::popups::DeletePopupInfo, RecipeActionDescriptor, RecipeServerAction};
+use crate::app::{DeleteInfoSignal, elements::popups::DeletePopupInfo, RecipeActionDescriptor, RecipeServerAction};
 
 
 #[derive(Clone)]
 pub enum RoundMenuButton {
-    HomePage,
     Display,
     New,
     Edit,
@@ -20,12 +19,8 @@ pub enum RoundMenuButton {
 pub struct RoundMenuInfo {
     pub buttons: Option<Vec<RoundMenuButton>>,
     pub recipe_id: Option<u16>,
-    pub delete_info: Option<WriteSignal<Option<DeletePopupInfo>>>,
+    pub hide_return_button: bool,
 }
-#[derive(Clone)]
-pub struct RoundMenuWriteSignal(pub WriteSignal<Option<RoundMenuInfo>>);
-#[derive(Clone)]
-pub struct RoundMenuReadSignal(pub ReadSignal<Option<RoundMenuInfo>>);
 
 #[component]
 pub fn RoundMenu(
@@ -47,7 +42,24 @@ pub fn RoundMenu(
         is_unfolded.1.set(!is_unfolded.0.get())
     };
 
+    let on_return_click = move |ev: MouseEvent| {
+        ev.stop_propagation();
+        let navigate = leptos_router::use_navigate();
+        navigate("/", Default::default());
+    };
+
     view! {
+        <Show
+            when=move || !info.get().hide_return_button
+        >
+            <button
+                class="round-menu-return-button"
+                on:click=on_return_click
+            >
+                {"Return"}
+            </button>
+        </Show>
+
         <div
             class="round-menu"
         >
@@ -74,25 +86,6 @@ pub fn RoundMenu(
                         };
 
                         match b {
-
-                            RoundMenuButton::HomePage => {
-                                let on_button_click = move |ev: MouseEvent| {
-                                    ev.stop_propagation();
-                                    let navigate = leptos_router::use_navigate();
-                                    navigate("/", Default::default());
-                                };
-
-                                view! {
-                                    <div
-                                        class=      { button_class.clone() + " homepage" }
-                                        class:unfolded=is_unfolded.0
-                                        on:click=   on_button_click
-                                    >
-                                        {"↩"}
-                                    </div>
-                                }.into_view()
-                            },
-
                             RoundMenuButton::Display => {
                                 let on_button_click = move |ev: MouseEvent| {
                                     ev.stop_propagation();
@@ -107,13 +100,13 @@ pub fn RoundMenu(
                                         when=move || { info.get().recipe_id.is_some() }
                                         fallback=move || ().into_view()
                                     >
-                                        <div
+                                        <button
                                             class=      { button_class.clone() + " display" }
                                             class:unfolded=is_unfolded.0
                                             on:click=   on_button_click
                                         >
-                                            {"🔍"}
-                                        </div>
+                                            {"🔍 Display"}
+                                        </button>
                                     </Show>
                                 }.into_view()
                             },
@@ -126,13 +119,13 @@ pub fn RoundMenu(
                                 };
 
                                 view! {
-                                    <div
+                                    <button
                                         class=      { button_class.clone() + " new" }
                                         class:unfolded=is_unfolded.0
                                         on:click=   on_button_click
                                     >
-                                        {"➕"}
-                                    </div>
+                                        {"➕ New Recipe"}
+                                    </button>
                                 }.into_view()
                             },
 
@@ -150,13 +143,13 @@ pub fn RoundMenu(
                                         when=move || { info.get().recipe_id.is_some() }
                                         fallback=move || ().into_view()
                                     >
-                                        <div
+                                        <button
                                             class=      { button_class.clone() + " edit" }
                                             class:unfolded=is_unfolded.0
                                             on:click=   on_button_click
                                         >
-                                            {"✏️"}
-                                        </div>
+                                            {"✏️ Edit"}
+                                        </button>
                                     </Show>
                                 }.into_view()
                             },
@@ -174,13 +167,13 @@ pub fn RoundMenu(
                                         when=move || info.get().recipe_id.is_some()
                                         fallback=move || ().into_view()
                                     >
-                                        <div
+                                        <button
                                             class=      { button_class.clone() + " duplicate" }
                                             class:unfolded=is_unfolded.0
                                             on:click=   on_button_click
                                         >
-                                            {"⧉"}
-                                        </div>
+                                            {"⧉ Duplicate"}
+                                        </button>
                                     </Show>
                                 }.into_view()
                             },
@@ -199,49 +192,38 @@ pub fn RoundMenu(
                                         when=move || { info.get().recipe_id.is_some() }
                                         fallback=move || ().into_view()
                                     >
-                                        <div
+                                        <button
                                             class=      { button_class.clone() + " print" }
                                             class:unfolded=is_unfolded.0
                                             on:click=   on_button_click
                                         >
-                                            {"📄"}
-                                        </div>
+                                            {"📄 Print"}
+                                        </button>
                                     </Show>
                                 }.into_view()
                             },
 
                             RoundMenuButton::Delete => {
-                                let wants_deletion = create_rw_signal(false);
+
+                                let delete_info_signal =
+                                        use_context::<DeleteInfoSignal>()
+                                            .expect("To find DeleteInfoSignal in context.")
+                                            .0;
+                                let recipe_id = info.get().recipe_id.expect("to find recipe_id for button Delete.");
+                                
                                 let on_button_click = move |ev: MouseEvent| {
                                     ev.stop_propagation();
-                                    let info = info.get();
-                                    let recipe_id = info.recipe_id.expect("to find recipe_id for button Delete.");
-                                    let delete_info = info.delete_info.expect("to find delete_info for button Delete.");
-                                    wants_deletion.set(true);
-                                    delete_info.set(Some(
-                                        DeletePopupInfo {
-                                            wants_deletion: wants_deletion,
-                                            recipe_id:      create_signal(recipe_id).0,
-                                        }
-                                    ));
+                                    delete_info_signal.set( Some( DeletePopupInfo(recipe_id)) );
                                 };
 
                                 view!{
-                                    <Show
-                                        when=move || {
-                                            let info = info.get();
-                                            info.recipe_id.is_some() && info.delete_info.is_some()
-                                        }
-                                        fallback=move || ().into_view()
-                                    >
-                                        <div
+                                    <button
                                             class=      { button_class.clone() + " delete" }
                                             class:unfolded=is_unfolded.0
                                             on:click=   on_button_click
-                                        >
-                                            {"🗑️"}
-                                        </div>
-                                    </Show>
+                                    >
+                                        {"Delete 🗑️"}
+                                    </button>
                                 }.into_view()
                             },
                         }
@@ -264,7 +246,7 @@ pub fn RoundMenu(
                     </div>
 
                     // Other buttons
-                    <div
+                    <button
                         class="round-menu-unfold-button rm-button"
                         class:unfolded=is_unfolded.0
                         class:not-needed={ move || button_count < 2 }
@@ -277,7 +259,7 @@ pub fn RoundMenu(
                                 "• • •"
                             }
                         }
-                    </div>
+                    </button>
                     <div
                         class="round-menu-other-buttons"
                         class:unfolded=is_unfolded.0
