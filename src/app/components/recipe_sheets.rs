@@ -218,12 +218,6 @@ pub fn EditableRecipeSheet(
 
     let save_pending = recipe_action.pending();
 
-    let on_delete_click = move |_| {
-        if let Some(id) = recipe.id {
-            recipe_action.dispatch(RecipeActionDescriptor::Delete(id));
-        }
-    };
-
     let on_save_click = move |_| {
         // Get recipe
         let signals = recipe_signals.get_untracked();
@@ -324,20 +318,6 @@ pub fn EditableRecipeSheet(
                 <p>"wait for save"</p>
             </Show>
             
-
-            {
-                if is_new_recipe {
-                    Some(view! {
-
-                        <button
-                            on:click=on_delete_click
-                        >
-                            "Delete"
-                        </button>
-
-                    }.into_view())
-                } else { None }
-            }
         </div>
     }
 }

@@ -4,10 +4,22 @@ use leptos::{ev::{MouseEvent, InputEvent}, logging::log, *};
 // Will display on top of each page in the header
 #[component]
 pub fn RecipeSearchBar(
-    set_search_input: WriteSignal<Vec<String>>,
+    search_input: RwSignal<Vec<String>>,
+    request_search_clear: RwSignal<bool>,
 ) -> impl IntoView {
 
     let input_element: NodeRef<html::Input> = create_node_ref();
+
+    create_effect(move |_| {
+        if request_search_clear.get() {
+            // Clear search
+            input_element()
+                .expect("Input to be mounted")
+                .set_value("");
+            search_input.set(vec![]);
+            request_search_clear.set(false);
+        }
+    });
 
     let on_search_submit = move |ev: ev::SubmitEvent| {
         ev.prevent_default();
@@ -29,7 +41,7 @@ pub fn RecipeSearchBar(
                 .collect();
 
         log!("SEARCH:\n{:?}", search_words);
-        set_search_input.set(search_words)
+        search_input.set(search_words)
     };
 
     view! {
@@ -42,8 +54,9 @@ pub fn RecipeSearchBar(
                 node_ref=input_element
                 // On Input, if empty -> clear search
                 on:input=move |ev| {
-                    if event_target_value(&ev).len() < 1 {
-                        set_search_input.set(vec![]);
+                    let value = event_target_value(&ev);
+                    if value.len() < 1 {
+                        search_input.set(vec![]);
                     }
                 }
             >

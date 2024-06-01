@@ -303,7 +303,9 @@ pub fn AllRecipes() -> impl IntoView {
             .expect("To find SelectedTagsRwSignal in context.")
             .0;
 
-    let (get_search_input, set_search_input) = create_signal::<Vec<String>>(vec![]);
+    let search_input = create_rw_signal::<Vec<String>>(vec![]);
+
+    let request_search_clear = create_rw_signal(false);
 
     let all_recipes_light =
         use_context::<RecipesLightResource>()
@@ -315,10 +317,17 @@ pub fn AllRecipes() -> impl IntoView {
             .expect("To find AllTagsMemo in context.")
             .0;
     
+    let on_cancel_search_click = move |ev: MouseEvent| {
+        ev.stop_propagation();
+        // Clear search
+        request_search_clear.set(true);
+    };
+    
     view! {
 
         <RecipeSearchBar
-            set_search_input=set_search_input
+            search_input=search_input
+            request_search_clear=request_search_clear
         />
 
         <RoundMenu
@@ -357,26 +366,42 @@ pub fn AllRecipes() -> impl IntoView {
                                         view! { <p>"No recipes were found."</p> }.into_view()
                                     } else {
                                         let sel_tags = selected_tags_signal.get();
-                                        let search_input = get_search_input.get();
+                                        let search_input_value = search_input.get();
                                         // filter tags
                                         if sel_tags.len() > 0 {
                                             recipes.retain(|recipe| recipe.has_tags(&sel_tags));
                                         }
                                         // filter search
-                                        if search_input.len() > 0 {
-                                            recipes.retain(|recipe| recipe.is_in_search(&search_input));
+                                        if search_input_value.len() > 0 {
+                                            recipes.retain(|recipe| recipe.is_in_search(&search_input_value));
                                         }
-                                        // collect views
-                                        recipes
-                                            .into_iter()
-                                            .map(move |recipe| {
-                                                view! {
-                                                    <RecipeLightSheet
-                                                        recipe_light=recipe
-                                                    />
-                                                }
-                                            })
-                                            .collect_view()
+                                        // If no results:
+                                        if recipes.len() < 1 {
+                                            view! {
+                                                <div>
+                                                    <p>"No results..."</p>
+                                                    <button
+                                                        //class="cancel-search-button"
+                                                        on:click=on_cancel_search_click
+                                                    >
+                                                        "Cancel"
+                                                    </button>
+                                                </div>
+                                            }.into_view()
+                                        } else {
+                                            // else collect recipe views
+                                            recipes
+                                                .into_iter()
+                                                .map(move |recipe| {
+                                                    view! {
+                                                        <RecipeLightSheet
+                                                            recipe_light=recipe
+                                                        />
+                                                    }
+                                                })
+                                                .collect_view()
+                                        }
+                                        
                                     }
                                 }
                             })
