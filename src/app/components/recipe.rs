@@ -140,7 +140,7 @@ impl JsonRecipe {
 
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
-pub struct JsonRecipeTags(Option<Vec<String>>);
+pub struct JsonRecipeTags(Option<Vec</*(String, [u8; 3])*/ String>>);
 impl JsonRecipeTags {
     pub fn to_recipe_tags(self) -> Option<Vec<RecipeTag>> {
         if let Some(tags) = self.0 {
@@ -340,6 +340,7 @@ pub trait RecipeEntry: IntoView + std::fmt::Debug + Clone + Default + 'static {
     fn extract_value(nodes_refs: Vec<NodeRef<Input>>) -> Self;
     fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View;
     fn update_field_from_string_input(&mut self, field_id: Option<usize>, input: String);
+    fn get_string_from_field(&self, field_id: Option<usize>) -> String;
 }
 
 
@@ -349,13 +350,18 @@ pub trait RecipeEntry: IntoView + std::fmt::Debug + Clone + Default + 'static {
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RecipeTag {
     pub name: String,
+    //pub color: [u8; 3],
 }
 
 impl IntoView for RecipeTag {
 
     fn into_view(self) -> View {
         view! {
-            <p>{self.name}</p>
+            <p
+                color= {"red"}
+            >
+                { self.name }
+            </p>
         }
         .into_view()
     }
@@ -378,6 +384,7 @@ impl RecipeEntry for RecipeTag {
                 class=              "tags".to_owned()
                 initial_value=      entry.get_untracked().name
                 placeholder=        "Tag Name...".to_owned()
+                get_entry_signal=   entry
                 set_entry_signal=   set_entry
                 is_input=           true
             />
@@ -387,6 +394,10 @@ impl RecipeEntry for RecipeTag {
     
     fn update_field_from_string_input(&mut self, _field_id: Option<usize>, input: String) {
         self.name = input;
+    }
+    
+    fn get_string_from_field(&self, _field_id: Option<usize>) -> String {
+        self.name.clone()
     }
 }
 
@@ -437,12 +448,13 @@ impl RecipeEntry for RecipeIngredient {
     }
 
     fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View {
-        let entry = entry.get_untracked();
+        let entry_value = entry.get_untracked();
         view! {
             <RecipeEntryInput
                 class=              "ingredients quantity".to_owned()
-                initial_value=      entry.quantity.to_string()
+                initial_value=      entry_value.quantity.to_string()
                 placeholder=        "Quantity...".to_owned()
+                get_entry_signal=   entry
                 set_entry_signal=   set_entry
                 field_id=           {0}
                 is_input=           true
@@ -450,16 +462,18 @@ impl RecipeEntry for RecipeIngredient {
             />
             <RecipeEntryInput
                 class=              "ingredients unit".to_owned()
-                initial_value=      entry.unit
+                initial_value=      entry_value.unit
                 placeholder=        "Unit...".to_owned()
+                get_entry_signal=   entry
                 set_entry_signal=   set_entry
                 field_id=           {1}
                 is_input=           true
             />
             <RecipeEntryInput
                 class=              "ingredients ingredients-content".to_owned()
-                initial_value=      entry.content
+                initial_value=      entry_value.content
                 placeholder=        "Ingredient Content...".to_owned()
+                get_entry_signal=   entry
                 set_entry_signal=   set_entry
                 field_id=           {2}
                 is_input=           true
@@ -491,6 +505,26 @@ impl RecipeEntry for RecipeIngredient {
 
             _ => {
                 log!("ERROR: Invalid ID.")
+            },
+
+        }
+    }
+    
+    fn get_string_from_field(&self, field_id: Option<usize>) -> String {
+        match field_id {
+
+            Some(0) => self.quantity.to_string().clone(),
+
+            Some(1) => self.unit.clone(),
+
+            Some(2) => self.content.clone(),
+
+            None => {
+                panic!("ERROR: No ID provided.")
+            },
+
+            _ => {
+                panic!("ERROR: Invalid ID.")
             },
 
         }
@@ -530,11 +564,13 @@ impl RecipeEntry for RecipeInstruction {
     }
     
     fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View {
+        log!("YOLOOOO I got this: {}", entry.get_untracked().content);
         view! {
             <RecipeEntryInput
                 class=              "instructions".to_owned()
                 initial_value=      entry.get_untracked().content
                 placeholder=        "Instruction content...".to_owned()
+                get_entry_signal=   entry
                 set_entry_signal=   set_entry
             />
         }
@@ -543,6 +579,10 @@ impl RecipeEntry for RecipeInstruction {
     
     fn update_field_from_string_input(&mut self, _field_id: Option<usize>, input: String) {
         self.content = input;
+    }
+    
+    fn get_string_from_field(&self, _field_id: Option<usize>) -> String {
+        self.content.clone()
     }
 }
 
@@ -586,21 +626,23 @@ impl RecipeEntry for RecipeNote {
     }
     
     fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View {
-        let entry = entry.get_untracked();
+        let entry_value = entry.get_untracked();
         view! {
             <div class= "editable-recipe-note-container">
                 <RecipeEntryInput
                     class=              "notes title".to_owned()
-                    initial_value=      entry.title
+                    initial_value=      entry_value.title
                     placeholder=        "Note Title...".to_owned()
+                    get_entry_signal=   entry
                     set_entry_signal=   set_entry
                     field_id=           {0}
                     is_input=           true
                 />
                 <RecipeEntryInput
                     class=              "notes note-content".to_owned()
-                    initial_value=      entry.content
+                    initial_value=      entry_value.content
                     placeholder=        "Note Content...".to_owned()
+                    get_entry_signal=   entry
                     set_entry_signal=   set_entry
                     field_id=           {1}
                 />
@@ -621,6 +663,24 @@ impl RecipeEntry for RecipeNote {
 
             _ => {
                 log!("ERROR: Invalid ID.")
+            },
+
+        }
+    }
+    
+    fn get_string_from_field(&self, field_id: Option<usize>) -> String {
+        match field_id {
+
+            Some(0) => self.title.clone(),
+
+            Some(1) => self.content.clone(),
+
+            None => {
+                panic!("ERROR: No ID provided.")
+            },
+
+            _ => {
+                panic!("ERROR: Invalid ID.")
             },
 
         }

@@ -88,7 +88,7 @@ pub fn SuggestionList(
     view! {
         {move || {
 
-            // return nothing if the input is not focused AND the suggestion menu is not hoverred
+            // return nothing if the input is not focused
             if !is_input_focused.get() {
                 ().into_view()
             } else if let Some(possible_values) = possible_values {

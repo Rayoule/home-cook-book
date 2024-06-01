@@ -1,3 +1,4 @@
+use ev::select;
 use leptos::ev::MouseEvent;
 use leptos::*;
 use leptos::logging::log;
@@ -9,9 +10,6 @@ pub fn TagList(
     tags: Vec<String>,
     // Tags that are selected
     selected_tags_signal: RwSignal<Vec<String>>,
-    // Tags that are already checked (needed because the component might redraw if tags are added or removed)
-    // This needs to be updated ONLY if tags are added or removed (through addind/removing recipes)
-    //already_selected_tags: ReadSignal<Vec<String>>,
 ) -> impl IntoView {
 
     log!("Rendering TagList");
@@ -27,53 +25,34 @@ pub fn TagList(
             .collect()
     });
 
-    // Iterate over to make the collect_view
-    let tag_elems =move || {
+    let selected_tag_elems = move || {
         // get the signals
         let mut tags_states_signals = tags_states_signals.get();
-        // sort with selected in front, then in alphabetical order
-        tags_states_signals
-            .sort_by(|a, b| {
-                let a = a.0.get();
-                let b = b.0.get();
-
-                if a.0 != b.0 {
-                    b.0.cmp(&a.0)
-                } else {
-                    a.1.cmp(&b.1)
-                }
-            });
         // then generate the buttons
+        tags_states_signals
+            .retain(|(tag_state, set_tag_state)| {
+                tag_state.get().0
+            });
         tags_states_signals
             .into_iter()
             .map(|(tag_state, set_tag_state)| {
-                view! {
-                    <li class="tag-list-entry">
-                        <button
-                            class="tag-button"
-                            class:tag-selected = move || tag_state.get().0
-                            on:click = move |_| {
-                                // update the signal
-                                set_tag_state.update(|(tag_selected, tag_name)| {
-                                    let selecting_or_deselecting = !*tag_selected;
-                                    selected_tags_signal.update(|tags| {
-                                        if selecting_or_deselecting {
-                                            // Add tag
-                                            tags.push(tag_name.clone());
-                                        } else {
-                                            // Remove Tag
-                                            tags.retain(|t| t != tag_name);
-                                        }
-                                    });
-                                    // then update the selected value
-                                    *tag_selected = selecting_or_deselecting;
-                                })
-                            }
-                        >
-                            { move || tag_state.get().1 }
-                        </button>
-                    </li>
-                }
+                view_from_tag_state(tag_state, set_tag_state, selected_tags_signal)
+            })
+            .collect_view()
+    };
+
+    let unselected_tag_elems = move || {
+        // get the signals
+        let mut tags_states_signals = tags_states_signals.get();
+        // then generate the buttons
+        tags_states_signals
+            .retain(|(tag_state, set_tag_state)| {
+                !tag_state.get().0
+            });
+        tags_states_signals
+            .into_iter()
+            .map(|(tag_state, set_tag_state)| {
+                view_from_tag_state(tag_state, set_tag_state, selected_tags_signal)
             })
             .collect_view()
     };
@@ -126,12 +105,55 @@ pub fn TagList(
             </div>
 
             <ul
+                class="selected-tag-list"
+            >
+                {selected_tag_elems}
+            </ul>
+
+            <ul
                 class="tag-list"
                 class:unrolled=is_unrolled
             >
-                {tag_elems}
+                {unselected_tag_elems}
             </ul>
 
         </div>
     }
 }
+
+
+
+fn view_from_tag_state(
+    tag_state: ReadSignal<(bool, String)>,
+    set_tag_state: WriteSignal<(bool, String)>,
+    selected_tags_signal: RwSignal<Vec<String>>,
+) -> View {
+    view! {
+        <li class="tag-list-entry">
+            <button
+                class="tag-button"
+                class:tag-selected = move || tag_state.get().0
+                on:click = move |_| {
+                    // update the signal
+                    set_tag_state.update(|(tag_selected, tag_name)| {
+                        let selecting_or_deselecting = !*tag_selected;
+                        selected_tags_signal.update(|tags| {
+                            if selecting_or_deselecting {
+                                // Add tag
+                                tags.push(tag_name.clone());
+                            } else {
+                                // Remove Tag
+                                tags.retain(|t| t != tag_name);
+                            }
+                        });
+                        // then update the selected value
+                        *tag_selected = selecting_or_deselecting;
+                    })
+                }
+            >
+                { move || tag_state.get().1 }
+            </button>
+        </li>
+    }.into_view()
+}
+

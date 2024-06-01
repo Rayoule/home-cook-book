@@ -272,6 +272,7 @@ pub fn DuplicateButton(
 pub fn RecipeEntryInput<T: RecipeEntry>(
     initial_value: String,
     placeholder: String,
+    get_entry_signal: ReadSignal<T>,
     set_entry_signal: WriteSignal<T>,
     class: String,
     /// If the entry has multiple fields
@@ -287,6 +288,8 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
     let is_only_numbers = is_only_numbers.unwrap_or_default();
 
     let initial_value = if initial_value.is_empty() { None } else { Some(initial_value) };
+
+    log!("Et donc du coup ----> {:?}", initial_value);
 
     // setup for the SuggestionList
     let is_input_focused = create_rw_signal(false);
@@ -326,10 +329,9 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
         view! {
             <div
                 on:focusin=move |_| {
+                    log!("BAM");
                     set_input.set(
-                        input_element()
-                            .expect("<input> should be mounted")
-                            .value()
+                        get_entry_signal.get().get_string_from_field(field_id)
                     );
                     is_input_focused.set(true);
                 }
@@ -360,9 +362,7 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
                 {move || {
 
                     set_input.set(
-                        input_element()
-                            .expect("<input> should be mounted")
-                            .value()
+                        get_entry_signal.get().get_string_from_field(field_id)
                     );
 
                     view! {
@@ -385,7 +385,8 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
                 class=          class
                 type=           "text"
                 id=             "text-input"
-                value=          initial_value
+                //value=          initial_value
+                //value=          "Alors la attention"
                 placeholder=    placeholder
     
                 // on input, update entry signal
@@ -394,7 +395,9 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
                         recipe_entry.update_field_from_string_input(field_id, event_target_value(&ev))
                     });
                 }
-            />
+            >
+                {initial_value}
+            </textarea>
         }
         .into_view()
     }

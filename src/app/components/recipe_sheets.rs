@@ -48,7 +48,11 @@ pub fn RecipeLightSheet(
                         .into_iter()
                         .map(move |t| view! {
                             <li class= "recipe-light" >
-                                <span class= "recipe-light" >{t.name}</span>
+                                <span
+                                    class= "recipe-light"
+                                >
+                                    {t.name}
+                                </span>
                             </li>
                         })
                         .collect_view();

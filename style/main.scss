@@ -19,6 +19,11 @@ body {
 	font-size: large;
 }
 
+ul {
+	list-style-type: none;
+	padding: 0;
+}
+
 
 
 .header-menu {
@@ -514,14 +519,11 @@ li.recipe-light {
 }
 
 
-.list, ul {
-	list-style-type: none;
+ul.list {
 	display: flex;
 	flex-direction: column;
     align-items: center;
 	justify-content: center;
-
-	padding: 0;
 }
 
 li {
@@ -804,7 +806,13 @@ ul.notes {
 .unrollable-tag-panel.unrolled {
 	height: 50px;
 }
-.tag-list {
+ul.selected-tag-list {
+	display:block;
+	font-size: small;
+
+	width: 100px;
+}
+ul.tag-list {
 	display:block;
 	font-size: small;
 
