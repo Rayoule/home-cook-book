@@ -326,7 +326,7 @@ li.recipe-light {
 
 // Sub Menu
 .recipe-light-sub-menu {
-	cursor: pointer;
+	//cursor: pointer;
 
 	position: absolute;
     top: 5px;
@@ -335,16 +335,19 @@ li.recipe-light {
     width: 20px;
 	height: 35px;
 
-	margin: auto auto;
+    display: flex;
+    flex-direction: column;
+
+	//margin: auto auto;
+    
+    z-index: 10;
+
+	overflow: hidden;
+
+	background-color: white;
 
     border-radius: 15px;
 	box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
-
-	display: flex;
-	flex-direction: column;
-	justify-content: flex-start; // Or any other value like 'center' or 'space-between'
-	align-items: center;
-	gap: 3px; // Set the space between items (adjust the value as needed)
 
 	transition:
 		box-shadow 0.1s ease-out,
@@ -356,7 +359,7 @@ li.recipe-light {
 	box-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
 }
 .recipe-light-sub-menu:active {
-	//transform: scale(0.9);
+	transform: scale(0.9);
 	box-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
 	background-color: #525252;
 }
@@ -384,13 +387,27 @@ li.recipe-light {
 	background-color: rgba(0, 0, 0, 0.95);
 }
 .sub-menu-dot {
-	cursor: pointer;
-	color: black;
+	display: grid;
+	align-items: center;
+	font-size: large;
+
 	height: 6px;
-	transform: translateY(-2px);
+    width: 6px;
+
+	color: #333;
+
+	transform: translateY(-9px);
+
+	margin: auto auto;
 	opacity: 100%;
 
 	transition: opacity 0.1s ease-out;
+}
+.sub-menu-dot:first-child {
+	margin-top: 6px;
+}
+.sub-menu-dot:last-child {
+	margin-bottom: 6px;
 }
 .sub-menu-dot.into-menu {
 	display: none;
@@ -461,19 +478,8 @@ li.recipe-light {
 		text-shadow 0.1s ease-out,
 		transform 0.1s ease-out
 	;
-
-	&:hover {
-		color: white;
-		text-shadow: 0 0 10px white;
-		//transform: scale(1.2);
-	}
-	&:active {
-		color: white;
-		text-shadow: 0 0 12px white;
-		//transform: scale(0.9);
-	}
 }
-/*.sub-menu-option:hover {
+.sub-menu-option:hover {
 	color: white;
 	text-shadow: 0 0 10px white;
 	//transform: scale(1.2);
@@ -482,7 +488,7 @@ li.recipe-light {
 	color: white;
 	text-shadow: 0 0 12px white;
 	//transform: scale(0.9);
-}*/
+}
 
 
 
