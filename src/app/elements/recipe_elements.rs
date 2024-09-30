@@ -380,17 +380,30 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
         .into_view()
     } else {
         // Textarea
+
+        // setup for textarea autosize
+        let textarea = create_node_ref::<html::Textarea>();
+        let leptos_use::UseTextareaAutosizeReturn {
+            content: _,
+            set_content,
+            trigger_resize: _
+        } = leptos_use::use_textarea_autosize(textarea);
+
         view! {
             <textarea
                 class=          class
+                node_ref=       textarea
                 type=           "text"
                 id=             "text-input"
-                //value=          initial_value
-                //value=          "Alors la attention"
                 placeholder=    placeholder
     
-                // on input, update entry signal
+                // on input
                 on:input=move |ev| {
+
+                    // resize box to fit text
+                    set_content.set(event_target_value(&ev));
+
+                    // update entry signal
                     set_entry_signal.update(|recipe_entry| {
                         recipe_entry.update_field_from_string_input(field_id, event_target_value(&ev))
                     });

@@ -104,7 +104,6 @@ pub fn RecipeSheet(
                 view! {
                     <li class="display-recipe ingredients">
                         <span class="display-recipe ingredients">{ingredient.quantity} {ingredient.unit}</span>
-                        <br/>
                         <span class="display-recipe ingredients">{ingredient.content}</span>
                     </li>
                 }
@@ -136,7 +135,6 @@ pub fn RecipeSheet(
                 view! {
                     <li class="display-recipe notes">
                         <h4 class="display-recipe notes">{note.title}</h4>
-                        <br/>
                         <span class="display-recipe notes">{note.content}</span>
                     </li>
                 }
@@ -145,33 +143,33 @@ pub fn RecipeSheet(
     };
 
     view! {
-        <div class="display-recipe-continer">
+        <div class="display-recipe-container">
 
             <h2 class="display-recipe name">{recipe.name}</h2>
 
             <div class="display-recipe tags container">
-                <h3 class="display-recipe tags">"Tags"</h3>
+                <h3 class="display-recipe tags title">"Tags"</h3>
                 <ul class="display-recipe tags">
                     {tag_list}
                 </ul>
             </div>
 
             <div class="display-recipe ingredients container">
-                <h3 class="display-recipe ingredients">"Ingredients"</h3>
+                <h3 class="display-recipe ingredients title">"Ingredients"</h3>
                 <ul class="display-recipe ingredients">
                     {ingredient_list}
                 </ul>
             </div>
 
             <div class="display-recipe instructions container">
-                <h3 class="display-recipe instructions">"Instructions"</h3>
+                <h3 class="display-recipe instructions title">"Instructions"</h3>
                 <ul class="display-recipe instructions">
                     {instruction_list}
                 </ul>
             </div>
 
             <div class="display-recipe notes container">
-                <h3 class="display-recipe notes">"Notes"</h3>
+                <h3 class="display-recipe notes title">"Notes"</h3>
                 <ul class="display-recipe notes">
                     {note_list}
                 </ul>

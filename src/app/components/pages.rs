@@ -236,6 +236,7 @@ pub fn RecipePage(
 
         <DeleteRecipePopup/>
 
+        <div class="main-content">
         <Transition fallback=move || view! { "Waiting for resource..." } >
             {move || {
                 let recipe = recipe_resource.get();
@@ -276,6 +277,7 @@ pub fn RecipePage(
                 }
             }}
         </Transition>
+        </div>
     }
 }
 
