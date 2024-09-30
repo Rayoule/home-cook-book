@@ -2,13 +2,14 @@
 	--header-height: 50px;
 	--header-color: #1f1f1f;
 
-	--recipe-width: 728px;
+	--recipe-max-width: 728px;
 
 	--round-menu-button-size: 35px;
 	--round-menu-first-button-size: 50px;
 
-	--color-1: #034e90;
-	--color-2: #d8d6d0;
+	//--color-1: #034e90;
+	--color-1: white;
+	--color-2: #034e90;
 	--color-3: #de4c29;
 	--color-4: #836147;
 	--color-5: white;
@@ -160,17 +161,18 @@ ul {
 		color 0.1s ease-out,
 		transform 0.1s ease-out,
 	;
-}
-.round-menu-unfold-button.unfolded {
-	background-color: rgba(255, 255, 0, 0);
-	color: rgb(223, 223, 99);
 
-	border: 2px solid rgb(223, 223, 99);
-
-	height: 15px;
-	width: 30px;
-
-	margin: 5px auto;
+	&.unfolded {
+		background-color: rgba(255, 255, 0, 0);
+		color: rgb(223, 223, 99);
+	
+		border: 2px solid rgb(223, 223, 99);
+	
+		height: 15px;
+		width: 30px;
+	
+		margin: 5px auto;
+	}
 }
 .round-menu-button {
 	height: 0px;
@@ -196,21 +198,24 @@ ul {
 		opacity 0.05s ease-out,
 		transform 0.1s ease-out
 	;
-}
-.round-menu-button.unfolded {
-	height: var(--round-menu-button-size);
-	opacity: 1;
+
+	&.unfolded {
+		height: var(--round-menu-button-size);
+		opacity: 1;
+	}
 }
 .rm-button {
 	box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-}
-.rm-button:hover{
-	//transform: scale(1.1);
-	box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
-}
-.rm-button:active{
-	transform: scale(0.9);
-	box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+
+	&:hover{
+		//transform: scale(1.1);
+		box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+	}
+
+	&:active{
+		transform: scale(0.9);
+		box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+	}
 }
 .not-needed {
 	display: none;
@@ -495,7 +500,7 @@ li.recipe-light {
 }
 
 .display-recipe-container {
-	max-width: var(--recipe-width);
+	max-width: var(--recipe-max-width);
 
 	text-align: left;
 }
@@ -537,7 +542,8 @@ li.recipe-light {
 
 .editable-recipe {
 	text-align: left;
-	max-width: var(--recipe-width);
+	max-width: var(--recipe-max-width);
+	width: var(--recipe-max-width);
 
 	.name {
 		margin-bottom: 50px;
@@ -548,36 +554,15 @@ li.recipe-light {
 	}
 
 	li {
-		margin-bottom: 15px;
+		margin-bottom: 10px;
 	}
 }
 
-
-
-.list {
-	margin-top: 19px;
-	margin-bottom: 10px;
-}
-.list:last-of-type {
-	//margin-bottom: 100px;
-}
-.list:after {
-	content: "";
-    display: block;
-	background-color: #1f1f1f;
-
-    width: 50%;
-    height: 0.1px;
-
-	margin: 19px 0;
+.editable.container {
+	margin-bottom: 30px;
 }
 
-ul.list {
-	display: flex;
-	flex-direction: column;
-    align-items: center;
-	justify-content: center;
-}
+
 
 .ingredients li{
 	display: flex;
@@ -594,21 +579,23 @@ ul.list {
 
 	width: 500px;
 
-    border: 1px solid #b5b5b5;
+	border: none;
+	background-color: #ffffff00;
+    //border: 1px solid #b5b5b5;
     border-radius: 15px;
-    box-sizing: border-box;
+    //box-sizing: border-box;
 
 	transition: border 0.1s ease-out, transform 0.1 ease-out;
+}
 
-	textarea {
-		resize: none;
+textarea#text-input {
+	resize: none;
 
-		-ms-overflow-style: none;
-  		scrollbar-width: none;
+	-ms-overflow-style: none;
+	  scrollbar-width: none;
 
-		&::-webkit-scrollbar {
-			display: none;
-		}
+	&::-webkit-scrollbar {
+		display: none;
 	}
 }
 
@@ -666,6 +653,9 @@ li.instructions {
 li#entry-li {
 	display: flex;
 	flex-direction: row;
+
+	border-radius: 15px;
+	border: 1px solid grey;
 }
 
 .editable-recipe-note-container {
@@ -750,45 +740,40 @@ li#entry-li {
 }
 
 
-.remove-button-container{
-	/*float: right;
-	height: fit-content;
-	//display:table-row;
-	justify-content: center;
-	align-items: center;*/
-}
-#fake-button.remove-button{
-	font-size: 50%;
-	font-weight: bold;
 
-	position: relative;
-	//right: 0;
-
-	height: 17px;
-	width: 17px;
-
-	/*margin-left: 3px;
-	margin-top: auto;
-	margin-bottom: auto;*/
-	margin: auto auto;
-
-	border-radius: 15px;
-}
 .remove-button {
-	color: rgb(0, 0, 0);
-	background-color: #d17e2b;
-}
-.remove-button:hover {
-	background-color: #825221;
-	color: rgb(169, 169, 169);
 
-	transform: scale(0.9);
-}
-.remove-button:active {
-	color: rgb(255, 255, 255);
-    background-color: #684726;
+	font-size: 15px;
 
-	transform: scale(0.9);
+	margin-left: auto;
+	margin-right: 0px;
+
+	height: 25px;
+	width: 25px;
+
+	background: none;
+	color: rgb(56, 56, 56);
+	border: none;
+	padding: 0;
+	outline: inherit;
+
+	text-shadow: 0 0 0px rgb(0, 0, 0);
+
+	&:hover {
+		//background-color: #825221;
+		color: black;
+		text-shadow: 0 0 1px rgb(71, 71, 71);
+	
+		//transform: scale(0.9);
+	}
+
+	&:active {
+		color: black;
+		text-shadow: 0 0 3px rgb(26, 26, 26);
+		//background-color: #684726;
+	
+		//transform: scale(0.9);
+	}
 }
 
 

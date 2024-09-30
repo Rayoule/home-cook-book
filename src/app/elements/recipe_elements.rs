@@ -157,7 +157,7 @@ pub fn EditableEntryList<T: RecipeEntry>(
                                                     T::into_editable_view(entry, set_entry)
                                                 }
         
-                                                <button class="remove-button" id="fake-button"
+                                                <button class="remove-button"
                                                     on:click=move |_| {
                                                         // we are going to assign new ids since we remove an entry
                                                         let mut new_id_counter: u16 = 0;

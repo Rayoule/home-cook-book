@@ -453,7 +453,7 @@ impl RecipeEntry for RecipeIngredient {
             <RecipeEntryInput
                 class=              "ingredients quantity".to_owned()
                 initial_value=      entry_value.quantity.to_string()
-                placeholder=        "Quantity...".to_owned()
+                placeholder=        "Quantity".to_owned()
                 get_entry_signal=   entry
                 set_entry_signal=   set_entry
                 field_id=           {0}
@@ -463,7 +463,7 @@ impl RecipeEntry for RecipeIngredient {
             <RecipeEntryInput
                 class=              "ingredients unit".to_owned()
                 initial_value=      entry_value.unit
-                placeholder=        "Unit...".to_owned()
+                placeholder=        "Unit".to_owned()
                 get_entry_signal=   entry
                 set_entry_signal=   set_entry
                 field_id=           {1}
@@ -472,7 +472,7 @@ impl RecipeEntry for RecipeIngredient {
             <RecipeEntryInput
                 class=              "ingredients ingredients-content".to_owned()
                 initial_value=      entry_value.content
-                placeholder=        "Ingredient Content...".to_owned()
+                placeholder=        "Ingredient".to_owned()
                 get_entry_signal=   entry
                 set_entry_signal=   set_entry
                 field_id=           {2}
