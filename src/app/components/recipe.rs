@@ -460,6 +460,9 @@ impl RecipeEntry for RecipeIngredient {
                 is_input=           true
                 is_only_numbers=    true
             />
+
+            <div class="divider ingredients"></div>
+
             <RecipeEntryInput
                 class=              "ingredients unit".to_owned()
                 initial_value=      entry_value.unit
@@ -469,6 +472,9 @@ impl RecipeEntry for RecipeIngredient {
                 field_id=           {1}
                 is_input=           true
             />
+
+            <div class="divider ingredients"></div>
+
             <RecipeEntryInput
                 class=              "ingredients ingredients-content".to_owned()
                 initial_value=      entry_value.content
@@ -632,16 +638,19 @@ impl RecipeEntry for RecipeNote {
                 <RecipeEntryInput
                     class=              "notes title".to_owned()
                     initial_value=      entry_value.title
-                    placeholder=        "Note Title...".to_owned()
+                    placeholder=        "Title".to_owned()
                     get_entry_signal=   entry
                     set_entry_signal=   set_entry
                     field_id=           {0}
                     is_input=           true
                 />
+
+                <div class="divider notes"></div>
+
                 <RecipeEntryInput
                     class=              "notes note-content".to_owned()
                     initial_value=      entry_value.content
-                    placeholder=        "Note Content...".to_owned()
+                    placeholder=        "Content".to_owned()
                     get_entry_signal=   entry
                     set_entry_signal=   set_entry
                     field_id=           {1}

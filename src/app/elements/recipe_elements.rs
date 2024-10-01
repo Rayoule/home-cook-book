@@ -329,7 +329,6 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
         view! {
             <div
                 on:focusin=move |_| {
-                    log!("BAM");
                     set_input.set(
                         get_entry_signal.get().get_string_from_field(field_id)
                     );
@@ -380,7 +379,6 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
         .into_view()
     } else {
         // Textarea
-
         // setup for textarea autosize
         let textarea = create_node_ref::<html::Textarea>();
         let leptos_use::UseTextareaAutosizeReturn {
