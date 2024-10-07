@@ -12,9 +12,48 @@ use crate::app::{
             EditableRecipeSheet, RecipeLightSheet, RecipeSheet
         }, tags::*
     }, elements::{molecules::*, popups::*},
-    //set_page_name, AllTagsMemo, RecipeServerAction, RecipesLightResource, RoundMenu, RoundMenuButton, RoundMenuInfo, SelectedTagsRwSignal
-
 };
+
+
+pub fn LoginPage() -> impl IntoView {
+
+    //TODO
+    // If not logged in, then show the page. If logged in, then show </AllRecipes>
+
+    set_page_name("Login");
+
+    // name input noderef
+    let name_input: NodeRef<html::Input> = create_node_ref();
+    // password input noderef
+    let password_input: NodeRef<html::Input> = create_node_ref();
+
+    // Handler for form submission
+    let submit_event = move |event: ev::SubmitEvent| {
+        event.prevent_default(); // Prevent the default form submission
+        let name_value = name_input().expect("name <input> should be mounted").value();
+        let password_value = password_input().expect("password <input> should be mounted").value();
+
+        // TODO
+        // Call server function to see if auth is good
+    };
+    
+    view! {
+        <form on:submit=submit_event>
+            <label for="name">"Name:"</label>
+            <input
+                type="text"
+                //value=name
+                node_ref=name_input
+            />
+            <input
+                type="text"
+                //value=password
+                node_ref=password_input
+            />
+            <button type="submit">"Submit"</button>
+        </form>
+    }
+}
 
 
 
@@ -92,10 +131,11 @@ pub fn NewRecipePage() -> impl IntoView {
         />
 
         //<A href="/">{"Return to Home Page"}</A>
-
-        <EditableRecipeSheet
-            is_new_recipe=  true
-        />
+        <div class="main-content">
+            <EditableRecipeSheet
+                is_new_recipe=  true
+            />
+        </div>
 
         <Show
             when=fetch_and_redirect_pending

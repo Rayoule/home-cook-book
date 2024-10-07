@@ -136,7 +136,7 @@ pub fn App() -> impl IntoView {
                     outro_back="slideOutBack"
                     intro_back="slideInBack"
                 >
-                    <Route path="/"                     view=AllRecipes />
+                    <Route path="/"                     view=LoginPage />
                     <Route path="/new-recipe"           view=NewRecipePage />
                     <Route path="/recipe/:id/:mode"     view=|| view! { <RecipePage/> }/>
                     <Route path="/*any"                 view=NotFound />

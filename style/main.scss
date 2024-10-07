@@ -581,14 +581,13 @@ ul {
 	}
 
 	&.tags {
-		overflow: auto;
-	
+		overflow-y: visible;
 		height: var(--text-input-height);
-		width: 300px;
+		width: fit-content;
+		min-width: 50px;
 	}
 
 	&.ingredients {
-		overflow: auto;
 		max-height: var(--text-input-height);
 		height: var(--text-input-height);
 
@@ -643,15 +642,10 @@ ul.instructions {
 	}
 }
 
-textarea#text-input {
-	resize: none;
 
-	-ms-overflow-style: none;
-	  scrollbar-width: none;
-
-	&::-webkit-scrollbar {
-		display: none;
-	}
+ul.tags {
+	display: flex;
+	flex-wrap: wrap;
 }
 
 
@@ -690,6 +684,17 @@ li#entry-li {
 		left: 0px;
 		height: 1px;
 		margin: 5px 0px;
+	}
+}
+
+textarea#text-input {
+	resize: none;
+
+	-ms-overflow-style: none;
+	  scrollbar-width: none;
+
+	&::-webkit-scrollbar {
+		display: none;
 	}
 }
 

@@ -77,8 +77,6 @@ pub fn RecipeSheet(
     recipe: Recipe,
     print: bool,
 ) -> impl IntoView {
-    //
-    
 
     let tag_list = {
         recipe
