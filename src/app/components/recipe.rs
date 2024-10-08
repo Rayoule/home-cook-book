@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::app::{components::recipe, elements::recipe_elements::*};
 
-use super::{recipe_server_functions::recipe_function, recipe_sheets::EditableRecipeSheet};
+use super::recipe_sheets::EditableRecipeSheet;
 
 /// Main Recipe Format
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

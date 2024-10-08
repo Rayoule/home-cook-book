@@ -1,17 +1,16 @@
-use std::{error::Error, sync::Arc};
-
-use leptos::{ev::MouseEvent, *};
+use leptos::*;
 use leptos_router::*;
 use leptos::logging::log;
-use itertools::Itertools;
+use std::sync::Arc;
 
 use crate::app::{
     *,
     components::{
-        recipe::*, recipe_server_functions::*, recipe_sheets::{
+        recipe_server_functions::*, recipe_sheets::{
             EditableRecipeSheet, RecipeLightSheet, RecipeSheet
-        }, tags::*
-    }, elements::{molecules::*, popups::*},
+        }, tags::*, auth::auth_server_functions::try_login
+    },
+    elements::molecules::*,
 };
 
 
@@ -21,6 +20,26 @@ pub fn LoginPage() -> impl IntoView {
     // If not logged in, then show the page. If logged in, then show </AllRecipes>
 
     set_page_name("Login");
+
+    // setup submission signals (username, password)
+    let submission = create_signal((String::new(), String::new()));
+
+    let try_login = create_action(|(username, password): &(String, String)| {
+        let username = username.clone();
+        let password = password.clone();
+        async move {
+            match try_login(username, password).await {
+                Ok(login) => {
+                    if login {
+                        // If login was succesful
+                    } else {
+                        // If login failed
+                    }
+                },
+                Err(e) => log!("Error trying login: {:?}", e.to_string()),
+            }
+        }
+    });
 
     // name input noderef
     let name_input: NodeRef<html::Input> = create_node_ref();
@@ -33,8 +52,14 @@ pub fn LoginPage() -> impl IntoView {
         let name_value = name_input().expect("name <input> should be mounted").value();
         let password_value = password_input().expect("password <input> should be mounted").value();
 
+        submission.1.set((name_value.clone(), password_value.clone()));
+
+        log!("username: {:?}; password: {:?}", &name_value, &password_value);
+
         // TODO
-        // Call server function to see if auth is good
+        try_login.dispatch((name_value, password_value));
+
+        
     };
     
     view! {
@@ -42,12 +67,12 @@ pub fn LoginPage() -> impl IntoView {
             <label for="name">"Name:"</label>
             <input
                 type="text"
-                //value=name
+                value=submission.0.get().0
                 node_ref=name_input
             />
             <input
                 type="text"
-                //value=password
+                value=submission.0.get().1
                 node_ref=password_input
             />
             <button type="submit">"Submit"</button>
@@ -359,7 +384,7 @@ pub fn AllRecipes() -> impl IntoView {
             .expect("To find AllTagsMemo in context.")
             .0;
     
-    let on_cancel_search_click = move |ev: MouseEvent| {
+    let on_cancel_search_click = move |ev: ev::MouseEvent| {
         ev.stop_propagation();
         // Clear search
         request_search_clear.set(true);

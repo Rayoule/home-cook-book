@@ -4,4 +4,4 @@ pub mod recipe_sheets;
 pub mod recipe_server_functions;
 pub mod tags;
 pub mod round_menu;
-pub mod auth_server_functions;
+pub mod auth;

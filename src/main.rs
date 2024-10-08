@@ -2,10 +2,6 @@
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
 
-    // Init shared login states
-    
-    init_login_states();
-
     // SETUP
     use actix_files::Files;
     use actix_web::*;
@@ -13,7 +9,8 @@ async fn main() -> std::io::Result<()> {
     use leptos_actix::{generate_route_list, LeptosRoutes};
     use home_cook_book::app::*;
     use home_cook_book::app::components::recipe_server_functions::ssr::*;
-    use home_cook_book::app::components::auth_server_functions::init_login_states;
+    use home_cook_book::app::components::auth::auth_utils::LoginStates;
+
     let mut conn = db().await.expect("couldn't connect to DB");
     sqlx::migrate!()
         .run(&mut conn)
@@ -41,7 +38,7 @@ async fn main() -> std::io::Result<()> {
             .leptos_routes(leptos_options.to_owned(), routes.to_owned(), App)
             .app_data(web::Data::new(leptos_options.to_owned()))
             // add login states
-            .app_data(web::Data::new(init_login_states()))
+            .app_data(web::Data::new(LoginStates::default()))
         //.wrap(middleware::Compress::default())
     })
     .bind(&addr)?

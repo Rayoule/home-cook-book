@@ -4,7 +4,7 @@ use leptos_router::A;
 use serde::{Serialize, Deserialize};
 
 use crate::app::{
-    components::recipe_server_functions::recipe_function, elements::{popups::DeletePopupInfo, recipe_elements::*}, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeLight, RecipeServerAction
+    elements::{popups::DeletePopupInfo, recipe_elements::*}, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeLight, RecipeServerAction
 };
 
 
