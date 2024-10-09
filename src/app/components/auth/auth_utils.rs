@@ -9,7 +9,7 @@ pub const ACCOUNTS_FILE_NAME: &'static str = "hcb_auth.json";
 
 
 // Struct found in the JSON auth file along with the .exe
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct LoginAccount {
     pub username: String,
     pub password: String,
@@ -31,58 +31,21 @@ impl LoginAccountCollection {
 // User login state
 #[derive(Clone, Debug)]
 pub struct UserLoginState {
-    username: String,
-    current_ip: String,
-    log_date: SystemTime,
+    pub username: String,
+    pub current_ip: String,
+    pub log_date: SystemTime,
 }
 
-#[derive(Default)]
+#[cfg(feature = "ssr")]
+#[derive(Default, Clone)]
 pub struct SharedLoginStates {
-    states: Arc<Mutex<Vec<UserLoginState>>>
+    pub states: Arc<Mutex<Vec<UserLoginState>>>
 }
+#[cfg(feature = "ssr")]
 impl SharedLoginStates {
-
-    pub fn get_inner_login_states(self) -> Vec<UserLoginState> {
-        self.states.lock().unwrap().clone()
-    }
-
-    pub fn check_if_logged_in(&self, ip_address: String) -> bool {
-        let binding = self.states.lock().unwrap();
-        let lock = binding.clone();
-        lock.iter().any(|x| x.current_ip == ip_address)
-    }
-
-    #[cfg(feature = "ssr")]
-    pub async fn add_login(self, username: String) -> Result<bool, ServerFnError> {
-        let shared_logins = self.states.lock();
-        if let Ok(mut shared_logins) = shared_logins {
-
-            let already_logged_in = shared_logins.iter().any(|x| x.username == username);
-
-            if !already_logged_in {
-                use actix_web::dev::ConnectionInfo;
-                let connexion_info: ConnectionInfo = leptos_actix::extract::<ConnectionInfo>().await?;
-                println!("{:?}", connexion_info);
-                let ip = connexion_info.peer_addr().unwrap().to_string();
-                let new_login_state =
-                    UserLoginState {
-                        username:   username,
-                        current_ip: ip,
-                        log_date:   SystemTime::now()
-                    };
-                shared_logins.push(new_login_state);
-                Ok(true)
-            } else {
-                log!("User Already Logged In");
-                Ok(false)
-            }
-        } else {
-            Err(ServerFnError::ServerError("Could not read shared logins state.".to_string()))
+    pub fn init_states() -> Self {
+        SharedLoginStates {
+            states: Arc::new(Mutex::new(vec![]))
         }
     }
-}
-
-// Init the login states (see in main())
-pub fn init_login_states() -> SharedLoginStates {
-    SharedLoginStates::default()
 }

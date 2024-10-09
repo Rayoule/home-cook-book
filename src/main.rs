@@ -24,6 +24,9 @@ async fn main() -> std::io::Result<()> {
     let routes = generate_route_list(App);
     println!("listening on http://{}", &addr);
 
+    // Initializing login states
+    let states = SharedLoginStates::init_states();
+
     HttpServer::new(move || {
         let leptos_options = &conf.leptos_options;
         let site_root = &leptos_options.site_root;
@@ -38,7 +41,7 @@ async fn main() -> std::io::Result<()> {
             .leptos_routes(leptos_options.to_owned(), routes.to_owned(), App)
             .app_data(web::Data::new(leptos_options.to_owned()))
             // add login states
-            .app_data(web::Data::new(SharedLoginStates::default()))
+            .app_data(web::Data::new(states.clone()))
         //.wrap(middleware::Compress::default())
     })
     .bind(&addr)?

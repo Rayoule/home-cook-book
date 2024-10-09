@@ -1,4 +1,3 @@
-use components::auth::auth_utils::LoginAccount;
 use leptos::*;
 use leptos_router::*;
 use leptos::logging::log;
@@ -9,7 +8,9 @@ use crate::app::{
     components::{
         recipe_server_functions::*, recipe_sheets::{
             EditableRecipeSheet, RecipeLightSheet, RecipeSheet
-        }, tags::*, auth::auth_server_functions::try_login
+        }, tags::*, auth::{
+            auth_server_functions::{check_login, try_login}, auth_utils::LoginAccount
+        },
     },
     elements::molecules::*,
 };
@@ -17,8 +18,8 @@ use crate::app::{
 
 pub fn LoginPage() -> impl IntoView {
 
-    //TODO
-    // If not logged in, then show the page. If logged in, then show </AllRecipes>
+    // TODO proper check login with signals and all
+    // check_login();
 
     set_page_name("Login");
 
