@@ -9,7 +9,7 @@ async fn main() -> std::io::Result<()> {
     use leptos_actix::{generate_route_list, LeptosRoutes};
     use home_cook_book::app::*;
     use home_cook_book::app::components::recipe_server_functions::ssr::*;
-    use home_cook_book::app::components::auth::auth_utils::LoginStates;
+    use home_cook_book::app::components::auth::auth_utils::SharedLoginStates;
 
     let mut conn = db().await.expect("couldn't connect to DB");
     sqlx::migrate!()
@@ -38,7 +38,7 @@ async fn main() -> std::io::Result<()> {
             .leptos_routes(leptos_options.to_owned(), routes.to_owned(), App)
             .app_data(web::Data::new(leptos_options.to_owned()))
             // add login states
-            .app_data(web::Data::new(LoginStates::default()))
+            .app_data(web::Data::new(SharedLoginStates::default()))
         //.wrap(middleware::Compress::default())
     })
     .bind(&addr)?

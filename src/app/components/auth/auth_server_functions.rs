@@ -3,70 +3,66 @@ use leptos::logging::log;
 use serde::{Deserialize, Serialize};
 use std::{env, fs::File, time::{SystemTime, UNIX_EPOCH}};
 use std::sync::{Arc, Mutex};
+use std::io::BufReader;
 
-use super::auth_utils::LoginAccountCollection;
+use super::auth_utils::{LoginAccountCollection, SharedLoginStates};
+use crate::app::components::auth::auth_utils::LoginAccount;
 
 
 
 #[server]
-pub async fn try_login(username: String, password: String) -> Result<bool, ServerFnError> {
+pub async fn try_login(account: LoginAccount) -> Result<bool, ServerFnError> {
     
     // check if username is not empty
-    if username.as_str().is_empty() {
+    if account.username.is_empty() {
         return Err(ServerFnError::ServerError("Username is empty".to_string()))
     }
 
     // check if password is not empty
-    else if password.as_str().is_empty() {
+    else if account.password.is_empty() {
         return Err(ServerFnError::ServerError("Password is empty".to_string()))
     }
 
     // proceed to auth
     else {
-
-        log!("YOLOOOOOOOOOOOOOOO");
-
-        // check username + password
-        /*let exe_path = env::current_exe()?;
-        let directory_path = exe_path.parent().unwrap();
-        let file = File::open(directory_path)?;
-
-        let users: LoginAccountCollection = serde_json::from_reader(file)?;*/
-
-        // Get the current working directory
-        let current_dir = env::current_dir()?;
-        println!("Current directory: {:?}", current_dir);
-
-        // Specify the filename
-        let filename = "hcb_auth.json";
-
-        // Combine the path and filename
-        let file_path = current_dir.join(filename);
-        println!("Attempting to open: {:?}", file_path);
-
-        // Open the file
-        let file = File::open(&file_path)?;
-        let reader = BufReader::new(file);
-
-        // Deserialize the JSON into a `LoginStates` struct
-        let login_states: LoginStates = serde_json::from_reader(reader).unwrap();
-
-        // Print the deserialized data
-        println!("{:?}", login_states);
-
         // check if account is correct
-        let contains_value = users.accounts.iter().any(|x| x.username.as_str() == &username);
+        if check_account(account).await? {
+            // Then login
+        } else {
+            return Err(ServerFnError::ServerError("Invalid username and/or password.".to_string()));
+        }
 
         // test
-        use actix_web::dev::ConnectionInfo;
-        let connexion_info = leptos_actix::extract::<ConnectionInfo>().await?;
-        println!("{:?}", connexion_info);
+        
 
         // log in user
         //log_in_user();
     }
 
     Ok(true)
+}
+
+
+#[cfg(feature = "ssr")]
+pub async fn check_account(submission: LoginAccount) -> Result<bool, ServerFnError> {
+    // Get the current working directory
+    let current_dir = env::current_dir()?;
+    println!("Current directory: {:?}", current_dir);
+
+    // Combine the path and filename
+    use crate::app::components::auth::auth_utils::ACCOUNTS_FILE_NAME;
+    let file_path = current_dir.join(ACCOUNTS_FILE_NAME);
+    println!("Attempting to open: {:?}", file_path);
+
+    // Open the file
+    let file = File::open(&file_path)?;
+    let reader = BufReader::new(file);
+
+    // Deserialize the JSON into a `LoginStates` struct
+    let accounts: LoginAccountCollection = serde_json::from_reader(reader)?;
+
+    // Check if it contains the submitted account
+    Ok(accounts.contains_account(&submission))
 }
 
 
@@ -84,9 +80,13 @@ pub async fn check_login(ip_address: String) -> Result<bool, ServerFnError> {
 }
 
 #[cfg(feature = "ssr")]
-pub async fn log_in_user(username: String, ip_address: String) -> Result<(), ServerFnError> {
-    // TODO
-    // LOG IN USER
+pub async fn log_in_user(submission: &LoginAccount) -> Result<(), ServerFnError> {
+
+    use actix_web::dev::ConnectionInfo;
+    let connexion_info = leptos_actix::extract::<ConnectionInfo>().await?;
+    println!("{:?}", connexion_info);
+
+    //let shared_loginf
 
     Ok(())
 }

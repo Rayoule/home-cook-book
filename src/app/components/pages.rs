@@ -1,3 +1,4 @@
+use components::auth::auth_utils::LoginAccount;
 use leptos::*;
 use leptos_router::*;
 use leptos::logging::log;
@@ -24,11 +25,10 @@ pub fn LoginPage() -> impl IntoView {
     // setup submission signals (username, password)
     let submission = create_signal((String::new(), String::new()));
 
-    let try_login = create_action(|(username, password): &(String, String)| {
-        let username = username.clone();
-        let password = password.clone();
+    let try_login = create_action(|login_account: &LoginAccount| {
+        let login_account = login_account.clone();
         async move {
-            match try_login(username, password).await {
+            match try_login(login_account).await {
                 Ok(login) => {
                     if login {
                         // If login was succesful
@@ -49,17 +49,17 @@ pub fn LoginPage() -> impl IntoView {
     // Handler for form submission
     let submit_event = move |event: ev::SubmitEvent| {
         event.prevent_default(); // Prevent the default form submission
-        let name_value = name_input().expect("name <input> should be mounted").value();
-        let password_value = password_input().expect("password <input> should be mounted").value();
 
-        submission.1.set((name_value.clone(), password_value.clone()));
+        let login_account = LoginAccount {
+            username: name_input().expect("name <input> should be mounted").value(),
+            password: password_input().expect("password <input> should be mounted").value()
+        };
 
-        log!("username: {:?}; password: {:?}", &name_value, &password_value);
+        submission.1.set((login_account.username.clone(), login_account.password.clone()));
 
-        // TODO
-        try_login.dispatch((name_value, password_value));
+        log!("Login submission: {:?}", &login_account);
 
-        
+        try_login.dispatch(login_account);
     };
     
     view! {
