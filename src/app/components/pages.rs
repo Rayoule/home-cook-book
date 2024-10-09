@@ -9,7 +9,8 @@ use crate::app::{
         recipe_server_functions::*, recipe_sheets::{
             EditableRecipeSheet, RecipeLightSheet, RecipeSheet
         }, tags::*, auth::{
-            auth_server_functions::{user_login_check, try_login}, auth_utils::LoginAccount
+            auth_utils::LoginAccount,
+            auth_server_functions::server_try_login
         },
     },
     elements::molecules::*,
@@ -29,7 +30,7 @@ pub fn LoginPage() -> impl IntoView {
     let try_login = create_action(|login_account: &LoginAccount| {
         let login_account = login_account.clone();
         async move {
-            match try_login(login_account).await {
+            match server_try_login(login_account).await {
                 Ok(login) => {
                     if login {
                         // If login was succesful

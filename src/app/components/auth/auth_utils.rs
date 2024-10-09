@@ -55,7 +55,7 @@ impl SharedLoginStates {
 
 
 #[cfg(feature = "ssr")]
-pub async fn fetch_request_ip(submission: &LoginAccount) -> Result<String, ServerFnError> {
+pub async fn fetch_request_ip() -> Result<String, ServerFnError> {
     use actix_web::dev::ConnectionInfo;
     let cur_ip = leptos_actix::extract::<ConnectionInfo>().await?;
     Ok(cur_ip.peer_addr().unwrap().to_string())

@@ -9,7 +9,8 @@ use crate::app::{
     components::{
         pages::*,
         recipe::*,
-        recipe_server_functions::{get_all_recipes_light, recipe_function}, round_menu::*
+        recipe_server_functions::{get_all_recipes_light, recipe_function}, round_menu::*,
+        auth::{auth_server_functions::server_login_check, auth_utils::LoginAccount}
     },
     elements::popups::*,
 };
@@ -20,6 +21,8 @@ pub mod elements;
 
 #[derive(Clone)]
 pub struct PageNameSetter(WriteSignal<String>);
+#[derive(Clone)]
+pub struct LoginCheckAction(Action<String, ()>);
 #[derive(Clone)]
 pub struct RecipeServerAction(Action<RecipeActionDescriptor, Result<(), ServerFnError>>);
 #[derive(Clone)]
@@ -42,6 +45,28 @@ pub fn App() -> impl IntoView {
     // PageName signal
     let (get_page_name, set_page_name) = create_signal("".to_owned());
     provide_context(PageNameSetter(set_page_name));
+
+    // Login Check Action
+    let login_check_action = 
+        create_action(|username: &String| {
+            let username = username.clone();
+            async move {
+                match server_login_check(username.to_string()).await {
+                    Ok(succeeded) => {
+                        if succeeded {
+                            log!("Login Check Succeeded.");
+                        } else {
+                            log!("Login Check Failed. Redirecting...");
+                            let path = "/";
+                            let navigate = leptos_router::use_navigate();
+                            navigate(&path, Default::default());
+                        }
+                    },
+                    Err(e) => { log!("Error checking login: {:?}", e.to_string()); },
+                }
+            }
+        });
+    provide_context(LoginCheckAction(login_check_action));
 
     // Recipe Action
     let recipe_action = 
