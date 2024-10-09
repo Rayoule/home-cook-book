@@ -1,11 +1,14 @@
 use leptos::*;
 use leptos::logging::log;
 use serde::{Deserialize, Serialize};
-use std::{env, fs::File, time::{SystemTime, UNIX_EPOCH}};
-use std::sync::{Arc, Mutex};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+#[cfg(feature = "ssr")]
+use std::sync::{Mutex, MutexGuard, Arc};
 
 
 pub const ACCOUNTS_FILE_NAME: &'static str = "hcb_auth.json";
+pub const LOG_PERSISTANCE_DURATION_SECONDS: u64 = 5; // 7200;
 
 
 // Struct found in the JSON auth file along with the .exe
@@ -48,4 +51,12 @@ impl SharedLoginStates {
             states: Arc::new(Mutex::new(vec![]))
         }
     }
+}
+
+
+#[cfg(feature = "ssr")]
+pub async fn fetch_request_ip(submission: &LoginAccount) -> Result<String, ServerFnError> {
+    use actix_web::dev::ConnectionInfo;
+    let cur_ip = leptos_actix::extract::<ConnectionInfo>().await?;
+    Ok(cur_ip.peer_addr().unwrap().to_string())
 }

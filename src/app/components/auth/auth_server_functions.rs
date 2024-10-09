@@ -1,12 +1,17 @@
 use leptos::*;
 use leptos::logging::log;
 use serde::{Deserialize, Serialize};
-use std::{env, fs::File, time::{SystemTime, UNIX_EPOCH}};
+use std::{env, fs::File, time::{Duration, SystemTime, UNIX_EPOCH}};
 use std::sync::{Arc, Mutex};
 use std::io::BufReader;
 
 use super::auth_utils::LoginAccountCollection;
-use crate::app::components::auth::auth_utils::{LoginAccount, UserLoginState};
+use crate::app::components::auth::auth_utils::{
+    LoginAccount, UserLoginState,
+};
+
+#[cfg(feature = "ssr")]
+use crate::app::components::auth::auth_utils::*;
 
 
 #[server]
@@ -44,7 +49,6 @@ pub async fn check_account(submission: &LoginAccount) -> Result<bool, ServerFnEr
     println!("Current directory: {:?}", current_dir);
 
     // Combine the path and filename
-    use crate::app::components::auth::auth_utils::ACCOUNTS_FILE_NAME;
     let file_path = current_dir.join(ACCOUNTS_FILE_NAME);
     println!("Attempting to open: {:?}", file_path);
 
@@ -64,12 +68,68 @@ pub async fn check_account(submission: &LoginAccount) -> Result<bool, ServerFnEr
 
 
 #[server]
+/// This function will run on almost every request to check the login
+pub async fn user_login_check(user: LoginAccount) -> Result<bool, ServerFnError> {
+    check_login(user).await
+}
+
+
+#[cfg(feature = "ssr")]
 pub async fn check_login(user: LoginAccount) -> Result<bool, ServerFnError> {
-    // TODO
-    // A function that will check if the user is logged in or not
-    // plus replace the login state if the user log from another ip
-    // will redirect to login page if not logged in
-    Ok(true)
+
+    // Fetch state
+    use actix_web::web::Data;
+    use crate::app::components::auth::auth_utils::SharedLoginStates;
+    let shared_login_states: Data<SharedLoginStates> = leptos_actix::extract::<Data<SharedLoginStates>>().await?;
+    // Get the ownership of the Arc<> inside SharedLoginStates.states
+    let shared_login_states = shared_login_states.get_ref().states.clone();
+    // Get the MutexGuard to mutate state
+    let mut shared_login_states_lock = shared_login_states.lock()?;
+
+    // Fetch request ip
+    let cur_ip = fetch_request_ip(&user).await?;
+
+    log!("A");
+    
+    // Compare infos from state and from user
+    let mut is_logged_in = false;
+
+    use std::ops::DerefMut;
+    shared_login_states_lock.deref_mut().retain_mut(|logged_user: &mut UserLoginState| {
+        log!("B");
+        let current_time = SystemTime::now();
+        let login_duration = Duration::from_secs(LOG_PERSISTANCE_DURATION_SECONDS);
+        // If IP is logged in
+        if logged_user.current_ip == cur_ip {
+            log!("C");
+            // Check that the log date isn't passed out
+            if logged_user.log_date + login_duration > current_time {
+                log!("D");
+                // If passed out, logout
+                false
+            } else {
+                // Then check the username
+                if logged_user.username != user.username {
+                    log!("E");
+                    // If not matching, logout
+                    false
+                } else {
+                    log!("F");
+                    // If the username is matching, then update the log date and validate login
+                    logged_user.log_date = current_time;
+                    is_logged_in = true;
+                    true
+                }
+            }
+        } else {
+            log!("...");
+            // IP not matching -> not that user
+            // We return true so that the entry is not removed
+            true
+        }
+    });
+
+    Ok(is_logged_in)
 }
 
 #[cfg(feature = "ssr")]
@@ -78,14 +138,10 @@ pub async fn log_in_user(submission: &LoginAccount) -> Result<bool, ServerFnErro
     log!("Attempt to log in user {:?}", submission.username);
 
     // Fetch ip address
-    use actix_web::dev::ConnectionInfo;
-    let cur_ip = leptos_actix::extract::<ConnectionInfo>().await?;
-    let cur_ip = cur_ip.peer_addr().unwrap();
-    //log!("current ip: {:?}", &cur_ip);
+    let cur_ip = fetch_request_ip(submission).await?;
 
     // Fetch state
     use actix_web::web::Data;
-    use ev::submit;
     use crate::app::components::auth::auth_utils::SharedLoginStates;
     let shared_login_states: Data<SharedLoginStates> = leptos_actix::extract::<Data<SharedLoginStates>>().await?;
     // Get the ownership of the Arc<> inside SharedLoginStates.states
@@ -95,14 +151,44 @@ pub async fn log_in_user(submission: &LoginAccount) -> Result<bool, ServerFnErro
 
     let mut login_states = shared_login_states_lock.clone();
 
-    // check if already logged in
-    if login_states.iter().any(|x| {
-        x.current_ip == cur_ip
-    }) {
-        // TODO if already logged in then ignore or refresh ?
-        log!("User {:?} already logged in.", submission.username);
-        Ok(false)
-    } else {
+    log!("Current state is: {:?}", login_states);
+    log!("while User is: {:?}, with IP: {:?}", submission, &cur_ip);
+
+    // Compare infos from state and from user
+    let mut is_logged_in = false;
+
+    use std::ops::DerefMut;
+    shared_login_states_lock.deref_mut().retain_mut(|logged_user: &mut UserLoginState| {
+        log!("Checking entry...");
+        let current_time = SystemTime::now();
+        let login_duration = Duration::from_secs(LOG_PERSISTANCE_DURATION_SECONDS);
+        // If IP is logged in
+        if logged_user.current_ip == cur_ip {
+            // Check that the log date isn't passed out
+            if logged_user.log_date + login_duration > current_time {
+                // If passed out, logout
+                false
+            } else {
+                // If log not passed out, Then check the username
+                if logged_user.username != submission.username {
+                    // If not matching, logout
+                    false
+                } else {
+                    // If the username is matching, then update the log date and validate login
+                    logged_user.log_date = current_time;
+                    is_logged_in = true;
+                    true
+                }
+            }
+        } else {
+            log!("...");
+            // IP not matching -> not that user
+            // We return true so that the entry is not removed
+            true
+        }
+    });
+
+    if !is_logged_in {
         log!("Logging user {:?} in...", submission.username);
         let new_login_state =
             UserLoginState {
@@ -118,5 +204,10 @@ pub async fn log_in_user(submission: &LoginAccount) -> Result<bool, ServerFnErro
         log!("User {:?} is now logged in.", submission.username);
         
         Ok(true)
+
+    } else {
+        // Return false if the user was already logged in
+        log!("User {:?} was already logged in.", submission.username);
+        Ok(false)
     }
 }

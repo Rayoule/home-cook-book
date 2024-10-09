@@ -9,7 +9,7 @@ use crate::app::{
         recipe_server_functions::*, recipe_sheets::{
             EditableRecipeSheet, RecipeLightSheet, RecipeSheet
         }, tags::*, auth::{
-            auth_server_functions::{check_login, try_login}, auth_utils::LoginAccount
+            auth_server_functions::{user_login_check, try_login}, auth_utils::LoginAccount
         },
     },
     elements::molecules::*,
