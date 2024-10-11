@@ -35,7 +35,9 @@ pub async fn server_try_login(account: LoginAccount) -> Result<bool, ServerFnErr
         match check_account_credentials(&account).await {
             Ok(account_exists) => {
                 if account_exists {
-                    try_log_user_in(&account).await
+                    let result: bool = try_log_user_in(&account).await?;
+                    if result { leptos_actix::redirect("/"); }
+                    Ok(result)
                 } else {
                     return Err(ServerFnError::ServerError("Invalid username and/or password.".to_string()));
                 }
@@ -49,7 +51,14 @@ pub async fn server_try_login(account: LoginAccount) -> Result<bool, ServerFnErr
 #[server]
 /// This function will run on almost every request to check the login
 pub async fn server_login_check(username: String) -> Result<bool, ServerFnError> {
-    check_login(&username).await
+    let result = check_login(&username).await?;
+
+    if !result {
+        log!("Attempt redirecting");
+        actix_web::web::Redirect::to("/login");
+    }
+
+    Ok(result)
 }
 
 

@@ -17,10 +17,8 @@ use crate::app::{
 };
 
 
+#[component]
 pub fn LoginPage() -> impl IntoView {
-
-    // TODO proper check login with signals and all
-    // check_login();
 
     set_page_name("Login");
 
@@ -358,6 +356,9 @@ pub fn AllRecipes() -> impl IntoView {
 
     set_page_name("Recipes");
 
+    // Login Check for this page
+    let check_login_resource = use_context::<LoginCheckResource>().expect("Expected to find LoginCheckAction in context").0;
+
     // Round Menu setup for this page
     let round_menu_info = create_signal(
         RoundMenuInfo {
@@ -391,108 +392,134 @@ pub fn AllRecipes() -> impl IntoView {
         // Clear search
         request_search_clear.set(true);
     };
-    
+
     view! {
+        <Suspense
+            fallback=move || view!{ <p>{"Wait for Login Check..."}</p> }
+        >
+            <Show
+                when=move || {
+                    let result = check_login_resource.get();
+                    log!("{:?}", result);
+                    result.is_some_and(|x| x)
+                }
+                fallback=move || view!{<LoginFailed/>}
+            >
+                { move || { view! {
 
-        <RecipeSearchBar
-            search_input=search_input
-            request_search_clear=request_search_clear
-        />
-
-        <RoundMenu
-            info=round_menu_info.0
-        />
-
-        // TagList
-        <Transition fallback=move || view! {<p>"Loading..."</p> }>
-            { move || {
-                let tags_component = {
-                    move || {
-
-                        view! {
-                            <TagList
-                                tags=all_tags_memo.get()
-                                // Tags that are selected
-                                selected_tags_signal=selected_tags_signal
-                                // Tags that are already checked (needed because the component might redraw if tags are added or removed)
-                                // This needs to be updated ONLY if tags are added or removed (through addind/removing recipes)
-                                //already_selected_tags=already_selected_tags 
-                            />
-                        }
-                    }
-                };
-
-                // list of RecipeLightSheet
-                let existing_recipes = {
-                    move || {
-                        all_recipes_light.get()
-                            .map(move |recipes| match recipes {
-                                Err(e) => {
-                                    view! { <pre class="error">"Server Error: " {e.to_string()}</pre>}.into_view()
-                                }
-                                Ok(mut recipes) => {
-                                    if recipes.is_empty() {
-                                        view! { <p>"No recipes were found."</p> }.into_view()
-                                    } else {
-                                        let sel_tags = selected_tags_signal.get();
-                                        let search_input_value = search_input.get();
-                                        // filter tags
-                                        if sel_tags.len() > 0 {
-                                            recipes.retain(|recipe| recipe.has_tags(&sel_tags));
-                                        }
-                                        // filter search
-                                        if search_input_value.len() > 0 {
-                                            recipes.retain(|recipe| recipe.is_in_search(&search_input_value));
-                                        }
-                                        // If no results:
-                                        if recipes.len() < 1 {
-                                            view! {
-                                                <div>
-                                                    <p>"No results..."</p>
-                                                    <button
-                                                        //class="cancel-search-button"
-                                                        on:click=on_cancel_search_click
-                                                    >
-                                                        "Cancel"
-                                                    </button>
-                                                </div>
-                                            }.into_view()
-                                        } else {
-                                            // else collect recipe views
-                                            recipes
-                                                .into_iter()
-                                                .map(move |recipe| {
-                                                    view! {
-                                                        <RecipeLightSheet
-                                                            recipe_light=recipe
-                                                        />
-                                                    }
-                                                })
-                                                .collect_view()
-                                        }
-                                        
+                    <RecipeSearchBar
+                        search_input=search_input
+                        request_search_clear=request_search_clear
+                    />
+            
+                    <RoundMenu
+                        info=round_menu_info.0
+                    />
+            
+                    // TagList
+                    <Transition fallback=move || view! {<p>"Loading..."</p> }>
+                        { move || {
+                            let tags_component = {
+                                move || {
+            
+                                    view! {
+                                        <TagList
+                                            tags=all_tags_memo.get()
+                                            // Tags that are selected
+                                            selected_tags_signal=selected_tags_signal
+                                            // Tags that are already checked (needed because the component might redraw if tags are added or removed)
+                                            // This needs to be updated ONLY if tags are added or removed (through addind/removing recipes)
+                                            //already_selected_tags=already_selected_tags 
+                                        />
                                     }
                                 }
-                            })
-                            .unwrap_or_default()
-                    }
-                };
+                            };
+            
+                            // list of RecipeLightSheet
+                            let existing_recipes = {
+                                move || {
+                                    all_recipes_light.get()
+                                        .map(move |recipes| match recipes {
+                                            Err(e) => {
+                                                view! { <pre class="error">"Server Error: " {e.to_string()}</pre>}.into_view()
+                                            }
+                                            Ok(mut recipes) => {
+                                                if recipes.is_empty() {
+                                                    view! { <p>"No recipes were found."</p> }.into_view()
+                                                } else {
+                                                    let sel_tags = selected_tags_signal.get();
+                                                    let search_input_value = search_input.get();
+                                                    // filter tags
+                                                    if sel_tags.len() > 0 {
+                                                        recipes.retain(|recipe| recipe.has_tags(&sel_tags));
+                                                    }
+                                                    // filter search
+                                                    if search_input_value.len() > 0 {
+                                                        recipes.retain(|recipe| recipe.is_in_search(&search_input_value));
+                                                    }
+                                                    // If no results:
+                                                    if recipes.len() < 1 {
+                                                        view! {
+                                                            <div>
+                                                                <p>"No results..."</p>
+                                                                <button
+                                                                    //class="cancel-search-button"
+                                                                    on:click=on_cancel_search_click
+                                                                >
+                                                                    "Cancel"
+                                                                </button>
+                                                            </div>
+                                                        }.into_view()
+                                                    } else {
+                                                        // else collect recipe views
+                                                        recipes
+                                                            .into_iter()
+                                                            .map(move |recipe| {
+                                                                view! {
+                                                                    <RecipeLightSheet
+                                                                        recipe_light=recipe
+                                                                    />
+                                                                }
+                                                            })
+                                                            .collect_view()
+                                                    }
+                                                    
+                                                }
+                                            }
+                                        })
+                                        .unwrap_or_default()
+                                }
+                            };
+            
+                            view! {
+                                <div>
+                                    <div>
+                                        {tags_component}
+                                    </div>
+            
+                                    <DeleteRecipePopup/>
+            
+                                    <div class="recipe-list-container">
+                                        {existing_recipes}
+                                    </div>
+                                </div>
+                            }
+                        }}
+                    </Transition>
+                }}}
+            </Show>
+        </Suspense>
+    }
+}
 
-                view! {
-                    <div>
-                        <div>
-                            {tags_component}
-                        </div>
-
-                        <DeleteRecipePopup/>
-
-                        <div class="recipe-list-container">
-                            {existing_recipes}
-                        </div>
-                    </div>
-                }
-            }}
-        </Transition>
+#[component]
+pub fn LoginFailed() -> impl IntoView {
+    view!{
+        {move || {
+            let navigate = leptos_router::use_navigate();
+            navigate("/login", Default::default());
+            view!{<p>{"Login failed. Redirecting..."}</p>}
+        }}
     }
 }
 

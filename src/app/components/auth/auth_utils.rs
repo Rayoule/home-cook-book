@@ -17,6 +17,7 @@ pub struct LoginAccount {
     pub username: String,
     pub password: String,
 }
+
 #[derive(Deserialize, Debug)]
 pub struct LoginAccountCollection {
     pub accounts: Vec<LoginAccount>,

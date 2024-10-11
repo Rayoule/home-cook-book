@@ -21,8 +21,11 @@ pub mod elements;
 
 #[derive(Clone)]
 pub struct PageNameSetter(WriteSignal<String>);
+/// LoginCheckAction returns None if the login attempt failed
 #[derive(Clone)]
-pub struct LoginCheckAction(Action<String, ()>);
+pub struct LoginCheckResource(Resource<(), bool>);
+#[derive(Clone)]
+pub struct CurrrentUsername(RwSignal<String>);
 #[derive(Clone)]
 pub struct RecipeServerAction(Action<RecipeActionDescriptor, Result<(), ServerFnError>>);
 #[derive(Clone)]
@@ -46,27 +49,43 @@ pub fn App() -> impl IntoView {
     let (get_page_name, set_page_name) = create_signal("".to_owned());
     provide_context(PageNameSetter(set_page_name));
 
+    // Current Username
+    let current_username = create_rw_signal("".to_string());
+    provide_context(CurrrentUsername(current_username));
+
     // Login Check Action
-    let login_check_action = 
-        create_action(|username: &String| {
-            let username = username.clone();
-            async move {
-                match server_login_check(username.to_string()).await {
-                    Ok(succeeded) => {
-                        if succeeded {
-                            log!("Login Check Succeeded.");
-                        } else {
-                            log!("Login Check Failed. Redirecting...");
-                            let path = "/";
-                            let navigate = leptos_router::use_navigate();
-                            navigate(&path, Default::default());
+    let login_check_resource = 
+        create_resource(
+            || (),
+            |_| {
+                let rw_username = use_context::<CurrrentUsername>()
+                    .expect("Expected to find CurrrentUsername in context.")
+                    .0;
+                
+                async move {
+                    let username = rw_username.get();
+
+                    match server_login_check(username.clone()).await {
+                        Ok(succeeded) => {
+                            if succeeded {
+                                log!("Login Check Succeeded.");
+                                rw_username.set(username);
+                                true
+                            } else {
+                                log!("Login Check Failed.");
+                                false
+                            }
+                        },
+                        Err(e) => {
+                            log!("Error checking login: {:?}", e.to_string());
+                            false
+                        },
                         }
-                    },
-                    Err(e) => { log!("Error checking login: {:?}", e.to_string()); },
-                }
+                    }
             }
-        });
-    provide_context(LoginCheckAction(login_check_action));
+        );
+
+    provide_context(LoginCheckResource(login_check_resource));
 
     // Recipe Action
     let recipe_action = 
@@ -161,10 +180,11 @@ pub fn App() -> impl IntoView {
                     outro_back="slideOutBack"
                     intro_back="slideInBack"
                 >
-                    <Route path="/"                     view=LoginPage />
+                    <Route path="/"                     view=AllRecipes />
+                    <Route path="/login"                view=LoginPage />
                     <Route path="/new-recipe"           view=NewRecipePage />
-                    <Route path="/recipe/:id/:mode"     view=|| view! { <RecipePage/> }/>
-                    <Route path="/*any"                 view=NotFound />
+                    <Route path="/recipe/:id/:mode"     view=RecipePage />
+                    <Route path="/*"                    view=NotFound />
                 </AnimatedRoutes>
 
             </main>
