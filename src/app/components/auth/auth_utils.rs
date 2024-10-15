@@ -12,7 +12,7 @@ pub const LOG_PERSISTANCE_DURATION_SECONDS: u64 = 5; // 7200;
 
 
 // Struct found in the JSON auth file along with the .exe
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Default)]
 pub struct LoginAccount {
     pub username: String,
     pub password: String,

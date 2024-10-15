@@ -10,7 +10,7 @@ use crate::app::{
         pages::*,
         recipe::*,
         recipe_server_functions::{get_all_recipes_light, recipe_function}, round_menu::*,
-        auth::{auth_server_functions::server_login_check, auth_utils::LoginAccount}
+        auth::auth_server_functions::server_login_check,
     },
     elements::popups::*,
 };
@@ -84,8 +84,8 @@ pub fn App() -> impl IntoView {
                     }
             }
         );
-
     provide_context(LoginCheckResource(login_check_resource));
+
 
     // Recipe Action
     let recipe_action = 
@@ -180,10 +180,10 @@ pub fn App() -> impl IntoView {
                     outro_back="slideOutBack"
                     intro_back="slideInBack"
                 >
-                    <Route path="/"                     view=AllRecipes />
-                    <Route path="/login"                view=LoginPage />
-                    <Route path="/new-recipe"           view=NewRecipePage />
-                    <Route path="/recipe/:id/:mode"     view=RecipePage />
+                    <Route path="/"                     view=|| view! {<CheckLogin> <AllRecipes/> </CheckLogin>} />
+                    <Route path="/login"                view=|| view! {<CheckLogin is_login_page=true > <LoginPage/> </CheckLogin>} />
+                    <Route path="/new-recipe"           view=|| view! {<CheckLogin> <NewRecipePage/> </CheckLogin>} />
+                    <Route path="/recipe/:id/:mode"     view=|| view! {<CheckLogin> <RecipePage/> </CheckLogin>} />
                     <Route path="/*"                    view=NotFound />
                 </AnimatedRoutes>
 
@@ -198,4 +198,45 @@ pub fn set_page_name(name: &str) {
         .expect("to find PageNameSetter in context!")
         .0
         .set(name.to_owned());
+}
+
+#[component(transparent)]
+pub fn CheckLogin(
+    children: ChildrenFn,
+    #[prop(optional)]
+    is_login_page: bool,
+)-> impl IntoView
+{
+    let check_login_resource = use_context::<LoginCheckResource>().expect("Expected to find LoginCheckAction in context").0;
+    let view_stored = store_value(children);
+
+    let rw_login_check_result = create_rw_signal(false);
+
+    // If login check failed, then redirect to login
+    create_effect(move |_| {
+        if !rw_login_check_result.get() {
+            let navigate = leptos_router::use_navigate();
+            navigate("/login", Default::default());
+        }
+    });
+
+    view!{
+        <Suspense
+            fallback=move || view!{ <p>{"Wait for Login Check..."}</p> }
+        >
+            <Show
+                when=move || {
+                    let result = check_login_resource.get().is_some_and(|x| x);
+                    rw_login_check_result.set(result);
+                    log!("{:?}", result);
+                    result || is_login_page
+                }
+                fallback=move || {
+                    view! {<p>{"Login Failed."}</p>}
+                }
+            >
+                {view_stored.with_value(|view| view())}
+            </Show>
+        </Suspense>
+    }
 }

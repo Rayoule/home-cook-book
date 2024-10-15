@@ -22,24 +22,39 @@ pub fn LoginPage() -> impl IntoView {
 
     set_page_name("Login");
 
-    // setup submission signals (username, password)
-    let submission = create_signal((String::new(), String::new()));
+    let rw_try_login_result = create_rw_signal(false);
 
-    let try_login = create_action(|login_account: &LoginAccount| {
-        let login_account = login_account.clone();
+    let try_login_action = create_action( move |input: &LoginAccount| {
+        let input = input.clone();
         async move {
-            match server_try_login(login_account).await {
+            match server_try_login(input).await {
                 Ok(login) => {
                     if login {
                         // If login was succesful
+                        rw_try_login_result.set(true);
                     } else {
                         // If login failed
+                        rw_try_login_result.set(false);
                     }
                 },
-                Err(e) => log!("Error trying login: {:?}", e.to_string()),
+                Err(e) => {
+                    log!("Error trying login: {:?}", e.to_string());
+                    rw_try_login_result.set(false);
+                },
             }
         }
     });
+
+    // If the login is successful, then redirect to main
+    create_effect(move |_| {
+        if rw_try_login_result.get() {
+            let navigate = leptos_router::use_navigate();
+            navigate("/", Default::default());
+        }
+    });
+
+    // setup submission signals (username, password)
+    let submission = create_signal((String::new(), String::new()));
 
     // name input noderef
     let name_input: NodeRef<html::Input> = create_node_ref();
@@ -55,11 +70,9 @@ pub fn LoginPage() -> impl IntoView {
             password: password_input().expect("password <input> should be mounted").value()
         };
 
-        submission.1.set((login_account.username.clone(), login_account.password.clone()));
-
         log!("Login submission: {:?}", &login_account);
 
-        try_login.dispatch(login_account);
+        try_login_action.dispatch(login_account);
     };
     
     view! {
@@ -67,12 +80,12 @@ pub fn LoginPage() -> impl IntoView {
             <label for="name">"Name:"</label>
             <input
                 type="text"
-                value=submission.0.get().0
+                value=move || submission.0.get().0
                 node_ref=name_input
             />
             <input
                 type="text"
-                value=submission.0.get().1
+                value=move || submission.0.get().1
                 node_ref=password_input
             />
             <button type="submit">"Submit"</button>
@@ -389,7 +402,6 @@ pub fn AllRecipes() -> impl IntoView {
     
     let on_cancel_search_click = move |ev: ev::MouseEvent| {
         ev.stop_propagation();
-        // Clear search
         request_search_clear.set(true);
     };
 
@@ -403,7 +415,7 @@ pub fn AllRecipes() -> impl IntoView {
                     log!("{:?}", result);
                     result.is_some_and(|x| x)
                 }
-                fallback=move || view!{<LoginFailed/>}
+                fallback=move || view!{ <p>{"Login Failed."}</p> }
             >
                 { move || { view! {
 
@@ -509,17 +521,6 @@ pub fn AllRecipes() -> impl IntoView {
                 }}}
             </Show>
         </Suspense>
-    }
-}
-
-#[component]
-pub fn LoginFailed() -> impl IntoView {
-    view!{
-        {move || {
-            let navigate = leptos_router::use_navigate();
-            navigate("/login", Default::default());
-            view!{<p>{"Login failed. Redirecting..."}</p>}
-        }}
     }
 }
 
