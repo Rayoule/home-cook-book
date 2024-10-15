@@ -49,15 +49,16 @@ pub async fn server_try_login(account: LoginAccount) -> Result<bool, ServerFnErr
 
 #[server]
 /// This function will run on almost every request to check the login
-pub async fn server_login_check(username: String) -> Result<bool, ServerFnError> {
-    let result = check_login(&username).await?;
+pub async fn server_login_check() -> Result<bool, ServerFnError> {
+    let result = check_login().await?;
     Ok(result)
 }
 
 
 #[cfg(feature = "ssr")]
 pub async fn try_log_user_in(user: &LoginAccount) -> Result<bool, ServerFnError> {
-    if check_login(&user.username).await? {
+    if check_login().await? {
+        log!("user: {:?} is already logged in.", &user.username);
         // If already logged in, then nothing.
         Ok(false)
     } else {
@@ -71,11 +72,11 @@ pub async fn try_log_user_in(user: &LoginAccount) -> Result<bool, ServerFnError>
 pub async fn check_account_credentials(submission: &LoginAccount) -> Result<bool, ServerFnError> {
     // Get the current working directory
     let current_dir = env::current_dir()?;
-    println!("Current directory: {:?}", current_dir);
+    //log!("Current directory: {:?}", current_dir);
 
     // Combine the path and filename
     let file_path = current_dir.join(ACCOUNTS_FILE_NAME);
-    println!("Attempting to open: {:?}", file_path);
+    //log!("Attempting to open: {:?}", file_path);
 
     // Open the file
     let file = File::open(&file_path)?;
@@ -85,7 +86,7 @@ pub async fn check_account_credentials(submission: &LoginAccount) -> Result<bool
     let accounts: LoginAccountCollection = serde_json::from_reader(reader)?;
 
     // DEBUG
-    log!("{:?}", &accounts);
+    //log!("{:?}", &accounts);
 
     // Check if it contains the submitted account
     Ok(accounts.contains_account(submission))
@@ -94,7 +95,7 @@ pub async fn check_account_credentials(submission: &LoginAccount) -> Result<bool
 
 
 #[cfg(feature = "ssr")]
-pub async fn check_login(user: &String) -> Result<bool, ServerFnError> {
+pub async fn check_login() -> Result<bool, ServerFnError> {
 
     // Fetch state
     use actix_web::web::Data;
@@ -131,16 +132,11 @@ pub async fn check_login(user: &String) -> Result<bool, ServerFnError> {
         let login_duration = Duration::from_secs(LOG_PERSISTANCE_DURATION_SECONDS);
         // If IP is logged in
         if logged_user.current_ip == cur_ip {
-            if logged_user.username != user.to_string() {
-                // If not matching, logout
-                false
-            } else {
-                // If the username is matching, then update the log date and validate login
-                logged_user.log_date = current_time;
-                is_logged_in = true;
-                true
-            }
+            is_logged_in = true;
+            logged_user.log_date = current_time;
+            true
         } else {
+            log!("TEST: IP not matching...");
             // IP not matching -> not that user
             // We return true so that the entry is not removed
             true
@@ -171,10 +167,10 @@ pub async fn log_in_user(submission: &LoginAccount) -> Result<bool, ServerFnErro
 
     let mut login_states = shared_login_states_lock.clone();
 
-    log!("Current state is: {:?}", login_states);
-    log!("while User is: {:?}, with IP: {:?}", submission, &cur_ip);
+    //log!("Current state is: {:?}", login_states);
+    //log!("while User is: {:?}, with IP: {:?}", submission, &cur_ip);
 
-    log!("Logging user {:?} in...", submission.username);
+    //log!("Logging user {:?} in...", submission.username);
     let new_login_state =
         UserLoginState {
             username:   submission.username.clone(),

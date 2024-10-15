@@ -22,34 +22,36 @@ pub fn LoginPage() -> impl IntoView {
 
     set_page_name("Login");
 
-    let rw_try_login_result = create_rw_signal(false);
+    
+    let rw_wants_redirect = create_rw_signal(false);
+    create_effect(move |_| {
+        if rw_wants_redirect.get() {
+            let navigate = leptos_router::use_navigate();
+            navigate("/", Default::default());
+        }
+    });
 
     let try_login_action = create_action( move |input: &LoginAccount| {
         let input = input.clone();
         async move {
-            match server_try_login(input).await {
+            match server_try_login(input.clone()).await {
                 Ok(login) => {
                     if login {
-                        // If login was succesful
-                        rw_try_login_result.set(true);
+                        // If login was successful
+                        //cur_username.set(input.username.clone());
+                        log!("LOGIN IS SUCCESSFUL OUAIS");
+                        rw_wants_redirect.set(true);
+                        true
                     } else {
                         // If login failed
-                        rw_try_login_result.set(false);
+                        false
                     }
                 },
                 Err(e) => {
                     log!("Error trying login: {:?}", e.to_string());
-                    rw_try_login_result.set(false);
+                    false
                 },
             }
-        }
-    });
-
-    // If the login is successful, then redirect to main
-    create_effect(move |_| {
-        if rw_try_login_result.get() {
-            let navigate = leptos_router::use_navigate();
-            navigate("/", Default::default());
         }
     });
 
@@ -73,6 +75,11 @@ pub fn LoginPage() -> impl IntoView {
         log!("Login submission: {:?}", &login_account);
 
         try_login_action.dispatch(login_account);
+
+        /*if try_login_result.get().is_some_and(|x| x) {
+            let navigate = leptos_router::use_navigate();
+            navigate("/", Default::default());
+        }*/
     };
     
     view! {
@@ -369,9 +376,6 @@ pub fn AllRecipes() -> impl IntoView {
 
     set_page_name("Recipes");
 
-    // Login Check for this page
-    let check_login_resource = use_context::<LoginCheckResource>().expect("Expected to find LoginCheckAction in context").0;
-
     // Round Menu setup for this page
     let round_menu_info = create_signal(
         RoundMenuInfo {
@@ -406,121 +410,105 @@ pub fn AllRecipes() -> impl IntoView {
     };
 
     view! {
-        <Suspense
-            fallback=move || view!{ <p>{"Wait for Login Check..."}</p> }
-        >
-            <Show
-                when=move || {
-                    let result = check_login_resource.get();
-                    log!("{:?}", result);
-                    result.is_some_and(|x| x)
-                }
-                fallback=move || view!{ <p>{"Login Failed."}</p> }
-            >
-                { move || { view! {
+        <RecipeSearchBar
+            search_input=search_input
+            request_search_clear=request_search_clear
+        />
 
-                    <RecipeSearchBar
-                        search_input=search_input
-                        request_search_clear=request_search_clear
-                    />
-            
-                    <RoundMenu
-                        info=round_menu_info.0
-                    />
-            
-                    // TagList
-                    <Transition fallback=move || view! {<p>"Loading..."</p> }>
-                        { move || {
-                            let tags_component = {
-                                move || {
-            
-                                    view! {
-                                        <TagList
-                                            tags=all_tags_memo.get()
-                                            // Tags that are selected
-                                            selected_tags_signal=selected_tags_signal
-                                            // Tags that are already checked (needed because the component might redraw if tags are added or removed)
-                                            // This needs to be updated ONLY if tags are added or removed (through addind/removing recipes)
-                                            //already_selected_tags=already_selected_tags 
-                                        />
+        <RoundMenu
+            info=round_menu_info.0
+        />
+
+        // TagList
+        <Transition fallback=move || view! {<p>"Loading..."</p> }>
+            { move || {
+                let tags_component = {
+                    move || {
+
+                        view! {
+                            <TagList
+                                tags=all_tags_memo.get()
+                                // Tags that are selected
+                                selected_tags_signal=selected_tags_signal
+                                // Tags that are already checked (needed because the component might redraw if tags are added or removed)
+                                // This needs to be updated ONLY if tags are added or removed (through addind/removing recipes)
+                                //already_selected_tags=already_selected_tags 
+                            />
+                        }
+                    }
+                };
+
+                // list of RecipeLightSheet
+                let existing_recipes = {
+                    move || {
+                        all_recipes_light.get()
+                            .map(move |recipes| match recipes {
+                                Err(e) => {
+                                    view! { <pre class="error">"Server Error: " {e.to_string()}</pre>}.into_view()
+                                }
+                                Ok(mut recipes) => {
+                                    if recipes.is_empty() {
+                                        view! { <p>"No recipes were found."</p> }.into_view()
+                                    } else {
+                                        let sel_tags = selected_tags_signal.get();
+                                        let search_input_value = search_input.get();
+                                        // filter tags
+                                        if sel_tags.len() > 0 {
+                                            recipes.retain(|recipe| recipe.has_tags(&sel_tags));
+                                        }
+                                        // filter search
+                                        if search_input_value.len() > 0 {
+                                            recipes.retain(|recipe| recipe.is_in_search(&search_input_value));
+                                        }
+                                        // If no results:
+                                        if recipes.len() < 1 {
+                                            view! {
+                                                <div>
+                                                    <p>"No results..."</p>
+                                                    <button
+                                                        //class="cancel-search-button"
+                                                        on:click=on_cancel_search_click
+                                                    >
+                                                        "Cancel"
+                                                    </button>
+                                                </div>
+                                            }.into_view()
+                                        } else {
+                                            // else collect recipe views
+                                            recipes
+                                                .into_iter()
+                                                .map(move |recipe| {
+                                                    view! {
+                                                        <RecipeLightSheet
+                                                            recipe_light=recipe
+                                                        />
+                                                    }
+                                                })
+                                                .collect_view()
+                                        }
+                                        
                                     }
                                 }
-                            };
-            
-                            // list of RecipeLightSheet
-                            let existing_recipes = {
-                                move || {
-                                    all_recipes_light.get()
-                                        .map(move |recipes| match recipes {
-                                            Err(e) => {
-                                                view! { <pre class="error">"Server Error: " {e.to_string()}</pre>}.into_view()
-                                            }
-                                            Ok(mut recipes) => {
-                                                if recipes.is_empty() {
-                                                    view! { <p>"No recipes were found."</p> }.into_view()
-                                                } else {
-                                                    let sel_tags = selected_tags_signal.get();
-                                                    let search_input_value = search_input.get();
-                                                    // filter tags
-                                                    if sel_tags.len() > 0 {
-                                                        recipes.retain(|recipe| recipe.has_tags(&sel_tags));
-                                                    }
-                                                    // filter search
-                                                    if search_input_value.len() > 0 {
-                                                        recipes.retain(|recipe| recipe.is_in_search(&search_input_value));
-                                                    }
-                                                    // If no results:
-                                                    if recipes.len() < 1 {
-                                                        view! {
-                                                            <div>
-                                                                <p>"No results..."</p>
-                                                                <button
-                                                                    //class="cancel-search-button"
-                                                                    on:click=on_cancel_search_click
-                                                                >
-                                                                    "Cancel"
-                                                                </button>
-                                                            </div>
-                                                        }.into_view()
-                                                    } else {
-                                                        // else collect recipe views
-                                                        recipes
-                                                            .into_iter()
-                                                            .map(move |recipe| {
-                                                                view! {
-                                                                    <RecipeLightSheet
-                                                                        recipe_light=recipe
-                                                                    />
-                                                                }
-                                                            })
-                                                            .collect_view()
-                                                    }
-                                                    
-                                                }
-                                            }
-                                        })
-                                        .unwrap_or_default()
-                                }
-                            };
-            
-                            view! {
-                                <div>
-                                    <div>
-                                        {tags_component}
-                                    </div>
-            
-                                    <DeleteRecipePopup/>
-            
-                                    <div class="recipe-list-container">
-                                        {existing_recipes}
-                                    </div>
-                                </div>
-                            }
-                        }}
-                    </Transition>
-                }}}
-            </Show>
-        </Suspense>
+                            })
+                            .unwrap_or_default()
+                    }
+                };
+
+                view! {
+                    <div>
+                        <div>
+                            {tags_component}
+                        </div>
+
+                        <DeleteRecipePopup/>
+
+                        <div class="recipe-list-container">
+                            {existing_recipes}
+                        </div>
+                    </div>
+                }
+            }}
+        </Transition>
     }
 }
 

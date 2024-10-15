@@ -8,7 +8,7 @@ use std::sync::{Mutex, MutexGuard, Arc};
 
 
 pub const ACCOUNTS_FILE_NAME: &'static str = "hcb_auth.json";
-pub const LOG_PERSISTANCE_DURATION_SECONDS: u64 = 5; // 7200;
+pub const LOG_PERSISTANCE_DURATION_SECONDS: u64 = 7200; // 7200s = 2h;
 
 
 // Struct found in the JSON auth file along with the .exe
@@ -58,6 +58,15 @@ impl SharedLoginStates {
 #[cfg(feature = "ssr")]
 pub async fn fetch_request_ip() -> Result<String, ServerFnError> {
     use actix_web::dev::ConnectionInfo;
-    let cur_ip = leptos_actix::extract::<ConnectionInfo>().await?;
-    Ok(cur_ip.peer_addr().unwrap().to_string())
+
+    match leptos_actix::extract::<ConnectionInfo>().await {
+        Ok(connection_info) => {
+            if let Some(current_ip) = connection_info.peer_addr() {
+                Ok(current_ip.to_string())
+            } else {
+                Err(ServerFnError::ServerError("IP not found in HttpRequest.".to_string()))
+            }
+        },
+        Err(e) => Err(ServerFnError::ServerError(e.to_string()))
+    }
 }

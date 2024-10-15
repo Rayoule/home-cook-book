@@ -24,8 +24,8 @@ pub struct PageNameSetter(WriteSignal<String>);
 /// LoginCheckAction returns None if the login attempt failed
 #[derive(Clone)]
 pub struct LoginCheckResource(Resource<(), bool>);
-#[derive(Clone)]
-pub struct CurrrentUsername(RwSignal<String>);
+/*#[derive(Clone)]
+pub struct CurrentUsername(RwSignal<String>);*/
 #[derive(Clone)]
 pub struct RecipeServerAction(Action<RecipeActionDescriptor, Result<(), ServerFnError>>);
 #[derive(Clone)]
@@ -49,41 +49,29 @@ pub fn App() -> impl IntoView {
     let (get_page_name, set_page_name) = create_signal("".to_owned());
     provide_context(PageNameSetter(set_page_name));
 
-    // Current Username
-    let current_username = create_rw_signal("".to_string());
-    provide_context(CurrrentUsername(current_username));
-
     // Login Check Action
-    let login_check_resource = 
-        create_resource(
-            || (),
-            |_| {
-                let rw_username = use_context::<CurrrentUsername>()
-                    .expect("Expected to find CurrrentUsername in context.")
-                    .0;
-                
-                async move {
-                    let username = rw_username.get();
-
-                    match server_login_check(username.clone()).await {
-                        Ok(succeeded) => {
-                            if succeeded {
-                                log!("Login Check Succeeded.");
-                                rw_username.set(username);
-                                true
-                            } else {
-                                log!("Login Check Failed.");
-                                false
-                            }
-                        },
-                        Err(e) => {
-                            log!("Error checking login: {:?}", e.to_string());
+    let login_check_resource = create_resource(
+        || {},
+        |_| {
+            async move {
+                match server_login_check().await {
+                    Ok(succeeded) => {
+                        if succeeded {
+                            log!("Login Check Succeeded.");
+                            true
+                        } else {
+                            log!("Login Check Failed.");
                             false
-                        },
                         }
-                    }
+                    },
+                    Err(e) => {
+                        log!("Error checking login: {:?}", e.to_string());
+                        false
+                    },
+                }
             }
-        );
+        }
+    );
     provide_context(LoginCheckResource(login_check_resource));
 
 
@@ -182,6 +170,7 @@ pub fn App() -> impl IntoView {
                 >
                     <Route path="/"                     view=|| view! {<CheckLogin> <AllRecipes/> </CheckLogin>} />
                     <Route path="/login"                view=|| view! {<CheckLogin is_login_page=true > <LoginPage/> </CheckLogin>} />
+                    //<Route path="/login"                view=|| view! {<LoginPage/>} />
                     <Route path="/new-recipe"           view=|| view! {<CheckLogin> <NewRecipePage/> </CheckLogin>} />
                     <Route path="/recipe/:id/:mode"     view=|| view! {<CheckLogin> <RecipePage/> </CheckLogin>} />
                     <Route path="/*"                    view=NotFound />
@@ -224,19 +213,27 @@ pub fn CheckLogin(
         <Suspense
             fallback=move || view!{ <p>{"Wait for Login Check..."}</p> }
         >
-            <Show
-                when=move || {
-                    let result = check_login_resource.get().is_some_and(|x| x);
-                    rw_login_check_result.set(result);
-                    log!("{:?}", result);
-                    result || is_login_page
+            { move || {
+
+                let result = check_login_resource.get();
+                
+                view!{
+                    <Show
+                        when=move || {
+                            //let result = check_login_resource.get();
+                            let result = result.is_some_and(|x| x);
+                            log!("CheckLogin --> {:?}", result);
+                            rw_login_check_result.set(result);
+                            result || is_login_page
+                        }
+                        fallback=move || {
+                            view! {<p>{"Login Failed."}</p>}
+                        }
+                    >
+                        { view_stored.with_value(|view| view()) }
+                    </Show>
                 }
-                fallback=move || {
-                    view! {<p>{"Login Failed."}</p>}
-                }
-            >
-                {view_stored.with_value(|view| view())}
-            </Show>
+            }}
         </Suspense>
     }
 }
