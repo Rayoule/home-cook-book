@@ -8,7 +8,7 @@ use std::sync::{Mutex, MutexGuard, Arc};
 
 
 pub const ACCOUNTS_FILE_NAME: &'static str = "hcb_auth.json";
-pub const LOG_PERSISTANCE_DURATION_SECONDS: u64 = 7200; // 7200s = 2h;
+pub const LOG_PERSISTANCE_DURATION_SECONDS: u64 = 10; // 7200s = 2h;
 
 
 // Struct found in the JSON auth file along with the .exe
@@ -62,11 +62,16 @@ pub async fn fetch_request_ip() -> Result<String, ServerFnError> {
     match leptos_actix::extract::<ConnectionInfo>().await {
         Ok(connection_info) => {
             if let Some(current_ip) = connection_info.peer_addr() {
-                Ok(current_ip.to_string())
+                let fetched_ip = current_ip.to_string();
+                log!("IP fetched: {:?}", fetched_ip);
+                Ok(fetched_ip)
             } else {
                 Err(ServerFnError::ServerError("IP not found in HttpRequest.".to_string()))
             }
         },
-        Err(e) => Err(ServerFnError::ServerError(e.to_string()))
+        Err(e) => {
+            log!("ERROR in IP Fetching: {:?}", e.to_string());
+            Err(ServerFnError::ServerError(e.to_string()))
+        }
     }
 }

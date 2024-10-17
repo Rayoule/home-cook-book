@@ -156,7 +156,7 @@ pub async fn recipe_function(recipe_action_desc: RecipeActionDescriptor) -> Resu
 pub async fn get_all_recipes_light() -> Result<Vec<RecipeLight>, ServerFnError> {
     use self::ssr::*;
 
-    log!("Fetch all recipes action.");
+    //log!("Fetch all recipes action.");
 
     let mut conn = db().await?;
 
@@ -191,6 +191,42 @@ pub async fn get_all_recipes_light() -> Result<Vec<RecipeLight>, ServerFnError> 
     all_recipe_light.sort_by_key(|r| r.name.to_lowercase());
 
     Ok(all_recipe_light)
+}
+
+
+
+#[server]
+pub async fn get_all_recipes_as_json() -> Result<String, ServerFnError> {
+    use self::ssr::*;
+
+    let mut conn = db().await?;
+
+    // fake API delay
+    if FAKE_API_DELAY { std::thread::sleep(std::time::Duration::from_millis(1250)); }
+
+    // Fetch all
+    let mut rows = sqlx::query_as::<_, DbRowRecipe>("SELECT * FROM recipes").fetch(&mut conn);
+
+    use futures::TryStreamExt;
+    let mut all_recipes_json = JsonRecipeCollection(vec![]);
+    while let Some(row) = rows.try_next().await? {
+        let json_recipe = JsonRecipe {
+            name:           row.recipe_name,
+            tags:           serde_json::from_str::<JsonRecipeTags>(&row.recipe_tags)?,
+            ingredients:    serde_json::from_str::<JsonRecipeIngredients>(&row.recipe_ingredients)?,
+            instructions:   serde_json::from_str::<JsonRecipeInstructions>(&row.recipe_instructions)?,
+            notes:          serde_json::from_str::<JsonRecipeNotes>(&row.recipe_notes)?,
+        };
+        all_recipes_json.0.push(json_recipe);
+    }
+
+    // Sort recipes alphabetically
+    all_recipes_json.0.sort_by_key(|r| r.name.to_lowercase());
+
+    // Turn into a String
+    let out: String = serde_json::to_string_pretty(&all_recipes_json)?;
+
+    Ok(out)
 }
 
 

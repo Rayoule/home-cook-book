@@ -57,14 +57,15 @@ pub async fn server_login_check() -> Result<bool, ServerFnError> {
 
 #[cfg(feature = "ssr")]
 pub async fn try_log_user_in(user: &LoginAccount) -> Result<bool, ServerFnError> {
-    if check_login().await? {
+    /*if check_login().await? {
         log!("user: {:?} is already logged in.", &user.username);
         // If already logged in, then nothing.
         Ok(false)
     } else {
         // If not logged in, then try log in
         log_in_user(user).await
-    }
+    }*/
+    log_in_user(user).await
 }
 
 
@@ -96,6 +97,8 @@ pub async fn check_account_credentials(submission: &LoginAccount) -> Result<bool
 
 #[cfg(feature = "ssr")]
 pub async fn check_login() -> Result<bool, ServerFnError> {
+
+    log!("SERVER -> Checking login");
 
     // Fetch state
     use actix_web::web::Data;

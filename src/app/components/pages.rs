@@ -8,10 +8,7 @@ use crate::app::{
     components::{
         recipe_server_functions::*, recipe_sheets::{
             EditableRecipeSheet, RecipeLightSheet, RecipeSheet
-        }, tags::*, auth::{
-            auth_utils::LoginAccount,
-            auth_server_functions::server_try_login
-        },
+        }, tags::*,
     },
     elements::molecules::*,
 };
@@ -22,38 +19,8 @@ pub fn LoginPage() -> impl IntoView {
 
     set_page_name("Login");
 
-    
-    let rw_wants_redirect = create_rw_signal(false);
-    create_effect(move |_| {
-        if rw_wants_redirect.get() {
-            let navigate = leptos_router::use_navigate();
-            navigate("/", Default::default());
-        }
-    });
 
-    let try_login_action = create_action( move |input: &LoginAccount| {
-        let input = input.clone();
-        async move {
-            match server_try_login(input.clone()).await {
-                Ok(login) => {
-                    if login {
-                        // If login was successful
-                        //cur_username.set(input.username.clone());
-                        log!("LOGIN IS SUCCESSFUL OUAIS");
-                        rw_wants_redirect.set(true);
-                        true
-                    } else {
-                        // If login failed
-                        false
-                    }
-                },
-                Err(e) => {
-                    log!("Error trying login: {:?}", e.to_string());
-                    false
-                },
-            }
-        }
-    });
+    let try_login_action = use_context::<TryLoginAction>().expect("Expected to find TryLoginAction in context.").0;
 
     // setup submission signals (username, password)
     let submission = create_signal((String::new(), String::new()));
@@ -75,28 +42,31 @@ pub fn LoginPage() -> impl IntoView {
         log!("Login submission: {:?}", &login_account);
 
         try_login_action.dispatch(login_account);
-
-        /*if try_login_result.get().is_some_and(|x| x) {
-            let navigate = leptos_router::use_navigate();
-            navigate("/", Default::default());
-        }*/
     };
     
     view! {
-        <form on:submit=submit_event>
-            <label for="name">"Name:"</label>
-            <input
-                type="text"
-                value=move || submission.0.get().0
-                node_ref=name_input
-            />
-            <input
-                type="text"
-                value=move || submission.0.get().1
-                node_ref=password_input
-            />
-            <button type="submit">"Submit"</button>
-        </form>
+        <div class="login-container" >
+            <h3 class="login-title" >{"Login"}</h3>
+            <form class="login-form" on:submit=submit_event>
+                <input
+                    class="login-input"
+                    type="text"
+                    placeholder="Username"
+                    value=move || submission.0.get().0
+                    node_ref=name_input
+                />
+                <br/>
+                <input
+                    class="login-input"
+                    type="password"
+                    placeholder="Password"
+                    value=move || submission.0.get().1
+                    node_ref=password_input
+                />
+                <br/>
+                <button class="login-button" type="submit"> "Ok" </button>
+            </form>
+        </div>
     }
 }
 
@@ -419,6 +389,9 @@ pub fn AllRecipes() -> impl IntoView {
             info=round_menu_info.0
         />
 
+        // TODO find a place for this button
+        <A href="/download-all"> "Dowload All" </A>
+
         // TagList
         <Transition fallback=move || view! {<p>"Loading..."</p> }>
             { move || {
@@ -512,6 +485,67 @@ pub fn AllRecipes() -> impl IntoView {
     }
 }
 
+
+
+/// Download all recipes button
+/// Renders the home page of your application.
+#[component]
+pub fn DownloadAll() -> impl IntoView {
+    /*let all_recipes = create_rw_signal(String::new());
+    let all_recipes_action =
+        create_action(|_input| {
+            async move {
+                match get_all_recipes_as_json().await {
+                    Ok(content) => all_recipes.set(content),
+                    Err(e) => {
+                        log!(ServerFnError::ServerError(e.to_string()));
+                    },
+                }
+            }
+        });*/
+    let all_recipes = create_resource(
+        || (),
+        |_| {
+            async move {
+                match get_all_recipes_as_json().await {
+                    Ok(content) => Some(content),
+                    Err(e) => {
+                        log!("{:?}", e.to_string());
+                        None
+                    }
+                }
+            }
+        }
+    );
+
+    view! {
+        <Suspense
+            fallback=move || view!{ <p>"Recipes loading."</p> <br/> <p>"Please wait..."</p> }
+        >
+            {move || {
+                if let Some(Some(data)) = all_recipes.get() {
+                    let encoded_data = format!("data:text/plain;charset=utf-8,{}", urlencoding::encode("Hello Hello !"));
+                    view!{
+                        /*<button
+                            on:click = move |_| {
+                                
+                            }
+                        >  
+                            "Download All Recipes"
+                        </button>*/
+                        <a href={encoded_data} download="all_recipes_json.txt">
+                            "Download All Recipes"
+                        </a>
+                    }.into_view()
+                } else {
+                    view!{
+                        <p>"Fetched empty data :("</p>
+                    }.into_view()
+                }
+            }}
+        </Suspense>
+    }
+}
 
 
 

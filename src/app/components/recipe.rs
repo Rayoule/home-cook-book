@@ -105,6 +105,10 @@ impl RecipeLight {
     }
 }
 
+/// The Recipe format, without the ID, that will be serialize into JSON
+#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
+pub struct JsonRecipeCollection(pub Vec<JsonRecipe>);
 
 /// The Recipe format, without the ID, that will be serialize into JSON
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
