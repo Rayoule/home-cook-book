@@ -219,7 +219,7 @@ pub fn App() -> impl IntoView {
                     <Route path="/login"                view=|| view! {<CheckLogin is_login_page=true > <LoginPage/> </CheckLogin>} />
                     <Route path="/new-recipe"           view=|| view! {<CheckLogin> <NewRecipePage/> </CheckLogin>} />
                     <Route path="/recipe/:id/:mode"     view=|| view! {<CheckLogin> <RecipePage/> </CheckLogin>} />
-                    <Route path="/download-all"         view=|| view! {<CheckLogin> <DownloadAll/> </CheckLogin>} />
+                    <Route path="/download-all"         view=|| view! {<CheckLogin> <SavePage/> </CheckLogin>} />
                     <Route path="/*"                    view=NotFound />
                 </AnimatedRoutes>
 

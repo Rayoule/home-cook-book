@@ -8,7 +8,7 @@ use crate::app::{
     components::{
         recipe_server_functions::*, recipe_sheets::{
             EditableRecipeSheet, RecipeLightSheet, RecipeSheet
-        }, tags::*,
+        }, tags::*, download_upload::{DownloadAll, UploadAll},
     },
     elements::molecules::*,
 };
@@ -490,60 +490,15 @@ pub fn AllRecipes() -> impl IntoView {
 /// Download all recipes button
 /// Renders the home page of your application.
 #[component]
-pub fn DownloadAll() -> impl IntoView {
-    /*let all_recipes = create_rw_signal(String::new());
-    let all_recipes_action =
-        create_action(|_input| {
-            async move {
-                match get_all_recipes_as_json().await {
-                    Ok(content) => all_recipes.set(content),
-                    Err(e) => {
-                        log!(ServerFnError::ServerError(e.to_string()));
-                    },
-                }
-            }
-        });*/
-    let all_recipes = create_resource(
-        || (),
-        |_| {
-            async move {
-                match get_all_recipes_as_json().await {
-                    Ok(content) => Some(content),
-                    Err(e) => {
-                        log!("{:?}", e.to_string());
-                        None
-                    }
-                }
-            }
-        }
-    );
+pub fn SavePage() -> impl IntoView {
 
     view! {
-        <Suspense
-            fallback=move || view!{ <p>"Recipes loading."</p> <br/> <p>"Please wait..."</p> }
-        >
-            {move || {
-                if let Some(Some(data)) = all_recipes.get() {
-                    let encoded_data = format!("data:text/plain;charset=utf-8,{}", urlencoding::encode("Hello Hello !"));
-                    view!{
-                        /*<button
-                            on:click = move |_| {
-                                
-                            }
-                        >  
-                            "Download All Recipes"
-                        </button>*/
-                        <a href={encoded_data} download="all_recipes_json.txt">
-                            "Download All Recipes"
-                        </a>
-                    }.into_view()
-                } else {
-                    view!{
-                        <p>"Fetched empty data :("</p>
-                    }.into_view()
-                }
-            }}
-        </Suspense>
+
+        <h2>"Download current Cook Book save or Upload save to current Cook Book."</h2>
+        <div>
+            <DownloadAll/>
+            <UploadAll/>
+        </div>
     }
 }
 
@@ -576,10 +531,17 @@ pub fn NotFound() -> impl IntoView {
 pub fn HeaderMenu(
     page_name: ReadSignal<String>
 ) -> impl IntoView {
+
+    let on_home_click = move |_| {
+        let navigate = leptos_router::use_navigate();
+        navigate("/", Default::default());
+    };
+
     view! {
         <header class="header-menu">
             <h3
                 class="logo"
+                on:click=on_home_click
             >{"Home Cook Book"}</h3>
             <h4
                 class="page-name"
