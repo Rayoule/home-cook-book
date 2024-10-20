@@ -411,61 +411,6 @@ pub fn AllRecipes() -> impl IntoView {
                     }
                 };
 
-                // list of RecipeLightSheet
-                let existing_recipes = {
-                    move || {
-                        all_recipes_light.get()
-                            .map(move |recipes| match recipes {
-                                Err(e) => {
-                                    view! { <pre class="error">"Server Error: " {e.to_string()}</pre>}.into_view()
-                                }
-                                Ok(mut recipes) => {
-                                    if recipes.is_empty() {
-                                        view! { <p>"No recipes were found."</p> }.into_view()
-                                    } else {
-                                        let sel_tags = selected_tags_signal.get();
-                                        let search_input_value = search_input.get();
-                                        // filter tags
-                                        if sel_tags.len() > 0 {
-                                            recipes.retain(|recipe| recipe.has_tags(&sel_tags));
-                                        }
-                                        // filter search
-                                        if search_input_value.len() > 0 {
-                                            recipes.retain(|recipe| recipe.is_in_search(&search_input_value));
-                                        }
-                                        // If no results:
-                                        if recipes.len() < 1 {
-                                            view! {
-                                                <div>
-                                                    <p>"No results..."</p>
-                                                    <button
-                                                        //class="cancel-search-button"
-                                                        on:click=on_cancel_search_click
-                                                    >
-                                                        "Cancel"
-                                                    </button>
-                                                </div>
-                                            }.into_view()
-                                        } else {
-                                            // else collect recipe views
-                                            recipes
-                                                .into_iter()
-                                                .map(move |recipe| {
-                                                    view! {
-                                                        <RecipeLightSheet
-                                                            recipe_light=recipe
-                                                        />
-                                                    }
-                                                })
-                                                .collect_view()
-                                        }
-                                        
-                                    }
-                                }
-                            })
-                            .unwrap_or_default()
-                    }
-                };
 
                 view! {
                     <div>
@@ -476,7 +421,58 @@ pub fn AllRecipes() -> impl IntoView {
                         <DeleteRecipePopup/>
 
                         <div class="recipe-list-container">
-                            {existing_recipes}
+                            {move || {
+                                all_recipes_light.get()
+                                    .map(move |recipes| match recipes {
+                                        Err(e) => {
+                                            view! { <pre class="error">"Server Error: " {e.to_string()}</pre>}.into_view()
+                                        }
+                                        Ok(mut recipes) => {
+                                            if recipes.is_empty() {
+                                                view! { <p>"No recipes were found."</p> }.into_view()
+                                            } else {
+                                                let sel_tags = selected_tags_signal.get();
+                                                let search_input_value = search_input.get();
+                                                // filter tags
+                                                if sel_tags.len() > 0 {
+                                                    recipes.retain(|recipe| recipe.has_tags(&sel_tags));
+                                                }
+                                                // filter search
+                                                if search_input_value.len() > 0 {
+                                                    recipes.retain(|recipe| recipe.is_in_search(&search_input_value));
+                                                }
+                                                // If no results:
+                                                if recipes.len() < 1 {
+                                                    view! {
+                                                        <div>
+                                                            <p>"No results..."</p>
+                                                            <button
+                                                                //class="cancel-search-button"
+                                                                on:click=on_cancel_search_click
+                                                            >
+                                                                "Cancel"
+                                                            </button>
+                                                        </div>
+                                                    }.into_view()
+                                                } else {
+                                                    // else collect recipe views
+                                                    recipes
+                                                        .into_iter()
+                                                        .map(move |recipe| {
+                                                            view! {
+                                                                <RecipeLightSheet
+                                                                    recipe_light=recipe
+                                                                />
+                                                            }
+                                                        })
+                                                        .collect_view()
+                                                }
+                                                
+                                            }
+                                        }
+                                    })
+                                    .unwrap_or_default()
+                            }}
                         </div>
                     </div>
                 }
@@ -492,12 +488,18 @@ pub fn AllRecipes() -> impl IntoView {
 #[component]
 pub fn SavePage() -> impl IntoView {
 
+    let has_been_backed_up = create_rw_signal(false);
+
     view! {
 
         <h2>"Download current Cook Book save or Upload save to current Cook Book."</h2>
-        <div>
-            <DownloadAll/>
-            <UploadAll/>
+        <div class="save-page-container" >
+            <DownloadAll
+                has_been_backed_up = has_been_backed_up
+            />
+            <UploadAll
+                has_been_backed_up = has_been_backed_up
+            />
         </div>
     }
 }

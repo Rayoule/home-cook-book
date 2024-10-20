@@ -1,3 +1,4 @@
+use components::recipe_server_functions::apply_json_save;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
@@ -28,11 +29,13 @@ pub struct PageNameSetter(WriteSignal<String>);
 #[derive(Clone)]
 pub struct LoginCheckResource(Resource<(usize, usize), bool>);
 #[derive(Clone)]
+pub struct ApplySaveFromJson(Action<String, bool>);
+#[derive(Clone)]
 pub struct TryLoginAction(Action<LoginAccount, bool>);
 #[derive(Clone)]
 pub struct RecipeServerAction(Action<RecipeActionDescriptor, Result<(), ServerFnError>>);
 #[derive(Clone)]
-pub struct RecipesLightResource(Resource<usize, Result<Vec<RecipeLight>, ServerFnError>>);
+pub struct RecipesLightResource(Resource<(usize, usize), Result<Vec<RecipeLight>, ServerFnError>>);
 #[derive(Clone)]
 pub struct AllTagsSignal(RwSignal<Vec<String>>);
 #[derive(Clone)]
@@ -127,15 +130,31 @@ pub fn App() -> impl IntoView {
         }
     );
     provide_context(LoginCheckResource(login_check_resource));
+
+
+    // Apply save from JSON
+    let upload_save_action = create_action(|save: &String| {
+        let save = save.to_string();
+        async move {
+            match apply_json_save(save).await {
+                Err(e) => {
+                    log!("ERROR: {:?}", e.to_string());
+                    false
+                },
+                _ => true,
+            }
+        }
+    });
+    provide_context(ApplySaveFromJson(upload_save_action));
     
 
     // All RecipeLight resource
     let all_recipe_light = create_local_resource(
-        move || recipe_action.version().get(),
-        move |_| {
-            //log!("Fetching all resources!");
-            get_all_recipes_light()
-        },
+        move || (
+            recipe_action.version().get(),
+            upload_save_action.version().get()
+        ),
+        move |_| { get_all_recipes_light() },
     );
     provide_context(RecipesLightResource(all_recipe_light));
 
