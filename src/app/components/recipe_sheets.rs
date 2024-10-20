@@ -8,9 +8,11 @@ use crate::app::{
 };
 
 
+
 #[component]
 pub fn RecipeLightSheet(
     recipe_light: RecipeLight,
+    custom_color_style: String,
 ) -> impl IntoView {
 
     // Setup context with the recipe light getter
@@ -32,6 +34,7 @@ pub fn RecipeLightSheet(
         <div
             class="recipe-light-container"
             on:click=on_click
+            style=&custom_color_style
         >
 
             <RecipeLightSubMenu
@@ -41,20 +44,24 @@ pub fn RecipeLightSheet(
             <h3 class="recipe-light name">{ recipe_name }</h3>
 
             // Tag list
-            {
+            {move || {
                 let tag_list =
                     recipe_tags
+                        .clone()
                         .unwrap_or_else(|| vec![])
                         .into_iter()
-                        .map(move |t| view! {
-                            <li class= "recipe-light" >
-                                <span
-                                    class= "recipe-light"
-                                >
-                                    {t.name}
-                                </span>
-                            </li>
-                        })
+                        .enumerate()
+                        .map(move |(i, t)| {
+
+                            view! {
+                                <li class= "recipe-light">
+                                    <span
+                                        class= "recipe-light"
+                                    >
+                                        {t.name}
+                                    </span>
+                                </li>
+                        }})
                         .collect_view();
 
                 view!{
@@ -62,7 +69,7 @@ pub fn RecipeLightSheet(
                         {tag_list}
                     </ul>
                 }
-            }
+            }}
             
         </div>
     }

@@ -338,7 +338,13 @@ pub fn RecipePage(
 
 
 
-
+// Colors to iterate from
+const COLORS: [&str; 4] = [
+    "#f9ecd4",
+    "#d3d3e7",
+    "#ef6121",
+    "#ce9838"
+];
 
 /// Renders the home page of your application.
 #[component]
@@ -456,18 +462,27 @@ pub fn AllRecipes() -> impl IntoView {
                                                     }.into_view()
                                                 } else {
                                                     // else collect recipe views
+                                                    use rand::Rng;
+                                                    let mut rng = rand::thread_rng();
+                                                    let random_number: usize = rng.gen_range(0..5); // 0 to 4 inclusive
                                                     recipes
                                                         .into_iter()
-                                                        .map(move |recipe| {
+                                                        .enumerate()
+                                                        .map(move |(i, recipe)| {
+                                                            let idx = i + random_number;
+                                                            let color_id: usize = idx % COLORS.len();
+                                                            let style_color = COLORS[color_id];
+                                                            let style_string = "background-color: ".to_string() + style_color + ";";
+                                                            
                                                             view! {
                                                                 <RecipeLightSheet
                                                                     recipe_light=recipe
+                                                                    custom_color_style=style_string
                                                                 />
                                                             }
                                                         })
                                                         .collect_view()
                                                 }
-                                                
                                             }
                                         }
                                     })

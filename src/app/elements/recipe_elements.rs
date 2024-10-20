@@ -92,7 +92,7 @@ pub fn EditableEntryList<T: RecipeEntry>(
 
             // Component in non editable mode
             view! {
-                <div class={style_class.clone() + " container list"}>
+                <div class={style_class.clone() + " container list"} >
                     <h1>{entry_type_title}</h1>
                     <ul class={style_class.clone()}>
                         {
