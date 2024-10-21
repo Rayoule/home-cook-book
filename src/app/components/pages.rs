@@ -340,10 +340,10 @@ pub fn RecipePage(
 
 // Colors to iterate from
 const COLORS: [&str; 4] = [
-    "#f9ecd4",
-    "#d3d3e7",
-    "#ef6121",
-    "#ce9838"
+    "var(--color-1)",
+    "var(--color-2)",
+    "var(--color-3)",
+    "var(--color-4)"
 ];
 
 /// Renders the home page of your application.

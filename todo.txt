@@ -1,7 +1,14 @@
 Home Cook Book
 
 
-	Styling:
+	To Do :
+    - Designer le menu (tags, search?)
+    - Designer le Round Button Menu
+    - Menu settings (Home?, Settings, Logout)
+    - 
+    - Crashes:
+      - Refresh Edit page
+      - Refresh Download page
 		
 
   Features:
@@ -23,3 +30,7 @@ Home Cook Book
         - Print
         - Delete
       - Print: NO HEADER (only the recipe: see hot thai kitchen)
+
+
+Note :
+  - 

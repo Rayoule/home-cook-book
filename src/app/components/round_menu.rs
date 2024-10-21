@@ -124,7 +124,7 @@ pub fn RoundMenu(
                                         class:unfolded=is_unfolded.0
                                         on:click=   on_button_click
                                     >
-                                        {"➕ New Recipe"}
+                                        {"+"}
                                     </button>
                                 }.into_view()
                             },
