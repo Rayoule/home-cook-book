@@ -5,7 +5,7 @@ Home Cook Book
     - Designer le menu (tags, search?)
     - Designer le Round Button Menu
     - Menu settings (Home?, Settings, Logout)
-    - 
+    - Enlever le "transform: translate(0.5%, -0.5%);" décalage sub-menu
     - Crashes:
       - Refresh Edit page
       - Refresh Download page
