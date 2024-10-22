@@ -13,16 +13,18 @@
 
 	// Recipes Light colors
 	--color-1: #f9ecd4;
-	--color-2: #976e58;
+	--color-2: #a78370;
 	--color-3: #f57032;
 	--color-4: #f5a640;
 
 	// Other colors
-	--color-5: #5a483a00;
+	--color-5: #5a483a;
 	--color-6: #d6e8f7;
 	--color-7: #976e58;
 	--color-8: #caaacd;
 	--color-9: #f5a640;
+	--color-10: #9c9c5d;
+	--tag-list-color: #a78370;
 }
 
 * {
@@ -892,10 +894,11 @@ textarea#text-input {
 	top: 0px;
 	right: 0px;
 
-	width: 15px;
+	width: 60px;
 	height: 60px;
 
-	border: none; 
+	border: 1px solid black; 
+	border-radius: 100px;
 
 	background-color: var(--color-3);
 
@@ -913,7 +916,7 @@ textarea#text-input {
 	}
 
 	&.is-enabled {
-		background-color: red;
+		background-color: rgba(0, 0, 0, 0);
 	}
 }
 .tags-container {
@@ -926,7 +929,7 @@ textarea#text-input {
 	height: 100vh;
 	width: 0px;
 
-	background-color: var(--color-9);
+	background-color: var(--tag-list-color);
 
 	&.unrolled {
 		width: 100vw;
@@ -936,17 +939,6 @@ textarea#text-input {
 		width 0.05s ease-out
 	;
 }
-.unrollable-tag-panel {
-	//z-index: 101;
-	display: block;
-	overflow: hidden;
-	height: 50px;
-	width: 200px;
-
-	transition:
-		height 0.1s ease-out
-	;
-}
 ul.selected-tag-list {
 	display:block;
 	font-size: small;
@@ -954,15 +946,8 @@ ul.selected-tag-list {
 	width: 100px;
 }
 ul.tag-list {
-	//display:block;
+
 	font-size: small;
-
-	/*display: flex;
-	flex-direction: column;
-	justify-content: space-between;*/
-
-	//width: 100px;
-	//max-height: 80vh;
 
 	overflow-y: auto;
 
@@ -970,7 +955,9 @@ ul.tag-list {
 		max-height 0.15s ease-out
 	;
 }
-.tag-list {
+ul.tag-list {
+
+	margin-top: 100px;
 
 	&::-webkit-scrollbar {
 		width: 0px;
@@ -978,19 +965,34 @@ ul.tag-list {
 	}
 }
 .tag-button {
-	margin-bottom: 3px;
 
-	background-color: var(--color-1);
-    border: 1px solid grey;
-	border-radius: 5px;
-	padding: 2px;
+	font-size: small;
+	font-weight: bold;
+
+	margin-bottom: 3px;
+	padding: 8px 10px;
+
+	//color: var(--color-1);
+	background-color: var(--tag-list-color);
+
+    border: 1px solid rgb(0, 0, 0);
+	border-radius: 20;
 
     cursor: pointer;
 
 	&.tag-selected {
-		background-color: var(--color-3);
+		//color: black;
+		background-color: var(--color-1);
+
+		transform: scale(1.1);
+	}
+
+	&::before {
+		content: "#";
+		margin-right: 2px; /* Adjust the spacing if needed */
 	}
 }
+
 .tag-list-entry {
 	text-align: left;
 
@@ -1001,8 +1003,26 @@ ul.tag-list {
 
 	margin: 5px 5px;
 }
-.clear-tags-button{
-	background-color: rgb(255, 187, 0);
+.clear-tags-button {
+
+	position: fixed;
+
+	bottom: 50px;
+
+	translate:
+		calc(var(--round-menu-first-button-size)/-2)
+		0px;
+
+	height: var(--round-menu-first-button-size);
+	width: var(--round-menu-first-button-size);
+
+	border: 1px solid black;
+	border-radius: 100px;
+	background-color: var(--color-4);
+
+	&.is_rolled {
+		display: none;
+	}
 }
 
 

@@ -105,35 +105,21 @@ pub fn TagList(
             class:unrolled=is_unrolled
         >
 
-            
-
-            <div
-                class="unrollable-tag-panel"
-                //class:unrolled=is_unrolled
-            >
-
-                <p>{"Tags"}</p>
-
-                <button
-                    class="clear-tags-button"
-                    on:click=on_clear_tags_click
-                >
-                    {"Clear Tags"}
-                </button>
-            </div>
-
-            /*<ul
-                class="selected-tag-list"
-            >
-                {selected_tag_elems}
-            </ul>*/
+            <p>{"Tags"}</p>
 
             <ul
                 class="tag-list"
-                //class:unrolled=is_unrolled
             >
                 {all_tag_elems}
             </ul>
+
+            <button
+                class="clear-tags-button"
+                class:is_rolled=move || { !is_unrolled.get() }
+                on:click=on_clear_tags_click
+            >
+                {"Clear"}
+            </button>
 
         </div>
     }
