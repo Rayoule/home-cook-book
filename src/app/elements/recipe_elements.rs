@@ -378,9 +378,12 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
         }
         .into_view()
     } else {
+
         // Textarea
-        // setup for textarea autosize
         let textarea = create_node_ref::<html::Textarea>();
+
+        // setup for textarea autosize
+        #[cfg(feature= "hydrate")]
         let leptos_use::UseTextareaAutosizeReturn {
             content: _,
             set_content,
@@ -399,6 +402,7 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
                 on:input=move |ev| {
 
                     // resize box to fit text
+                    #[cfg(feature= "hydrate")]
                     set_content.set(event_target_value(&ev));
 
                     // update entry signal

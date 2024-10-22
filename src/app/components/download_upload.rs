@@ -80,6 +80,8 @@ pub fn UploadAll( has_been_backed_up: RwSignal<bool> ) -> impl IntoView {
     // Textarea
     // setup for textarea autosize
     let textarea = create_node_ref::<html::Textarea>();
+
+    #[cfg(feature= "hydrate")]
     let leptos_use::UseTextareaAutosizeReturn {
         content: _,
         set_content,
@@ -116,7 +118,10 @@ pub fn UploadAll( has_been_backed_up: RwSignal<bool> ) -> impl IntoView {
                         // on input
                         on:input=move |ev| {
                             // resize box to fit text
+                            #[cfg(feature= "hydrate")]
                             set_content.set(event_target_value(&ev));
+
+                            log!("Yolo");
                         }
                     > {} </textarea>
                     <div class="divider save"></div>

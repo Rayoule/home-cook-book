@@ -7,30 +7,39 @@ Home Cook Book
     - Menu settings (Home?, Settings, Logout)
     - Enlever le "transform: translate(0.5%, -0.5%);" décalage sub-menu
     - Crashes:
-      - Refresh Edit page
-      - Refresh Download page
+      X Refresh Edit page
+      X Refresh Download page
 		
 
   Features:
-    X Duplicate button
-    X Print page (Use the print param of RecipeSheet)
-    - Header button for pages:
-      - All recipe:
-        - New Recipe
-        - Search Bar
-        - Tags
-      - New Recipe:
-        - Cancel (Return to recipes)
-      - Edit Recipe:
-        - Print
-        - Display
-        - Delete
-      - Display Recipe:
-        - Edit
-        - Print
-        - Delete
-      - Print: NO HEADER (only the recipe: see hot thai kitchen)
-
+    - Large Garlic / Small garlic
+    - Settings Menu top right
+    - Header
+      - Grosse gousse d'ail <3
+      - Settings top right
+        - Login
+        - Download/Upload db save
+    - All Recipes Page
+      - Tag Filter (below header)
+      - Search Bar (below header)
+      - [A] New Recipe Button
+    - [A] New Recipe Page
+      - Back button (arrow)
+      - Save button as r.b.
+      - Cancel Button as r.b.
+    - [A] Edit Recipe Page
+      - Back button (arrow)
+      - Save Button as r.b.
+      - Cancel Button as r.b.
+      - Delete Button in page bottom
+    - View Recipe Page
+      - Back button (arrow)
+      - Edit button as r.b.
+    - Print Recipe Page (page to save as PDF from browser)
+      - Opens in a new tab
+      - No Buttons, no Header, just the recipe
+    - [A] Download/Upload Save Page
+    - Login Page Page
 
 Note :
   - 

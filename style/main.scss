@@ -4,22 +4,25 @@
 
 	--recipe-max-width: 728px;
 
-	--round-menu-button-size: 35px;
+	--round-menu-button-size: 50px;
 	--round-menu-first-button-size: 50px;
 
 	--text-input-height: 32px;
 	--text-input-font-size: 18px;
 	--text-input-border-color: rgb(196, 196, 196);
 
+	// Recipes Light colors
 	--color-1: #f9ecd4;
 	--color-2: #976e58;
-	//--color-3: #ef6121;
 	--color-3: #f57032;
 	--color-4: #f5a640;
-	--color-5: #5a483a;
+
+	// Other colors
+	--color-5: #5a483a00;
 	--color-6: #d6e8f7;
 	--color-7: #976e58;
 	--color-8: #caaacd;
+	--color-9: #f5a640;
 }
 
 * {
@@ -104,7 +107,7 @@ ul {
     bottom: 40px;
     right: 30px;
 
-	z-index: 999;
+	z-index: 10;
 
 	display: flex;
 	flex-direction: column-reverse;
@@ -880,87 +883,14 @@ textarea#text-input {
 }
 
 
-
-.tags-container {
-	position: absolute;
-    left: 10px;
-	top: var(--header-height);
-
-	background-color: var(--color-1);
-}
-.unrollable-tag-panel {
-	display: block;
-	overflow: hidden;
-	height: 0vh;
-
-	transition:
-		height 0.1s ease-out
-	;
-
-	&.unrolled {
-		height: 50px;
-	}
-}
-ul.selected-tag-list {
-	display:block;
-	font-size: small;
-
-	width: 100px;
-}
-ul.tag-list {
-	display:block;
-	font-size: small;
-
-	width: 100px;
-	max-height: 0;
-
-	overflow-y: hidden;
-
-	transition:
-		max-height 0.15s ease-out
-	;
-}
-.tag-list {
-
-	&.unrolled {
-		max-height: 80vh;
-		overflow-y: auto;
-	}
-
-	&::-webkit-scrollbar {
-		width: 0px;
-		background: transparent;
-	}
-}
-.tag-button {
-	
-	margin-bottom: 3px;
-
-	background-color: var(--color-1);
-    border: 1px solid grey;
-	border-radius: 5px;
-	padding: 2px;
-
-    cursor: pointer;
-
-	&.tag-selected {
-		background-color: var(--color-3);
-	}
-}
-.clear-tags-button{
-	background-color: rgb(255, 187, 0);
-}
-.tag-list-entry {
-	margin-left: 5px;
-	text-align: left;
-}
 .unroll-tags-button {
     cursor: pointer;
 
-	position: absolute;
+	z-index: 101;
+	position: fixed;
 
-	top: -25px;
-	right: -20px;
+	top: 0px;
+	right: 0px;
 
 	width: 15px;
 	height: 60px;
@@ -975,22 +905,110 @@ ul.tag-list {
 	;
 
 	&:hover {
-		transform: translateY(20px);
+		//transform: translateY(20px);
 	}
 
 	&:active {
-		transform: translateY(25px);
+		//transform: translateY(25px);
 	}
 
 	&.is-enabled {
 		background-color: red;
 	}
 }
+.tags-container {
+	z-index: 100;
+	position: fixed;
+
+	top: 0;
+	right: 0;
+
+	height: 100vh;
+	width: 0px;
+
+	background-color: var(--color-9);
+
+	&.unrolled {
+		width: 100vw;
+	}
+
+	transition:
+		width 0.05s ease-out
+	;
+}
+.unrollable-tag-panel {
+	//z-index: 101;
+	display: block;
+	overflow: hidden;
+	height: 50px;
+	width: 200px;
+
+	transition:
+		height 0.1s ease-out
+	;
+}
+ul.selected-tag-list {
+	display:block;
+	font-size: small;
+
+	width: 100px;
+}
+ul.tag-list {
+	//display:block;
+	font-size: small;
+
+	/*display: flex;
+	flex-direction: column;
+	justify-content: space-between;*/
+
+	//width: 100px;
+	//max-height: 80vh;
+
+	overflow-y: auto;
+
+	transition:
+		max-height 0.15s ease-out
+	;
+}
+.tag-list {
+
+	&::-webkit-scrollbar {
+		width: 0px;
+		background: transparent;
+	}
+}
+.tag-button {
+	margin-bottom: 3px;
+
+	background-color: var(--color-1);
+    border: 1px solid grey;
+	border-radius: 5px;
+	padding: 2px;
+
+    cursor: pointer;
+
+	&.tag-selected {
+		background-color: var(--color-3);
+	}
+}
+.tag-list-entry {
+	text-align: left;
+
+	display: inline-block;
+
+	width: fit-content;
+	height: fit-content;
+
+	margin: 5px 5px;
+}
+.clear-tags-button{
+	background-color: rgb(255, 187, 0);
+}
 
 
 .popup {
 	position: fixed;
-	z-index: 9999;
+	z-index: 1000;
 
 	display: flex;
     justify-content: center;

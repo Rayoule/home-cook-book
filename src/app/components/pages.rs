@@ -251,18 +251,16 @@ pub fn RecipePage(
                 match get_recipe_mode() {
                     RecipePageMode::Display => vec![
                         RoundMenuButton::Edit,
-                        RoundMenuButton::Duplicate,
                         RoundMenuButton::Print,
-                        RoundMenuButton::Delete,
+                        //RoundMenuButton::Delete,
                     ].into(),
                     RecipePageMode::Editable => vec![
                         RoundMenuButton::Delete,
                     ].into(),
                     RecipePageMode::Print => vec![
-                        RoundMenuButton::Edit,
+                        /*RoundMenuButton::Edit,
                         RoundMenuButton::Display,
-                        RoundMenuButton::Duplicate,
-                        RoundMenuButton::Delete,
+                        RoundMenuButton::Delete,*/
                     ].into(),
                 }
             }

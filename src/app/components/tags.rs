@@ -25,7 +25,7 @@ pub fn TagList(
             .collect()
     });
 
-    let selected_tag_elems = move || {
+    /*let selected_tag_elems = move || {
         // get the signals
         let mut tags_states_signals = tags_states_signals.get();
         // then generate the buttons
@@ -39,9 +39,9 @@ pub fn TagList(
                 view_from_tag_state(tag_state, set_tag_state, selected_tags_signal)
             })
             .collect_view()
-    };
+    };*/
 
-    let unselected_tag_elems = move || {
+    /*let unselected_tag_elems = move || {
         // get the signals
         let mut tags_states_signals = tags_states_signals.get();
         // then generate the buttons
@@ -49,6 +49,18 @@ pub fn TagList(
             .retain(|(tag_state, set_tag_state)| {
                 !tag_state.get().0
             });
+        tags_states_signals
+            .into_iter()
+            .map(|(tag_state, set_tag_state)| {
+                view_from_tag_state(tag_state, set_tag_state, selected_tags_signal)
+            })
+            .collect_view()
+    };*/
+
+    let all_tag_elems = move || {
+        // get the signals
+        let mut tags_states_signals = tags_states_signals.get();
+        // then generate the buttons
         tags_states_signals
             .into_iter()
             .map(|(tag_state, set_tag_state)| {
@@ -80,18 +92,24 @@ pub fn TagList(
     };
     
     view! {
-        <div class="tags-container">
 
-            <button
-                class="unroll-tags-button"
-                class:is-enabled=is_unrolled
-                on:click=on_unroll_click
-            >
-            </button>
+        <button
+            class="unroll-tags-button"
+            class:is-enabled=is_unrolled
+            on:click=on_unroll_click
+        >
+        </button>
+
+        <div
+            class="tags-container"
+            class:unrolled=is_unrolled
+        >
+
+            
 
             <div
                 class="unrollable-tag-panel"
-                class:unrolled=is_unrolled
+                //class:unrolled=is_unrolled
             >
 
                 <p>{"Tags"}</p>
@@ -104,17 +122,17 @@ pub fn TagList(
                 </button>
             </div>
 
-            <ul
+            /*<ul
                 class="selected-tag-list"
             >
                 {selected_tag_elems}
-            </ul>
+            </ul>*/
 
             <ul
                 class="tag-list"
-                class:unrolled=is_unrolled
+                //class:unrolled=is_unrolled
             >
-                {unselected_tag_elems}
+                {all_tag_elems}
             </ul>
 
         </div>
