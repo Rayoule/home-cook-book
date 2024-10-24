@@ -74,7 +74,7 @@ pub fn RoundMenu(
                     class="round-menu-return-button"
                     on:click=on_return_click
                 >
-                    {"Return"}
+                    {"↜"}
                 </button>
             </Show>
 

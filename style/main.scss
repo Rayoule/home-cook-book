@@ -47,12 +47,12 @@ ul {
 
 
 .header-menu {
-	color: white;
+	color: rgb(0, 0, 0);
 	height: var(--header-height);
 	text-align: left;
-	background-color: var(--color-5);
+	background-color: var(--color-1);
 
-	margin-bottom: 10px;
+	//margin-bottom: 10px;
 
 	z-index: 10;
 }
@@ -66,16 +66,57 @@ ul {
 	right: 20px;
 }
 
+.settings-menu-button {
+
+	position: absolute;
+
+	z-index: 201;
+
+	height: 40px;
+	width: 22px;
+
+	top: 5px;
+	right: 15px;
+
+	background-color: rgba(0, 0, 0, 0);
+
+	border: 1px solid black;
+	border-radius: 80px;
+
+}
+.settings-menu {
+
+	z-index: 200;
+	position: fixed;
+
+	top: 0;
+	right: 0;
+
+	height: 100vh;
+	width: 0px;
+
+	background-color: var(--tag-list-color);
+
+	&.is-open {
+		width: 100vw;
+	}
+}
+
 
 .search-bar {
 	display: inline-block;
 
-	background-color: white;
+	width: 210px;
+	height: 35px;
 
+	background-color: var(--color-1);
+
+	margin-left:auto;
+	//margin-left: 13px;
 	padding-left: 10px;
 
-	border: 1px solid grey;
-	border-radius: 10px;
+	border: 1px solid rgb(0, 0, 0);
+	border-radius: 40px;
 }
 .search-bar-input {
 	width: 170px;
@@ -245,8 +286,21 @@ ul {
 }
 .round-menu-return-button {
 	position: absolute;
-	top: calc(var(--header-height) + 20px);
-	left: 0;
+
+	top: calc(var(--header-height));
+	left: 20px;
+
+	font-size: xx-large;
+
+	transform:scale(2);
+
+	background-color: #00000000;
+	border: none;
+
+	&:hover{
+		transform: scale(2.2);
+	}
+
 }
 
 .save-button-container {
@@ -262,10 +316,12 @@ ul {
 	max-width: 750px;
 
 	display: grid;
+
     grid-gap: 10px; /* Spacing between grid items */
 
-    padding: 10px; /* Padding around the grid */
-	margin: auto;
+	//margin-top: 25px;
+
+	padding-left: 15px;
 
 	padding-bottom: 150px;
 }
@@ -299,6 +355,7 @@ ul {
 
 	display: flex;
 	flex-direction: column;
+	//align-items: center;
 	justify-content: space-between;
 
 	background-color: var(--color-1);
@@ -306,7 +363,7 @@ ul {
 	width: 120px;
 	height: 150px;
 
-	margin: 10px auto;
+	//margin: 10px auto;
 	padding: 10px;
 	
 	border: 1px solid rgba(0, 0, 0, 1);
@@ -885,22 +942,37 @@ textarea#text-input {
 }
 
 
+.search-container {
+
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+
+	height: 70px;
+
+	margin: 0px 20px;
+}
+
+
 .unroll-tags-button {
     cursor: pointer;
 
+	position: relative;
+
 	z-index: 101;
-	position: fixed;
+	//position: fixed;
 
-	top: 0px;
-	right: 0px;
+	//top: 0px;
+	//right: 0px;
 
-	width: 60px;
-	height: 60px;
+	height: 35px;
+	width: 70px;
 
 	border: 1px solid black; 
 	border-radius: 100px;
 
-	background-color: var(--color-3);
+	background-color: var(--color-4);
 
 	transition:
 		transform 0.1s ease-out,
@@ -917,6 +989,11 @@ textarea#text-input {
 
 	&.is-enabled {
 		background-color: rgba(0, 0, 0, 0);
+	}
+
+	&::after {
+		content: "#"; /* Insert a # symbol before the button's text */
+		margin-right: 5px; /* Optional: add some space between the # and the button text */
 	}
 }
 .tags-container {
@@ -950,12 +1027,14 @@ ul.tag-list {
 
 	overflow-y: auto;
 
+	margin-top: 30vh;
+
+	padding: 0px 10px;
+
+	
 	transition:
 		max-height 0.15s ease-out
 	;
-}
-ul.tag-list {
-	margin-top: 100px;
 
 	&::-webkit-scrollbar {
 		width: 0px;

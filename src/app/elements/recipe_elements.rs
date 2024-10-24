@@ -563,36 +563,45 @@ pub fn SettingsMenu() -> impl IntoView {
         logout_action.dispatch(());
     };
 
+    // Backup Menu
+    let backup_enabled = create_rw_signal(false);
+
 
     view! {
         <button
             class = "settings-menu-button"
             on:click=move |_| is_menu_open.update(|b| *b = !*b)
         >
-            {"Settings"}
+            //{"Settings"}
         </button>
 
         <div
-            class = "settings_menu"
+            class = "settings-menu"
             class:is-open=is_menu_open
         >
 
-            <A href="/"> "Main Page" </A>
-
             <Show
                 when=is_logged_in
-                fallback=move || view! {
-                    <A href="/login"> "Login" </A>
-                }
+                fallback=move || view! { <LoginPage/> } // Login
             >
+
+                // Logout
                 <button
                     on:click=on_logout_click
                 > "Logout" </button>
-            </Show>
-            
-            
-            <Show when=is_logged_in >
-                <A href="/download-all"> "Dowload All" </A>
+
+                // Backup
+                <button on:click=move |_| {
+                    backup_enabled.update(|b| *b = !*b);
+                }>
+                    "Backup"
+                </button>
+                <Show
+                    when=backup_enabled
+                >
+                    <BackupPage/>
+                </Show>
+
             </Show>
 
         </div>

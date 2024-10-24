@@ -272,21 +272,14 @@ pub fn App() -> impl IntoView {
                 <ServerActionPendingPopup/>
                 <CheckLogin/>
 
-                /*<AnimatedRoutes
-                    outro="slideOut"
-                    intro="slideIn"
-                    outro_back="slideOutBack"
-                    intro_back="slideInBack"
-                >*/
                 <Routes>
                     <Route path="/"                     view=AllRecipes />
-                    <Route path="/login"                view=LoginPage />
+                    //<Route path="/login"                view=LoginPage />
                     <Route path="/new-recipe"           view=NewRecipePage />
                     <Route path="/recipe/:id/:mode"     view=RecipePage />
-                    <Route path="/download-all"         view=SavePage />
+                    //<Route path="/download-all"         view=SavePage />
                     <Route path="/*"                    view=NotFound />
                 </Routes>
-                //</AnimatedRoutes>
 
             </main>
 

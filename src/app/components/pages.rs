@@ -423,14 +423,6 @@ pub fn AllRecipes() -> impl IntoView {
     };
 
     view! {
-        <RecipeSearchBar
-            search_input=search_input
-            request_search_clear=request_search_clear
-        />
-
-        <RoundMenu
-            info=round_menu_info.0
-        />
 
         // TagList
         <Transition fallback=move || view! {<p>"Loading..."</p> }>
@@ -454,8 +446,15 @@ pub fn AllRecipes() -> impl IntoView {
 
                 view! {
                     <div>
-                        <div>
-                            {tags_component}
+
+                        <div class="search-container">
+                            <div>
+                                {tags_component}
+                            </div>
+                            <RecipeSearchBar
+                                search_input=search_input
+                                request_search_clear=request_search_clear
+                            />
                         </div>
 
                         <DeleteRecipePopup/>
@@ -527,6 +526,10 @@ pub fn AllRecipes() -> impl IntoView {
                 }
             }}
         </Transition>
+        
+        <RoundMenu
+            info=round_menu_info.0
+        />
     }
 }
 
@@ -535,7 +538,7 @@ pub fn AllRecipes() -> impl IntoView {
 /// Download all recipes button
 /// Renders the home page of your application.
 #[component]
-pub fn SavePage() -> impl IntoView {
+pub fn BackupPage() -> impl IntoView {
 
     // Ensure we are logged in
     check_login_wall();
@@ -623,9 +626,9 @@ pub fn HeaderMenu(
                     <p>{"Admin Mode"}</p>
                 </Show>
                 <SettingsMenu/>
-                <h4
+                /*<h4
                     class="page-name"
-                >{move || page_name.get()}</h4>
+                >{move || page_name.get()}</h4>*/
             </header>
         </Show>
     }

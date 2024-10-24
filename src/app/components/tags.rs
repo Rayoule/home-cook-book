@@ -105,7 +105,7 @@ pub fn TagList(
             class:unrolled=is_unrolled
         >
 
-            <p>{"Tags"}</p>
+            //<p>{"Tags"}</p>
 
             <ul
                 class="tag-list"
