@@ -266,6 +266,28 @@ pub fn DuplicateButton(
     }
 }
 
+#[component]
+pub fn PrintButton(
+    recipe_id: ReadSignal<u16>,
+) -> impl IntoView {
+
+    let on_duplicate_click = move |_| {
+        let print_path =
+            "/recipe/".to_owned() + &recipe_id.get().to_string() + "/print";
+        let window = web_sys::window().expect("window should be available");
+        window
+            .open_with_url_and_target(&print_path, "_blank")
+            .unwrap();
+    };
+
+    view!{
+        <span
+            class= "sub-menu-option"
+            on:click=on_duplicate_click
+        >{"Print"}</span>
+    }
+}
+
 
 
 #[component]
@@ -467,13 +489,17 @@ pub fn RecipeLightSubMenu(
                     recipe_id=      recipe_id
                 />
 
-                <A
+                /*<A
                     class= "sub-menu-option"
                     href=print_path
-                >{"Print"}</A>
+                >{"Print"}</A>*/
+
+                <PrintButton
+                    recipe_id=      recipe_id
+                />
 
                 <DeleteButton
-                    recipe_id=recipe_id
+                    recipe_id=      recipe_id
                 />
             </div>
 

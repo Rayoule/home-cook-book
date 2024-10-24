@@ -6,10 +6,11 @@ Home Cook Book
     - Designer le Round Button Menu
     - Menu settings (Home?, Settings, Logout)
     - Enlever le "transform: translate(0.5%, -0.5%);" décalage sub-menu
-    - "unrollable-tag-panel" div inutile dans tags.rs
+    X "unrollable-tag-panel" div inutile dans tags.rs
     - Crashes:
       X Refresh Edit page
       X Refresh Download page
+    - UPDATE HEADER FOR PRINT MODE (it doesn't re-render when changing route ofc)
 		
 
   Features:

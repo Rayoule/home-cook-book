@@ -50,8 +50,7 @@ pub fn RecipeLightSheet(
                         .clone()
                         .unwrap_or_else(|| vec![])
                         .into_iter()
-                        .enumerate()
-                        .map(move |(i, t)| {
+                        .map(move |t| {
 
                             view! {
                                 <li class= "recipe-light">
@@ -225,7 +224,7 @@ pub fn EditableRecipeSheet(
 
     let save_pending = recipe_action.pending();
 
-    let on_save_click = move |_| {
+    let on_save_click = move |ev: MouseEvent| {
         // Get recipe
         let signals = recipe_signals.get_untracked();
         // Gather recipe
@@ -308,7 +307,7 @@ pub fn EditableRecipeSheet(
 
             // Save Button
             <Show
-                when= save_pending
+                when=save_pending
                 fallback=move || view! {
                     <div
                         class="save-button-container"

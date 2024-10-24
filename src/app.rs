@@ -27,7 +27,11 @@ pub mod elements;
 #[derive(Clone)]
 pub struct PageNameSetter(WriteSignal<String>);
 #[derive(Clone)]
-pub struct LoginCheckResource(Resource<(usize, usize), bool>);
+pub struct IsLoggedIn(RwSignal<bool>);
+#[derive(Clone)]
+pub struct LoginCheckResource(Resource<(usize, usize, usize), bool>);
+#[derive(Clone)]
+pub struct IsPrintMode(RwSignal<bool>);
 #[derive(Clone)]
 pub struct ApplySaveFromJson(Action<String, bool>);
 #[derive(Clone)]
@@ -68,6 +72,14 @@ pub fn App() -> impl IntoView {
 
     // LOGIN
 
+    // Add Is Logged In in context
+    let is_logged_in_signal = create_rw_signal(false);
+    provide_context(IsLoggedIn(is_logged_in_signal));
+    create_effect(move |_| {
+        log!("IsLoggedIn changed to -> {:?}", is_logged_in_signal.get());
+    });
+
+
     // Redirect to "/" if logged in
     let rw_wants_redirect = create_rw_signal(false);
     create_effect(move |_| {
@@ -102,11 +114,21 @@ pub fn App() -> impl IntoView {
     });
     provide_context(TryLoginAction(try_login_action));
 
+    
+    // reload action
+    let reload_action = create_action( |_: &()| {
+        //login_check_resource.refetch();
+        async { log!("RELOAD!"); }
+    });
+    // This is needed so the login_check_resource is evaluated again on refresh
+    reload_action.dispatch(());
+
     // Login Check Resource
     let login_check_resource = create_resource(
         move || (
             try_login_action.version().get(),
-            recipe_action.version().get()
+            recipe_action.version().get(),
+            reload_action.version().get()
         ),
         move |_| {
             log!("RESOURCE -> Checking login"); 
@@ -115,9 +137,11 @@ pub fn App() -> impl IntoView {
                     Ok(succeeded) => {
                         if succeeded {
                             log!("Login Check RESOURCE Succeeded.");
+                            is_logged_in_signal.set(true);
                             true
                         } else {
                             log!("Login Check RESOURCE Failed.");
+                            is_logged_in_signal.set(false);
                             false
                         }
                     },
@@ -205,6 +229,24 @@ pub fn App() -> impl IntoView {
     });
     provide_context(SelectedTagsRwSignal(selected_tags));
 
+    // Print Mode
+    let is_print_mode = create_rw_signal(false);
+    create_effect(move |_| {
+        log!("BOUUUUUM");
+        let print_mode = use_params::<RecipeModeParam>()
+            .get()
+            .unwrap_or_default()
+            .mode
+            .is_some_and(|page_mode| page_mode == RecipePageMode::Print);
+        let print_mode = 
+            use_params_map().get().get("mode").is_some_and(|mode| {
+                mode.to_owned() == "print".to_string()
+            });
+        is_print_mode.set(print_mode);
+    });
+
+    provide_context(IsPrintMode(is_print_mode));
+
     // Delete Infos: If this is Some(id), then display the popup that will delete the recipe with this id
     let delete_popup_info = create_rw_signal::<Option<DeletePopupInfo>>(None);
     provide_context(DeleteInfoSignal(delete_popup_info));
@@ -217,16 +259,18 @@ pub fn App() -> impl IntoView {
         // sets the document title
         <Title text="Home Cook Book"/>
 
-        <HeaderMenu
-            page_name=get_page_name
-        />
-
+        
         // content for this welcome page
         <Router>
+
+            <HeaderMenu
+                page_name=get_page_name
+            />
 
             <main>
 
                 <ServerActionPendingPopup/>
+                <CheckLogin/>
 
                 <AnimatedRoutes
                     outro="slideOut"
@@ -258,6 +302,37 @@ pub fn set_page_name(name: &str) {
         .expect("to find PageNameSetter in context!")
         .0
         .set(name.to_owned());
+}
+
+
+#[component(transparent)]
+pub fn CheckLogin(
+    //children: ChildrenFn,
+)-> impl IntoView
+{
+    let check_login_resource =
+        use_context::<LoginCheckResource>()
+            .expect("Expected to find LoginCheckAction in context")
+            .0;
+
+    view!{
+        <Suspense
+            fallback=move || view!{ <p>{"Wait for Login Check..."}</p> }
+        >
+            {move || {
+                match check_login_resource.get() {
+                    Some(login_result) => {
+                        if login_result {
+                            log!("Login check: Success!");
+                        } else {
+                            log!("Login check: Fail.");
+                        }
+                    },
+                    None    => log!("Login check: Login Pending..."),
+                }
+            }.into_view()}
+        </Suspense>
+    }
 }
 
 

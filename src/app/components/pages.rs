@@ -170,8 +170,8 @@ struct RecipeIdParam {
 }
 
 #[derive(Params, PartialEq, Clone, Default)]
-struct RecipeModeParam {
-    mode: Option<RecipePageMode>,
+pub struct RecipeModeParam {
+    pub mode: Option<RecipePageMode>,
 }
 
 // Implement the error type for failed conversion
@@ -191,7 +191,6 @@ pub enum RecipePageMode {
     Editable,
     Print,
 }
-
 impl std::str::FromStr for RecipePageMode {
     type Err = ParamsError;
     
@@ -206,16 +205,24 @@ impl std::str::FromStr for RecipePageMode {
 }
 
 #[component]
-pub fn RecipePage(
-    //editable: RecipePageMode,
-) -> impl IntoView {
+pub fn RecipePage() -> impl IntoView {
 
     // Get params functions
-    let get_recipe_id_param =move || {
-        use_params::<RecipeIdParam>().get().unwrap_or_default().id.expect("To get RecipeIdParam")
+    let get_recipe_id_param = move |tracked: bool| {
+        let params = if tracked {
+            use_params::<RecipeIdParam>().get()
+        } else {
+            use_params::<RecipeIdParam>().get_untracked()
+        };
+        params.unwrap_or_default().id.expect("To get RecipeIdParam")
     };
-    let get_recipe_mode = move || {
-        use_params::<RecipeModeParam>().get().unwrap_or_default().mode.expect("To get RecipeModeParam")
+    let get_recipe_mode = move |tracked: bool| {
+        let params = if tracked {
+            use_params::<RecipeModeParam>().get()
+        } else {
+            use_params::<RecipeModeParam>().get_untracked()
+        };
+        params.unwrap_or_default().mode.expect("To get RecipeModeParam")
     };
 
     // Page Name setup
@@ -223,7 +230,7 @@ pub fn RecipePage(
     // Update Page Name
     create_effect(move |_| {
         set_page_name(
-            match get_recipe_mode() {
+            match get_recipe_mode(true) {
                 RecipePageMode::Display => "Display Recipe",
                 RecipePageMode::Editable => "Edit Recipe",
                 RecipePageMode::Print => "Print Recipe",
@@ -237,33 +244,53 @@ pub fn RecipePage(
             .expect("To find RecipeServerAction in context.")
             .0;
     
-    // RoundMenu setup for this page
-    let round_menu_info = create_signal(RoundMenuInfo::default());
-
-    // Update RoundMenu recipe_id
-    create_effect(move |_| {
-        round_menu_info.1.update(|rmi| rmi.recipe_id = Some(get_recipe_id_param()));
-    });
-    // Update RoundMenu buttons
-    create_effect(move |_| {
-        round_menu_info.1.update(|rmi| {
-            rmi.buttons = {
-                match get_recipe_mode() {
+    let round_menu_info = {
+        let recipe_mode = get_recipe_mode(false);
+        RoundMenuInfo {
+            buttons: {
+                match recipe_mode {
                     RecipePageMode::Display => vec![
                         RoundMenuButton::Edit,
                         RoundMenuButton::Print,
-                        //RoundMenuButton::Delete,
                     ].into(),
                     RecipePageMode::Editable => vec![
                         RoundMenuButton::Delete,
                     ].into(),
                     RecipePageMode::Print => vec![
-                        /*RoundMenuButton::Edit,
-                        RoundMenuButton::Display,
-                        RoundMenuButton::Delete,*/
                     ].into(),
                 }
-            }
+            },
+            recipe_id: Some(get_recipe_id_param(false)),
+            hide_return_button: recipe_mode == RecipePageMode::Print
+        }
+    };
+    // RoundMenu setup for this page
+    let round_menu_info = create_signal(round_menu_info);
+
+    // Update RoundMenu recipe_id
+    /*create_effect(move |_| {
+        round_menu_info.1.update(|rmi| rmi.recipe_id = Some(get_recipe_id_param()));
+    });*/
+    // Update RoundMenu buttons
+    create_effect(move |_| {
+        let recipe_mode = get_recipe_mode(true);
+        round_menu_info.1.update(|rmi| {
+            rmi.recipe_id = Some(get_recipe_id_param(true));
+            rmi.buttons = {
+                match recipe_mode {
+                    RecipePageMode::Display => vec![
+                        RoundMenuButton::Edit,
+                        RoundMenuButton::Print,
+                    ].into(),
+                    RecipePageMode::Editable => vec![
+                        RoundMenuButton::Delete,
+                    ].into(),
+                    RecipePageMode::Print => vec![
+                    ].into(),
+                }
+            };
+            rmi.hide_return_button =
+                recipe_mode == RecipePageMode::Print;
         });
     });
 
@@ -273,7 +300,7 @@ pub fn RecipePage(
             recipe_action
                 .version()
                 .get(),
-                get_recipe_id_param()
+                get_recipe_id_param(true)
         ),
         move |(_, recipe_id)| {
             get_recipe_by_id(Some(recipe_id))
@@ -296,7 +323,7 @@ pub fn RecipePage(
 
                 if let Some(Ok(recipe)) = recipe {
 
-                    match get_recipe_mode() {
+                    match get_recipe_mode(true) {
                         RecipePageMode::Display => {
                             // Display Recipe
                             view! {
@@ -547,21 +574,46 @@ pub fn HeaderMenu(
     page_name: ReadSignal<String>
 ) -> impl IntoView {
 
+    let print_mode = move || {
+        log!("So WHAT");
+        use_params::<RecipeModeParam>()
+            .get()
+            .unwrap_or_default()
+            .mode
+            .is_some_and(|page_mode| page_mode == RecipePageMode::Print)
+    };
+
+    //let create_resource
+
     let on_home_click = move |_| {
         let navigate = leptos_router::use_navigate();
         navigate("/", Default::default());
     };
 
+    let is_logged_in =
+        use_context::<IsLoggedIn>()
+            .expect("Expected to find IsLoggedIn in context")
+            .0;
+
     view! {
-        <header class="header-menu">
-            <h3
-                class="logo"
-                on:click=on_home_click
-            >{"Home Cook Book"}</h3>
-            <h4
-                class="page-name"
-            >{move || page_name.get()}</h4>
-        </header>
+        <Show
+            when=move || { !print_mode() }
+        >
+            <header class="header-menu">
+                <h3
+                    class="logo"
+                    on:click=on_home_click
+                >{"Home Cook Book"}</h3>
+                <Show
+                    when=is_logged_in
+                >
+                    <p>{"Admin Mode"}</p>
+                </Show>
+                <h4
+                    class="page-name"
+                >{move || page_name.get()}</h4>
+            </header>
+        </Show>
     }
 }
 
