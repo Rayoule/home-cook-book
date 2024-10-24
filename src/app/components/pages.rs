@@ -574,16 +574,17 @@ pub fn HeaderMenu(
     page_name: ReadSignal<String>
 ) -> impl IntoView {
 
+    // Don't show the header if in Print mode
     let print_mode = move || {
-        log!("So WHAT");
-        use_params::<RecipeModeParam>()
-            .get()
-            .unwrap_or_default()
-            .mode
-            .is_some_and(|page_mode| page_mode == RecipePageMode::Print)
+        let path = use_location().pathname.get();
+        let is_print =
+            path
+                .split('/')
+                .last()
+                .is_some_and(|last_word| last_word == "print");
+        log!("{:?}", is_print);
+        is_print
     };
-
-    //let create_resource
 
     let on_home_click = move |_| {
         let navigate = leptos_router::use_navigate();

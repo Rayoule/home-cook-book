@@ -10,7 +10,7 @@ Home Cook Book
     - Crashes:
       X Refresh Edit page
       X Refresh Download page
-    - UPDATE HEADER FOR PRINT MODE (it doesn't re-render when changing route ofc)
+    X Update header for print mode (it doesn't re-render when changing route ofc)
 		
 
   Features:

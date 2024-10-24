@@ -2,7 +2,7 @@ use leptos::{
     *,
     ev::MouseEvent, logging::log};
 
-use crate::app::{elements::popups::DeletePopupInfo, DeleteInfoSignal, IsPrintMode, RecipeActionDescriptor, RecipeModeParam, RecipePageMode, RecipeServerAction};
+use crate::app::{elements::popups::DeletePopupInfo, DeleteInfoSignal, IsLoggedIn, IsPrintMode, RecipeActionDescriptor, RecipeModeParam, RecipePageMode, RecipeServerAction};
 
 
 /// The bool indicated if the function needs admin rights
@@ -14,19 +14,6 @@ pub enum RoundMenuButton {
     Duplicate,
     Print,
     Delete,
-}
-impl RoundMenuButton {
-    pub fn requires_admin(&self) -> bool {
-        use RoundMenuButton::*;
-        match self {
-            Display     => false,
-            New         => true,
-            Edit        => true,
-            Duplicate   => true,
-            Print       => false,
-            Delete      => true,
-        }
-    }
 }
 
 #[derive(Clone, Default)]
@@ -42,6 +29,13 @@ pub fn RoundMenu(
 ) -> impl IntoView {
 
     log!("Rendering round menu");
+
+    // Is logged in
+    let is_logged_in =
+        use_context::<IsLoggedIn>()
+            .expect("Expected to find IsLoggedIn in context.")
+            .0;
+
 
     // Print mode ?
     let is_print_mode = 
@@ -143,13 +137,17 @@ pub fn RoundMenu(
                                     };
 
                                     view! {
-                                        <button
-                                            class=      { button_class.clone() + " new" }
-                                            class:unfolded=is_unfolded.0
-                                            on:click=   on_button_click
+                                        <Show
+                                            when=is_logged_in
                                         >
-                                            {"+"}
-                                        </button>
+                                            <button
+                                                class=      { button_class.clone() + " new" }
+                                                class:unfolded=is_unfolded.0
+                                                on:click=   on_button_click
+                                            >
+                                                {"+"}
+                                            </button>
+                                        </Show>
                                     }.into_view()
                                 },
 
@@ -164,8 +162,11 @@ pub fn RoundMenu(
 
                                     view! {
                                         <Show
-                                            when=move || { info.get().recipe_id.is_some() }
-                                            fallback=move || ().into_view()
+                                            when=move || {
+                                                info.get().recipe_id.is_some()
+                                                && is_logged_in.get()
+                                            }
+                                            //fallback=move || ().into_view()
                                         >
                                             <button
                                                 class=      { button_class.clone() + " edit" }
@@ -188,8 +189,11 @@ pub fn RoundMenu(
 
                                     view! {
                                         <Show
-                                            when=move || info.get().recipe_id.is_some()
-                                            fallback=move || ().into_view()
+                                            when=move || {
+                                                info.get().recipe_id.is_some()
+                                                && is_logged_in.get()
+                                            }
+                                            //fallback=move || ().into_view()
                                         >
                                             <button
                                                 class=      { button_class.clone() + " duplicate" }
@@ -243,13 +247,17 @@ pub fn RoundMenu(
                                     };
 
                                     view!{
-                                        <button
-                                                class=      { button_class.clone() + " delete" }
-                                                class:unfolded=is_unfolded.0
-                                                on:click=   on_button_click
+                                        <Show
+                                            when=is_logged_in
                                         >
-                                            {"Delete 🗑️"}
-                                        </button>
+                                            <button
+                                                    class=      { button_class.clone() + " delete" }
+                                                    class:unfolded=is_unfolded.0
+                                                    on:click=   on_button_click
+                                            >
+                                                {"Delete 🗑️"}
+                                            </button>
+                                        </Show>
                                     }.into_view()
                                 },
                             }

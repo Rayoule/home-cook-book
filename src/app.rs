@@ -272,24 +272,21 @@ pub fn App() -> impl IntoView {
                 <ServerActionPendingPopup/>
                 <CheckLogin/>
 
-                <AnimatedRoutes
+                /*<AnimatedRoutes
                     outro="slideOut"
                     intro="slideIn"
                     outro_back="slideOutBack"
                     intro_back="slideInBack"
-                >
-                    /*<Route path="/"                     view=|| view! {<CheckLogin> <AllRecipes/> </CheckLogin>} />
-                    <Route path="/login"                view=|| view! {<CheckLogin is_login_page=true > <LoginPage/> </CheckLogin>} />
-                    <Route path="/new-recipe"           view=|| view! {<CheckLogin> <NewRecipePage/> </CheckLogin>} />
-                    <Route path="/recipe/:id/:mode"     view=|| view! {<CheckLogin> <RecipePage/> </CheckLogin>} />
-                    <Route path="/download-all"         view=|| view! {<CheckLogin> <SavePage/> </CheckLogin>} />*/
+                >*/
+                <Routes>
                     <Route path="/"                     view=AllRecipes />
                     <Route path="/login"                view=LoginPage />
                     <Route path="/new-recipe"           view=NewRecipePage />
                     <Route path="/recipe/:id/:mode"     view=RecipePage />
                     <Route path="/download-all"         view=SavePage />
                     <Route path="/*"                    view=NotFound />
-                </AnimatedRoutes>
+                </Routes>
+                //</AnimatedRoutes>
 
             </main>
 
@@ -337,7 +334,7 @@ pub fn CheckLogin(
 
 
 /*#[component(transparent)]
-pub fn CheckLogin(
+pub fn LoginWall(
     children: ChildrenFn,
     #[prop(optional)]
     is_login_page: bool,
@@ -367,14 +364,7 @@ pub fn CheckLogin(
                     // On the client, the Suspense will prevent the children to display anyway.
                     let login_check_result = login_check.is_none_or(|x| x);
 
-                    // Debug
-                    //let login_check_result = if let Some(res) = login_check {res} else {true};
-                    //log!("LOGIN CHECK PROCESS start ------------------------------------");
-                    //log!("Check Login Resource: --> {:?}", login_check);
-                    //log!("Is Login Page:        --> {:?}", is_login_page);
-                    //log!("LOGIN CHECK PROCESS end ------------------------------------");
-
-                    let check = is_login_page || login_check_result; //|| is_logged_in.get();
+                    let check = is_login_page || login_check_result;
                     rw_enable_login.set(check);
                     check
                 }

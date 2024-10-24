@@ -447,10 +447,15 @@ pub fn RecipeLightSubMenu(
     recipe_id: ReadSignal<u16>,
 ) -> impl IntoView {
 
+    // Is logged in ?
+    let is_logged_in =
+        use_context::<IsLoggedIn>()
+            .expect("Expected to find IsLoggedIn in context")
+            .0;
+
     let is_menu = create_rw_signal(false);
 
-    let edit_path: String = "/recipe/".to_owned() + &recipe_id.get_untracked().to_string() + "/editable";
-    let print_path: String = "/recipe/".to_owned() + &recipe_id.get_untracked().to_string() + "/print";
+    //let edit_path: String = "/recipe/".to_owned() + &recipe_id.get_untracked().to_string() + "/editable";
 
     let on_sub_menu_click = move |ev: ev::MouseEvent| {
         ev.stop_propagation();
@@ -480,27 +485,39 @@ pub fn RecipeLightSubMenu(
                 class= "sub-menu-buttons"
                 class:into-menu=is_menu
             >
-                <A
-                    class= "sub-menu-option"
-                    href=edit_path
-                >{"Edit"}</A>
 
-                <DuplicateButton
-                    recipe_id=      recipe_id
-                />
+                <Show
+                    when=is_logged_in
+                >
+                    <A
+                        class= "sub-menu-option"
+                        href={
+                            "/recipe/".to_owned()
+                                + &recipe_id.get_untracked().to_string()
+                                + "/editable"
+                        }
+                    >{"Edit"}</A>
+                </Show>
 
-                /*<A
-                    class= "sub-menu-option"
-                    href=print_path
-                >{"Print"}</A>*/
+                <Show
+                    when=is_logged_in
+                >
+                    <DuplicateButton
+                        recipe_id=      recipe_id
+                    />
+                </Show>
 
                 <PrintButton
                     recipe_id=      recipe_id
                 />
 
-                <DeleteButton
-                    recipe_id=      recipe_id
-                />
+                <Show
+                    when=is_logged_in
+                >
+                    <DeleteButton
+                        recipe_id=      recipe_id
+                    />
+                </Show>
             </div>
 
             <div
