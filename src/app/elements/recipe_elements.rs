@@ -1,3 +1,4 @@
+use components::{auth::auth_server_functions::server_logout, download_upload::DownloadAll};
 use leptos::{
     ev::FocusEvent, html::Input, logging::log, *
 };
@@ -525,6 +526,75 @@ pub fn RecipeLightSubMenu(
                 class:into-menu=is_menu
                 on:click=on_sub_menu_click
             >{"X"}</div>
+        </div>
+    }
+}
+
+
+#[component]
+pub fn SettingsMenu() -> impl IntoView {
+
+    let is_menu_open = create_rw_signal(false);
+
+    create_effect(move |_| {
+        log!("Menu Open is ----> {:?}", is_menu_open.get());
+    });
+
+    // Is logged in
+    let is_logged_in =
+        use_context::<IsLoggedIn>()
+            .expect("Expected to find IsLoggedIn in context.")
+            .0;
+    
+    // Logout action
+    let logout_action = create_action(move |_: &()| {
+        async move {
+            match server_logout().await {
+                Ok(_) => {
+                    log!("Logout successful");
+                    is_logged_in.set(false);
+                },
+                Err(e) => log!("Error: {:?}", e.to_string()),
+            }
+        }
+    });
+    // Logout button
+    let on_logout_click = move |_| {
+        logout_action.dispatch(());
+    };
+
+
+    view! {
+        <button
+            class = "settings-menu-button"
+            on:click=move |_| is_menu_open.update(|b| *b = !*b)
+        >
+            {"Settings"}
+        </button>
+
+        <div
+            class = "settings_menu"
+            class:is-open=is_menu_open
+        >
+
+            <A href="/"> "Main Page" </A>
+
+            <Show
+                when=is_logged_in
+                fallback=move || view! {
+                    <A href="/login"> "Login" </A>
+                }
+            >
+                <button
+                    on:click=on_logout_click
+                > "Logout" </button>
+            </Show>
+            
+            
+            <Show when=is_logged_in >
+                <A href="/download-all"> "Dowload All" </A>
+            </Show>
+
         </div>
     }
 }

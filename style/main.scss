@@ -946,7 +946,6 @@ ul.selected-tag-list {
 	width: 100px;
 }
 ul.tag-list {
-
 	font-size: small;
 
 	overflow-y: auto;
@@ -956,7 +955,6 @@ ul.tag-list {
 	;
 }
 ul.tag-list {
-
 	margin-top: 100px;
 
 	&::-webkit-scrollbar {
@@ -965,14 +963,12 @@ ul.tag-list {
 	}
 }
 .tag-button {
-
 	font-size: small;
 	font-weight: bold;
 
 	margin-bottom: 3px;
 	padding: 8px 10px;
 
-	//color: var(--color-1);
 	background-color: var(--tag-list-color);
 
     border: 1px solid rgb(0, 0, 0);

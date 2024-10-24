@@ -35,7 +35,7 @@ pub async fn server_try_login(account: LoginAccount) -> Result<bool, ServerFnErr
         match check_account_credentials(&account).await {
             Ok(account_exists) => {
                 if account_exists {
-                    let result: bool = try_log_user_in(&account).await?;
+                    let result: bool = log_in_user(&account).await?;
                     Ok(result)
                 } else {
                     return Err(ServerFnError::ServerError("Invalid username and/or password.".to_string()));
@@ -54,18 +54,10 @@ pub async fn server_login_check() -> Result<bool, ServerFnError> {
     Ok(result)
 }
 
-
-#[cfg(feature = "ssr")]
-pub async fn try_log_user_in(user: &LoginAccount) -> Result<bool, ServerFnError> {
-    /*if check_login().await? {
-        log!("user: {:?} is already logged in.", &user.username);
-        // If already logged in, then nothing.
-        Ok(false)
-    } else {
-        // If not logged in, then try log in
-        log_in_user(user).await
-    }*/
-    log_in_user(user).await
+#[server]
+/// This function will run on almost every request to check the login
+pub async fn server_logout() -> Result<(), ServerFnError> {
+    log_out_user().await
 }
 
 
@@ -170,10 +162,6 @@ pub async fn log_in_user(submission: &LoginAccount) -> Result<bool, ServerFnErro
 
     let mut login_states = shared_login_states_lock.clone();
 
-    //log!("Current state is: {:?}", login_states);
-    //log!("while User is: {:?}, with IP: {:?}", submission, &cur_ip);
-
-    //log!("Logging user {:?} in...", submission.username);
     let new_login_state =
         UserLoginState {
             username:   submission.username.clone(),
@@ -188,6 +176,36 @@ pub async fn log_in_user(submission: &LoginAccount) -> Result<bool, ServerFnErro
     log!("User {:?} is now logged in.", submission.username);
     
     Ok(true)
+
+}
+
+#[cfg(feature = "ssr")]
+pub async fn log_out_user() -> Result<(), ServerFnError> {
+
+    log!("Attempt to log out user");
+
+    // Fetch state
+    use actix_web::web::Data;
+    use crate::app::components::auth::auth_utils::SharedLoginStates;
+    let shared_login_states: Data<SharedLoginStates> = leptos_actix::extract::<Data<SharedLoginStates>>().await?;
+    // Get the ownership of the Arc<> inside SharedLoginStates.states
+    let shared_login_states = shared_login_states.get_ref().states.clone();
+    // Get the MutexGuard to mutate state
+    let mut shared_login_states_lock = shared_login_states.lock()?;
+
+    // Fetch ip address
+    let cur_ip = fetch_request_ip().await?;
+
+    let mut login_states = shared_login_states_lock.clone();
+
+    // remove the entry matching the ip
+    login_states.retain(|entry| entry.current_ip != cur_ip);
+
+    *shared_login_states_lock = login_states;
+
+    log!("User is now logged out.");
+    
+    Ok(())
 
 }
 

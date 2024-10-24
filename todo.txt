@@ -3,14 +3,16 @@ Home Cook Book
 
 	To Do :
     - Designer le menu (tags, search?)
+    X Faire Logout
     - Designer le Round Button Menu
-    - Menu settings (Home?, Settings, Logout)
+    - Designer Menu settings (Home?, Settings, Logout)
     - Enlever le "transform: translate(0.5%, -0.5%);" décalage sub-menu
     X "unrollable-tag-panel" div inutile dans tags.rs
     - Crashes:
       X Refresh Edit page
       X Refresh Download page
     X Update header for print mode (it doesn't re-render when changing route ofc)
+    - Est-ce que des images hebergée ailleurs pourrait convenir ?
 		
 
   Features:

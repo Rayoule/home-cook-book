@@ -220,7 +220,7 @@ pub fn RoundMenu(
                                     view! {
                                         <Show
                                             when=move || { info.get().recipe_id.is_some() }
-                                            fallback=move || ().into_view()
+                                            //fallback=move || ().into_view()
                                         >
                                             <button
                                                 class=      { button_class.clone() + " print" }
@@ -266,17 +266,21 @@ pub fn RoundMenu(
                     
                     
                     // Store 1st button
-                    let first_button = buttons_iter.next();
+                    //let first_button = buttons_iter.next();
                     // Collect all other
-                    let other_buttons = buttons_iter.collect_view();
+                    //let other_buttons = buttons_iter.collect_view();
 
-                    view! {
+                    buttons_iter.collect_view()
+
+                    /*view! {
 
                         // First button
                         <div
+                            class="rm-butons-container"
                             class:not-needed={ move || button_count < 1 }
                         >
-                            {first_button.clone()}
+                            //{ first_button.clone() }
+                            
                         </div>
 
                         // Other buttons
@@ -302,7 +306,7 @@ pub fn RoundMenu(
                             { other_buttons.clone() }
                         </div>
 
-                    }
+                    }*/
                 }}
             </div>
         </Show>

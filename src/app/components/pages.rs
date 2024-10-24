@@ -1,3 +1,4 @@
+use elements::recipe_elements::SettingsMenu;
 use leptos::*;
 use leptos_router::*;
 use leptos::logging::log;
@@ -76,6 +77,9 @@ pub fn LoginPage() -> impl IntoView {
 pub fn NewRecipePage() -> impl IntoView {
 
     set_page_name("New Recipe");
+
+    // Ensure the user is logged in
+    check_login_wall();
 
     // Setup action
     let recipe_action =
@@ -237,6 +241,14 @@ pub fn RecipePage() -> impl IntoView {
             }
         );
     });
+
+    // Ensure the user is logged in when edit mode
+    match get_recipe_mode(false) {
+        RecipePageMode::Editable => {
+            check_login_wall();
+        },
+        _ => (),
+    }
 
     // Get recipe
     let recipe_action =
@@ -420,9 +432,6 @@ pub fn AllRecipes() -> impl IntoView {
             info=round_menu_info.0
         />
 
-        // TODO find a place for this button
-        <A href="/download-all"> "Dowload All" </A>
-
         // TagList
         <Transition fallback=move || view! {<p>"Loading..."</p> }>
             { move || {
@@ -528,7 +537,10 @@ pub fn AllRecipes() -> impl IntoView {
 #[component]
 pub fn SavePage() -> impl IntoView {
 
-    let has_been_backed_up = create_rw_signal(false);
+    // Ensure we are logged in
+    check_login_wall();
+
+    let has_been_backed_up: RwSignal<bool> = create_rw_signal(false);
 
     view! {
 
@@ -610,6 +622,7 @@ pub fn HeaderMenu(
                 >
                     <p>{"Admin Mode"}</p>
                 </Show>
+                <SettingsMenu/>
                 <h4
                     class="page-name"
                 >{move || page_name.get()}</h4>

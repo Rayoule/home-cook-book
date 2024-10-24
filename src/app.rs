@@ -332,6 +332,19 @@ pub fn CheckLogin(
     }
 }
 
+pub fn check_login_wall() {
+    let is_logged_in =
+        use_context::<IsLoggedIn>()
+            .expect("Expected to find IsLoggedIn in context")
+            .0;
+    create_effect(move |_| {
+        if !is_logged_in.get() {
+            let navigate = leptos_router::use_navigate();
+            navigate("/", Default::default());
+        }
+    });
+}
+
 
 /*#[component(transparent)]
 pub fn LoginWall(
