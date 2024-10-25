@@ -7,6 +7,14 @@ pub fn LogoSVG() -> impl IntoView {
 
         <svg class="logo-svg" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
             viewBox="0 0 512.865 512.865" xml:space="preserve">
+
+            <defs>
+                <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:blue;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:red;stop-opacity:1" />
+                </linearGradient>
+            </defs>
+
             <g>
                 <g>
                     <path d="M504.633,318.233c-24-73.2-73.2-107.6-120.8-140.8c-50.8-35.2-98.8-69.2-106.8-149.2c-0.4-2.4-0.4-4.8-0.8-7.6
