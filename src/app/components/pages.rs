@@ -1,4 +1,4 @@
-use elements::recipe_elements::SettingsMenu;
+use elements::{logo_svg::LogoSVG, recipe_elements::SettingsMenu};
 use leptos::*;
 use leptos_router::*;
 use leptos::logging::log;
@@ -16,7 +16,7 @@ use crate::app::{
 
 
 #[component]
-pub fn LoginPage() -> impl IntoView {
+pub fn LoginMenu() -> impl IntoView {
 
     set_page_name("Login");
 
@@ -46,7 +46,7 @@ pub fn LoginPage() -> impl IntoView {
     };
     
     view! {
-        <div class="login-container" >
+        <div>
             <h3 class="login-title" >{"Login"}</h3>
             <form class="login-form" on:submit=submit_event>
                 <input
@@ -424,6 +424,18 @@ pub fn AllRecipes() -> impl IntoView {
 
     view! {
 
+        /*<svg
+            src="assets/garlic-icon.svg"
+            class="logo"
+            on:click=move |_| {
+                let navigate = leptos_router::use_navigate();
+                navigate("/", Default::default());
+            }
+        ></svg>*/
+        <div class="logo" >
+            <LogoSVG/>
+        </div>
+
         // TagList
         <Transition fallback=move || view! {<p>"Loading..."</p> }>
             { move || {
@@ -547,7 +559,7 @@ pub fn BackupPage() -> impl IntoView {
 
     view! {
 
-        <h2>"Download current Cook Book save or Upload save to current Cook Book."</h2>
+        //<h2>"Download current Cook Book save or Upload save to current Cook Book."</h2>
         <div class="save-page-container" >
             <DownloadAll
                 has_been_backed_up = has_been_backed_up
@@ -601,34 +613,25 @@ pub fn HeaderMenu(
         is_print
     };
 
-    let on_home_click = move |_| {
-        let navigate = leptos_router::use_navigate();
-        navigate("/", Default::default());
-    };
-
-    let is_logged_in =
-        use_context::<IsLoggedIn>()
-            .expect("Expected to find IsLoggedIn in context")
-            .0;
 
     view! {
         <Show
             when=move || { !print_mode() }
         >
             <header class="header-menu">
-                <h3
+                /*<h3
                     class="logo"
                     on:click=on_home_click
-                >{"Home Cook Book"}</h3>
-                <Show
-                    when=is_logged_in
-                >
-                    <p>{"Admin Mode"}</p>
-                </Show>
+                >{"Home Cook Book"}</h3>*/
+                /*<img
+                    src="assets/garlic-icon.svg"
+                    class="logo"
+                    on:click=move |_| {
+                        let navigate = leptos_router::use_navigate();
+                        navigate("/", Default::default());
+                    };
+                ></img>*/
                 <SettingsMenu/>
-                /*<h4
-                    class="page-name"
-                >{move || page_name.get()}</h4>*/
             </header>
         </Show>
     }

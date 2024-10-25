@@ -105,8 +105,6 @@ pub fn TagList(
             class:unrolled=is_unrolled
         >
 
-            //<p>{"Tags"}</p>
-
             <ul
                 class="tag-list"
             >
@@ -115,7 +113,7 @@ pub fn TagList(
 
             <button
                 class="clear-tags-button"
-                class:is_rolled=move || { !is_unrolled.get() }
+                //class:is_rolled=move || { !is_unrolled.get() }
                 on:click=on_clear_tags_click
             >
                 {"Clear"}

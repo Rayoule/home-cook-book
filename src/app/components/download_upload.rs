@@ -44,8 +44,9 @@ pub fn DownloadAll( has_been_backed_up: RwSignal<bool> ) -> impl IntoView {
                             href =      {encoded_data}
                             download =  "all_recipes_json.txt"
                             on:click =  move |_| { has_been_backed_up.set(true) }
+                            class="download-backup-button"
                         >
-                            "Download All Recipes"
+                            "Download All"
                         </a>
                     }.into_view()
                 } else {
@@ -98,7 +99,11 @@ pub fn UploadAll( has_been_backed_up: RwSignal<bool> ) -> impl IntoView {
     view! {
         <Show
             when = has_been_backed_up
-            fallback = move || view! { <p>"Save the current Cookbook before you can overwriting it."</p> }
+            fallback = move || view! {
+                <p class="backup-warning" >
+                    "Download all before you can overwrite."
+                </p>
+            }
         >
             <Show
                 when = move || { !save_done.get() }

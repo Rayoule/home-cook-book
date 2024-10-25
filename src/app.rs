@@ -277,7 +277,7 @@ pub fn App() -> impl IntoView {
                     //<Route path="/login"                view=LoginPage />
                     <Route path="/new-recipe"           view=NewRecipePage />
                     <Route path="/recipe/:id/:mode"     view=RecipePage />
-                    //<Route path="/download-all"         view=SavePage />
+                    <Route path="/backup"               view=BackupPage />
                     <Route path="/*"                    view=NotFound />
                 </Routes>
 

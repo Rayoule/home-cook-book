@@ -7,6 +7,8 @@
 	--round-menu-button-size: 50px;
 	--round-menu-first-button-size: 50px;
 
+	--menu-open-speed: 0.00s;
+
 	--text-input-height: 32px;
 	--text-input-font-size: 18px;
 	--text-input-border-color: rgb(196, 196, 196);
@@ -47,19 +49,48 @@ ul {
 
 
 .header-menu {
-	color: rgb(0, 0, 0);
-	height: var(--header-height);
-	text-align: left;
-	background-color: var(--color-1);
-
-	//margin-bottom: 10px;
-
 	z-index: 10;
+
+	display: flex;
+	justify-content: center;
+
+	text-align: left;
+
+	height: var(--header-height);
+	
+	color: rgb(0, 0, 0);
+	
+	background-color: var(--color-1);
 }
 .logo {
-	position: absolute;
-	left: 5px;
+	//position: absolute;
+	//left: 5px;
+	display: block;
+
+	margin-left: auto;
+	margin-right: auto;
+
+	margin-bottom: 20px;
 }
+svg {
+	&.logo-svg {
+		overflow: visible;
+
+		width: 200px;
+		height: 200px;
+
+		// Option 1
+		//fill: var(--color-4);
+
+		// Option 2
+		fill: none;
+		stroke: black;
+		stroke-width: 3px;
+	}
+}
+/*.logo-svg {
+	
+}*/
 .page-name {
 	cursor: crosshair;
 	position: absolute;
@@ -86,20 +117,83 @@ ul {
 }
 .settings-menu {
 
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+
 	z-index: 200;
 	position: fixed;
 
 	top: 0;
-	right: 0;
+	right: -100vw;
 
 	height: 100vh;
-	width: 0px;
+	width: 100vw;
 
 	background-color: var(--tag-list-color);
 
+	transition:
+		right var(--menu-open-speed) ease-out
+	;
+
 	&.is-open {
-		width: 100vw;
+		right: 0;
 	}
+}
+
+.settings-button {
+
+	cursor: pointer;
+
+	position: relative;
+
+	height: 35px;
+	width: 70px;
+
+	margin: 25px;
+
+	border: 1px solid black; 
+	border-radius: 100px;
+
+	background-color: var(--color-1);
+
+	transition:
+		transform 0.1s ease-out,
+		background-color 0.1s ease-out
+	;
+
+	&.logout {
+		//
+	}
+
+	&.backup {
+		//
+	}
+}
+.download-backup-button {
+
+	font-size: small;
+	text-decoration: none;
+	color: inherit;
+
+	cursor: pointer;
+
+	position: relative;
+
+	//height: 35px;
+	//width: 150px;
+
+	margin: 25px;
+	padding: 10px 15px;
+
+	border: 1px solid black; 
+	border-radius: 100px;
+
+	background-color: var(--color-4);
+}
+.backup-warning {
+	font-size: small;
 }
 
 
@@ -738,7 +832,7 @@ ul.recipe-light li::before {
 		text-align: left;
 		padding: 10px;
 
-		width: 750px;
+		width: inherit;
 	}
 }
 
@@ -1001,19 +1095,20 @@ textarea#text-input {
 	position: fixed;
 
 	top: 0;
-	right: 0;
+	left: -100vw;
 
 	height: 100vh;
-	width: 0px;
+	width: 100vw;
 
 	background-color: var(--tag-list-color);
 
 	&.unrolled {
-		width: 100vw;
+		
+		left: 0;
 	}
 
 	transition:
-		width 0.05s ease-out
+		left var(--menu-open-speed) ease-out
 	;
 }
 ul.selected-tag-list {
@@ -1095,9 +1190,9 @@ ul.tag-list {
 	border-radius: 100px;
 	background-color: var(--color-4);
 
-	&.is_rolled {
+	/*&.is_rolled {
 		display: none;
-	}
+	}*/
 }
 
 
@@ -1135,24 +1230,58 @@ ul.tag-list {
 
 // LOGIN Definitions -----------------------------------------------
 
+/*.login-container {
+
+	display: inherit;
+
+	&.is-open {
+		display: inherit;
+	}
+}*/
 .login-title {
 	margin-bottom: 25px;
-	margin-top: 35px;
+	//margin-top: 35px;
 }
 .login-input {
-	font-size: larger;
+	font-size: large;
 	height: 30px;
 	width: 250px;
 
-	margin: 5px 5px;
+	background-color: var(--color-1);
+
+	border: 1px solid black;
+	border-radius: 40px;
+
+	margin: 5px 0px;
+	padding-left: 15px;
+}
+.login-button {
+
+	display: block;
+
+	margin: 10px auto;
+
+	height: var(--round-menu-first-button-size);
+	width: var(--round-menu-first-button-size);
+
+	background-color: var(--color-1);
+
+	border: 1px solid black;
+	border-radius: 40px;
+
+
 }
 
 // Download / Upload Saves Definitions -----------------------------------------------
 
 .save-page-container {
+	position: relative;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	justify-content: center;
+
+	padding-top: 30vh;
 }
 .upload-save-form {
 	height: fit-content;

@@ -2,6 +2,7 @@ Home Cook Book
 
 
 	To Do :
+    - Edit Page
     - Designer le menu (tags, search?)
     X Faire Logout
     - Designer le Round Button Menu
@@ -13,6 +14,13 @@ Home Cook Book
       X Refresh Download page
     X Update header for print mode (it doesn't re-render when changing route ofc)
     - Est-ce que des images hebergée ailleurs pourrait convenir ?
+
+    X button clear qui disparait (tags-container)
+    - on peut scroller dans les menus (tags/settings)
+    - bouttons top qui restent affichés dans les menus
+    - backup menu qui surgit
+    - enlever settings menu backup quand on est sur la page backup
+
 		
 
   Features:

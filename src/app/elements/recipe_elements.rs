@@ -1,4 +1,5 @@
 use components::{auth::auth_server_functions::server_logout, download_upload::DownloadAll};
+use ev::MouseEvent;
 use leptos::{
     ev::FocusEvent, html::Input, logging::log, *
 };
@@ -558,13 +559,6 @@ pub fn SettingsMenu() -> impl IntoView {
             }
         }
     });
-    // Logout button
-    let on_logout_click = move |_| {
-        logout_action.dispatch(());
-    };
-
-    // Backup Menu
-    let backup_enabled = create_rw_signal(false);
 
 
     view! {
@@ -582,25 +576,39 @@ pub fn SettingsMenu() -> impl IntoView {
 
             <Show
                 when=is_logged_in
-                fallback=move || view! { <LoginPage/> } // Login
+                fallback=move || view! {
+                    <div
+                        class="login-container"
+                        //class:is-open=is_menu_open
+                    >
+                        <LoginMenu/>
+                    </div>
+                } // Login
             >
+
+                // Backup
+                <button
+                    class="settings-button backup"
+                    on:click=move |_| {
+                        is_menu_open.set(false);
+
+                        let navigate = leptos_router::use_navigate();
+                        navigate("/backup", Default::default());
+                    }
+                >
+                    "Backup"
+                </button>
 
                 // Logout
                 <button
-                    on:click=on_logout_click
+                    class="settings-button logout"
+                    on:click=move |_| {
+                        is_menu_open.set(false);
+                        logout_action.dispatch(());
+                    }
                 > "Logout" </button>
 
-                // Backup
-                <button on:click=move |_| {
-                    backup_enabled.update(|b| *b = !*b);
-                }>
-                    "Backup"
-                </button>
-                <Show
-                    when=backup_enabled
-                >
-                    <BackupPage/>
-                </Show>
+                
 
             </Show>
 
