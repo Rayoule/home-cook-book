@@ -1,4 +1,4 @@
-use leptos::{*, ev::MouseEvent, logging::log};
+use leptos::{*, ev::MouseEvent, logging::*};
 
 use crate::app::{
     DeleteInfoSignal, RecipeActionDescriptor, RecipeServerAction
@@ -59,7 +59,7 @@ pub fn DeleteRecipePopup() -> impl IntoView {
             let navigate = leptos_router::use_navigate();
             navigate("/", Default::default());
         } else {
-            log!("ERROR: DeletePopupInfo is None!");
+            error!("ERROR: DeletePopupInfo is None!");
         }
     };
 

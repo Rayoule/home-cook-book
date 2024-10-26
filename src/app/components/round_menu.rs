@@ -1,8 +1,16 @@
 use leptos::{
     *,
-    ev::MouseEvent, logging::log};
+    ev::MouseEvent,
+};
 
-use crate::app::{elements::popups::DeletePopupInfo, DeleteInfoSignal, IsLoggedIn, IsPrintMode, RecipeActionDescriptor, RecipeModeParam, RecipePageMode, RecipeServerAction};
+use crate::app::{
+    elements::popups::DeletePopupInfo,
+    DeleteInfoSignal,
+    IsLoggedIn,
+    IsPrintMode,
+    RecipeActionDescriptor,
+    RecipeServerAction,
+};
 
 
 /// The bool indicated if the function needs admin rights
@@ -28,8 +36,6 @@ pub fn RoundMenu(
     info: ReadSignal<RoundMenuInfo>,
 ) -> impl IntoView {
 
-    log!("Rendering round menu");
-
     // Is logged in
     let is_logged_in =
         use_context::<IsLoggedIn>()
@@ -51,11 +57,6 @@ pub fn RoundMenu(
 
     // Unfolded Signal
     let is_unfolded = create_signal(false);
-    // Toggle unfolded on click
-    let on_unfold_click = move |ev: MouseEvent| {
-        ev.stop_propagation();
-        is_unfolded.1.set(!is_unfolded.0.get())
-    };
 
     let on_return_click = move |ev: MouseEvent| {
         ev.stop_propagation();
@@ -87,7 +88,7 @@ pub fn RoundMenu(
                     let mut button_count: usize = 0;
                     let mut is_first_button = true;
 
-                    let mut buttons_iter = info
+                    let buttons_iter = info
                         .get()
                         .buttons
                         .unwrap_or_else(|| vec![])

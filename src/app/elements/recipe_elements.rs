@@ -1,16 +1,12 @@
-use components::{auth::auth_server_functions::server_logout, download_upload::DownloadAll};
-use ev::MouseEvent;
 use leptos::{
-    ev::FocusEvent, html::Input, logging::log, *
+    *, logging::*,
 };
-
+use components::auth::auth_server_functions::server_logout;
+use ev::MouseEvent;
 use gloo_timers::callback::Timeout;
-
 use crate::app::{
     *,
-    elements::{
-        popups::*, molecules::*
-    }
+    elements::molecules::*
 };
 
 
@@ -35,7 +31,7 @@ pub fn EditableRecipeName(
                 </div>
             }.into_view()
         } else {
-            log!("ERROR: No Name provided.");
+            error!("ERROR: No Name provided.");
             ().into_view()
         }
         
@@ -58,7 +54,7 @@ pub fn EditableRecipeName(
                     />
             }.into_view()
         } else {
-            log!("ERROR: No Name Signal provided.");
+            error!("ERROR: No Name Signal provided.");
             ().into_view()
         }
     }
@@ -143,8 +139,6 @@ pub fn EditableEntryList<T: RecipeEntry>(
                         each=move || rw_entries.get()
                         key=|entry| entry.0
                         children=move |(id, (entry, set_entry))| {
-
-                            log!("RENDERING LIST");
 
                             view! {
                                 <li class={style_class.clone()} id="entry-li">
@@ -313,8 +307,6 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
 
     let initial_value = if initial_value.is_empty() { None } else { Some(initial_value) };
 
-    log!("Et donc du coup ----> {:?}", initial_value);
-
     // setup for the SuggestionList
     let is_input_focused = create_rw_signal(false);
     let (get_input, set_input) = create_signal("".to_string());
@@ -404,6 +396,7 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
     } else {
 
         // Textarea
+        #[allow(unused)]
         let textarea = create_node_ref::<html::Textarea>();
 
         // setup for textarea autosize
@@ -459,7 +452,7 @@ pub fn RecipeLightSubMenu(
 
     //let edit_path: String = "/recipe/".to_owned() + &recipe_id.get_untracked().to_string() + "/editable";
 
-    let on_sub_menu_click = move |ev: ev::MouseEvent| {
+    let on_sub_menu_click = move |ev: MouseEvent| {
         ev.stop_propagation();
         is_menu.set(!is_menu.get());
     };
@@ -535,11 +528,11 @@ pub fn RecipeLightSubMenu(
 #[component]
 pub fn SettingsMenu() -> impl IntoView {
 
-    let is_menu_open = create_rw_signal(false);
-
-    create_effect(move |_| {
-        log!("Menu Open is ----> {:?}", is_menu_open.get());
-    });
+    // get settings menu context
+    let is_settings_menu_open =
+        use_context::<IsSettingsMenuOpen>()
+            .expect("Expected to find IsSettingsMenuOpen in context.")
+            .0;
 
     // Is logged in
     let is_logged_in =
@@ -552,26 +545,34 @@ pub fn SettingsMenu() -> impl IntoView {
         async move {
             match server_logout().await {
                 Ok(_) => {
-                    log!("Logout successful");
                     is_logged_in.set(false);
                 },
-                Err(e) => log!("Error: {:?}", e.to_string()),
+                Err(e) => error!("Error: {:?}", e.to_string()),
             }
         }
     });
 
+    let is_tags_menu_open =
+        use_context::<IsTagsMenuOpen>()
+            .expect("Expected to find IsTagsMenuOpen in context.")
+            .0;
+
 
     view! {
-        <button
-            class = "settings-menu-button"
-            on:click=move |_| is_menu_open.update(|b| *b = !*b)
+        <Show
+            when=move || { !is_tags_menu_open.get() }
         >
-            //{"Settings"}
-        </button>
+            <button
+                class = "settings-menu-button"
+                on:click=move |_| is_settings_menu_open.update(|b| *b = !*b)
+            >
+                //{"Settings"}
+            </button>
+        </Show>
 
         <div
             class = "settings-menu"
-            class:is-open=is_menu_open
+            class:is-open=is_settings_menu_open
         >
 
             <Show
@@ -590,7 +591,7 @@ pub fn SettingsMenu() -> impl IntoView {
                 <button
                     class="settings-button backup"
                     on:click=move |_| {
-                        is_menu_open.set(false);
+                        is_settings_menu_open.set(false);
 
                         let navigate = leptos_router::use_navigate();
                         navigate("/backup", Default::default());
@@ -603,7 +604,7 @@ pub fn SettingsMenu() -> impl IntoView {
                 <button
                     class="settings-button logout"
                     on:click=move |_| {
-                        is_menu_open.set(false);
+                        is_settings_menu_open.set(false);
                         logout_action.dispatch(());
                     }
                 > "Logout" </button>

@@ -1,7 +1,6 @@
-use ev::select;
-use leptos::ev::MouseEvent;
 use leptos::*;
-use leptos::logging::log;
+use leptos::ev::MouseEvent;
+use crate::app::{IsSettingsMenuOpen, IsTagsMenuOpen};
 
 
 #[component]
@@ -11,8 +10,6 @@ pub fn TagList(
     // Tags that are selected
     selected_tags_signal: RwSignal<Vec<String>>,
 ) -> impl IntoView {
-
-    log!("Rendering TagList");
     
     // Make the signal list from "tags"
     let tags_states_signals: RwSignal<Vec<(ReadSignal<(bool, String)>, WriteSignal<(bool, String)>)>> =  create_rw_signal({
@@ -25,41 +22,9 @@ pub fn TagList(
             .collect()
     });
 
-    /*let selected_tag_elems = move || {
-        // get the signals
-        let mut tags_states_signals = tags_states_signals.get();
-        // then generate the buttons
-        tags_states_signals
-            .retain(|(tag_state, set_tag_state)| {
-                tag_state.get().0
-            });
-        tags_states_signals
-            .into_iter()
-            .map(|(tag_state, set_tag_state)| {
-                view_from_tag_state(tag_state, set_tag_state, selected_tags_signal)
-            })
-            .collect_view()
-    };*/
-
-    /*let unselected_tag_elems = move || {
-        // get the signals
-        let mut tags_states_signals = tags_states_signals.get();
-        // then generate the buttons
-        tags_states_signals
-            .retain(|(tag_state, set_tag_state)| {
-                !tag_state.get().0
-            });
-        tags_states_signals
-            .into_iter()
-            .map(|(tag_state, set_tag_state)| {
-                view_from_tag_state(tag_state, set_tag_state, selected_tags_signal)
-            })
-            .collect_view()
-    };*/
-
     let all_tag_elems = move || {
         // get the signals
-        let mut tags_states_signals = tags_states_signals.get();
+        let tags_states_signals = tags_states_signals.get();
         // then generate the buttons
         tags_states_signals
             .into_iter()
@@ -84,25 +49,41 @@ pub fn TagList(
             });
     };
 
-    let is_unrolled = create_rw_signal(false);
+    let is_tags_menu_open =
+        use_context::<IsTagsMenuOpen>()
+            .expect("Expected to find IsTagsMenuOpen in context.")
+            .0;
+    
+    let is_settings_menu_open =
+        use_context::<IsSettingsMenuOpen>()
+            .expect("Expected to find IsSettingsMenuOpen in context.")
+            .0;
 
     let on_unroll_click = move |ev:MouseEvent| {
         ev.stop_propagation();
-        is_unrolled.set(!is_unrolled.get())
+        is_tags_menu_open.update(|b| *b = !*b);
     };
     
+
     view! {
 
-        <button
-            class="unroll-tags-button"
-            class:is-enabled=is_unrolled
-            on:click=on_unroll_click
+        <Show
+            when=move || { !is_settings_menu_open.get() }
         >
-        </button>
+            <button
+                class="unroll-tags-button"
+                class:is-enabled=is_tags_menu_open
+                on:click=on_unroll_click
+            >
+            </button>
+        </Show>
 
         <div
             class="tags-container"
-            class:unrolled=is_unrolled
+            class:unrolled=is_tags_menu_open
+            on:click=move |_| {
+                is_tags_menu_open.set(false);
+            }
         >
 
             <ul
@@ -113,7 +94,6 @@ pub fn TagList(
 
             <button
                 class="clear-tags-button"
-                //class:is_rolled=move || { !is_unrolled.get() }
                 on:click=on_clear_tags_click
             >
                 {"Clear"}
@@ -135,7 +115,8 @@ fn view_from_tag_state(
             <button
                 class="tag-button"
                 class:tag-selected = move || tag_state.get().0
-                on:click = move |_| {
+                on:click = move |ev: MouseEvent| {
+                    ev.stop_propagation();
                     // update the signal
                     set_tag_state.update(|(tag_selected, tag_name)| {
                         let selecting_or_deselecting = !*tag_selected;

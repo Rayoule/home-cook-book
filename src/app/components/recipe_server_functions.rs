@@ -1,12 +1,8 @@
 use leptos::*;
-use leptos::logging::log;
-
 use crate::app::components::recipe::*;
 
-#[allow(dead_code)]
-const FAKE_API_DELAY: bool = false;
-
-
+#[cfg(feature = "ssr")]
+use leptos::logging::*;
 #[cfg(feature = "ssr")]
 pub mod ssr {
     pub use actix_web::HttpRequest;
@@ -17,6 +13,11 @@ pub mod ssr {
         Ok(SqliteConnection::connect("sqlite:cook-book.db").await?)
     }
 }
+
+
+
+#[allow(dead_code)]
+const FAKE_API_DELAY: bool = false;
 
 
 #[server]
@@ -55,14 +56,7 @@ pub async fn recipe_function(recipe_action_desc: RecipeActionDescriptor) -> Resu
                 .await
             {
                 Ok(_row) => {
-                    log!(
-                        "\n\nThe Recipe : \nName: {:?} \nTags: {:?} \nIngredients: {:?} \nInstructions: {:?} \nNotes: {:?} \nWas ADDED Successfully!\n\n",
-                        string_name,
-                        string_tags,
-                        string_ingredients,
-                        string_instructions,
-                        string_notes
-                    );
+                    log!("\nThe Recipe: {:?} was ADDED Successfully!\n\n", string_name);
                     Ok(())
                 },
                 Err(e) => Err(ServerFnError::ServerError(e.to_string())),
@@ -90,15 +84,7 @@ pub async fn recipe_function(recipe_action_desc: RecipeActionDescriptor) -> Resu
                     .await
                 {
                     Ok(_row) => {
-                        log!(
-                            "\n\nThe Recipe : \nId: {:?} \nName: {:?} \nTags: {:?} \nIngredients: {:?} \nInstructions: {:?} \nNotes: {:?} \nWas ADDED Successfully!\n\n",
-                            id,
-                            string_name,
-                            string_tags,
-                            string_ingredients,
-                            string_instructions,
-                            string_notes
-                        );
+                        log!("\nThe Recipe: {:?} was ADDED Successfully!\n", string_name);
                         Ok(())
                     },
                     Err(e) => Err(ServerFnError::ServerError(e.to_string())),
@@ -156,8 +142,6 @@ pub async fn recipe_function(recipe_action_desc: RecipeActionDescriptor) -> Resu
 pub async fn get_all_recipes_light() -> Result<Vec<RecipeLight>, ServerFnError> {
     use self::ssr::*;
 
-    //log!("Fetch all recipes action.");
-
     let mut conn = db().await?;
 
     // fake API delay
@@ -199,8 +183,6 @@ pub async fn get_all_recipes_light() -> Result<Vec<RecipeLight>, ServerFnError> 
 pub async fn get_recipe_by_id(recipe_id: Option<u16>) -> Result<Recipe, ServerFnError> {
     use self::ssr::*;
 
-    log!("Get recipe from id: {:?}", recipe_id);
-
     // fake API delay
     if FAKE_API_DELAY { std::thread::sleep(std::time::Duration::from_millis(1250)); }
 
@@ -223,9 +205,11 @@ pub async fn get_recipe_by_id(recipe_id: Option<u16>) -> Result<Recipe, ServerFn
         };
         let recipe = json_recipe.to_recipe(recipe_row.id);
 
+        log!("Recipe from id: {:?} fetched Successfully.", recipe_id);
+
         Ok(recipe)
     } else {
-        log::error!("No Recipe ID");
+        error!("No Recipe ID");
         leptos_actix::redirect("/");
         Err(ServerFnError::ServerError("No Recipe ID".to_owned()))
     }
@@ -244,11 +228,9 @@ pub async fn get_recipe_id_by_name(name: String) -> Result<Option<u16>, ServerFn
     if FAKE_API_DELAY { std::thread::sleep(std::time::Duration::from_millis(1250)); }
 
     if name.len() < 1 {
-        log!("ERROR: Provided recipe name is EMPTY !");
+        error!("ERROR: Provided recipe name is EMPTY !");
         return Ok(None);
     }
-
-    log!("Checking Recipe by name --> {:?}", name.clone());
 
     let mut conn = db().await?;
 
@@ -259,11 +241,11 @@ pub async fn get_recipe_id_by_name(name: String) -> Result<Option<u16>, ServerFn
         {
             Ok(recipe_row_id) => {
                 let recipe_id = recipe_row_id.id;
-                log!("Recipe named: '{:?}' -> ID: {:?} was found succesfully !", name, recipe_id.clone().to_string());
+                log!("Recipe named: '{:?}' -> ID: {:?} was found Succesfully.", name, recipe_id.clone().to_string());
                 Ok(Some(recipe_id))
             },
             Err(e) => {
-                log!("ERROR: Recipe named: '{:?}' FAILED because error: {:?}", name, e.to_string());
+                error!("ERROR: Recipe named: '{:?}' FAILED because error: {:?}", name, e.to_string());
                 Err(ServerFnError::ServerError(e.to_string()))
             },
         }
@@ -317,7 +299,7 @@ pub async fn apply_json_save(save: String) -> Result<(), ServerFnError> {
 
     let mut conn = db().await?;
 
-    let clear = sqlx::query("DELETE FROM recipes;").execute(&mut conn).await?;
+    let _ = sqlx::query("DELETE FROM recipes;").execute(&mut conn).await?;
 
     for recipe in save_json.0 {
         let string_name = recipe.name;

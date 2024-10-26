@@ -1,12 +1,7 @@
-use leptos::{ ev::MouseEvent, html::Input, logging::log, *
-};
-use leptos_router::A;
-use regex::Replacer;
+use leptos::{html::Input, logging::*, *};
 use serde::{Serialize, Deserialize};
 
-use crate::app::{components::recipe, elements::recipe_elements::*};
-
-use super::recipe_sheets::EditableRecipeSheet;
+use crate::app::elements::recipe_elements::*;
 
 /// Main Recipe Format
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -67,22 +62,17 @@ impl RecipeLight {
         // gather all recipe text
         let mut recipe_text: String = "".to_string();
         // add name
-        log!("Name: {:?}", self.name.clone());
         recipe_text += self.name.as_str();
         // add tags
         if let Some(tags) = &self.tags {
-            log!("Bim tags");
             for t in tags {
-                log!("Tags: {:?}", t.name.clone());
                 recipe_text += " ";
                 recipe_text += t.name.as_str();
             }
         }
         // add ingredients
         if let Some(ingrs) = &self.ingredients {
-            log!("Bim Ings");
             for i in ingrs {
-                log!("Ingredient: {:?}", i.content.clone());
                 recipe_text += " ";
                 recipe_text += i.content.as_str();
             }
@@ -91,8 +81,6 @@ impl RecipeLight {
         // lowercase all recipe text
         recipe_text = recipe_text.to_lowercase();
 
-        log!("RecipeText: {:?}", recipe_text.clone());
-
         // separate text into words
         let recipe_words: Vec<&str> =
             re
@@ -100,8 +88,17 @@ impl RecipeLight {
                 .map(|mat| mat.as_str())
                 .collect();
         
-        // check if recipe_words contains any of search_words
-        search_words.iter().any(|item| recipe_words.contains(&item.as_str()))
+        // Find matching words
+        search_words.iter().any(|item| {
+            recipe_words.iter().any(|word| {
+                // Check if recipe_words contains any of search_words
+                // (find exactly matching words)
+                word.contains(item)
+                // Check if search_words are sub parts of recipe_words
+                // (find matchings word parts. ex: find "re" in "recipe")
+                || item.contains(word)
+            })
+        })
     }
 }
 
@@ -499,7 +496,7 @@ impl RecipeEntry for RecipeIngredient {
                 match input.parse::<u16>() {
                     Ok(n) => n,
                     Err(e) => {
-                        log!("{}", "ERROR: Could not parse input because: -> ".to_owned() + &e.to_string());
+                        error!("{}", "ERROR: Could not parse input because: -> ".to_owned() + &e.to_string());
                         0
                     },
                 }
@@ -510,11 +507,11 @@ impl RecipeEntry for RecipeIngredient {
             Some(2) => self.content = input,
 
             None => {
-                log!("ERROR: No ID provided.")
+                error!("ERROR: No ID provided.")
             },
 
             _ => {
-                log!("ERROR: Invalid ID.")
+                error!("ERROR: Invalid ID.")
             },
 
         }
@@ -574,7 +571,6 @@ impl RecipeEntry for RecipeInstruction {
     }
     
     fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View {
-        log!("YOLOOOO I got this: {}", entry.get_untracked().content);
         view! {
             <RecipeEntryInput
                 class=              "instructions".to_owned()
@@ -671,11 +667,11 @@ impl RecipeEntry for RecipeNote {
             Some(1) => self.content = input,
 
             None => {
-                log!("ERROR: No ID provided.")
+                error!("ERROR: No ID provided.")
             },
 
             _ => {
-                log!("ERROR: Invalid ID.")
+                error!("ERROR: Invalid ID.")
             },
 
         }

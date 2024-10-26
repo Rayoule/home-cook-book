@@ -1,15 +1,6 @@
 use leptos::*;
-use leptos::logging::log;
-use server_fn::codec::{ MultipartData, MultipartFormData };
-
-#[cfg(feature = "ssr")]
-use std::sync::{
-    atomic::{AtomicU8, Ordering},
-    Mutex,
-};
-use wasm_bindgen::JsCast;
-use web_sys::{FormData, HtmlFormElement, SubmitEvent};
-
+use leptos::logging::*;
+use web_sys::SubmitEvent;
 use crate::app::{components::recipe_server_functions::*, ApplySaveFromJson};
 
 /// Download all recipes button
@@ -23,7 +14,7 @@ pub fn DownloadAll( has_been_backed_up: RwSignal<bool> ) -> impl IntoView {
                 match get_all_recipes_as_json_string().await {
                     Ok(content) => Some(content),
                     Err(e) => {
-                        log!("{:?}", e.to_string());
+                        error!("{:?}", e.to_string());
                         None
                     }
                 }
@@ -60,6 +51,7 @@ pub fn DownloadAll( has_been_backed_up: RwSignal<bool> ) -> impl IntoView {
 }
 
 
+#[allow(unused)] // disable the warning on "ev"
 #[component]
 pub fn UploadAll( has_been_backed_up: RwSignal<bool> ) -> impl IntoView {
 
@@ -92,7 +84,6 @@ pub fn UploadAll( has_been_backed_up: RwSignal<bool> ) -> impl IntoView {
     let on_submit = move |ev: SubmitEvent| {
         ev.prevent_default();
         let value = textarea().expect("Expected testarea to be mounted.").value();
-        log!("Applying save...");
         upload_save_action.dispatch(value);
     };
 
@@ -119,14 +110,10 @@ pub fn UploadAll( has_been_backed_up: RwSignal<bool> ) -> impl IntoView {
                         id=             "text-input"
                         type=           "text"
                         placeholder=    "Paste JSON save here"
-
-                        // on input
                         on:input=move |ev| {
                             // resize box to fit text
                             #[cfg(feature= "hydrate")]
                             set_content.set(event_target_value(&ev));
-
-                            log!("Yolo");
                         }
                     > {} </textarea>
                     <div class="divider save"></div>

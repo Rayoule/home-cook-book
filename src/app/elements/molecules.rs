@@ -1,4 +1,4 @@
-use leptos::{ev::{MouseEvent, InputEvent}, logging::log, *};
+use leptos::{ev::MouseEvent, *};
 
 
 // Will display on top of each page in the header
@@ -40,7 +40,6 @@ pub fn RecipeSearchBar(
                 .map(|word| word.to_string())
                 .collect();
 
-        log!("SEARCH:\n{:?}", search_words);
         search_input.set(search_words)
     };
 
@@ -148,7 +147,6 @@ pub fn SuggestionList(
                     ().into_view()
                 }
             } else {
-                log!("not valuuuues :(");
                 ().into_view()
             }
         }}

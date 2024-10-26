@@ -1,10 +1,12 @@
-use leptos::*;
-use leptos::logging::log;
 use serde::{Deserialize, Serialize};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::SystemTime;
 
 #[cfg(feature = "ssr")]
-use std::sync::{Mutex, MutexGuard, Arc};
+use {
+    leptos::ServerFnError,
+    leptos::logging::*,
+    std::sync::{Mutex, Arc},
+};
 
 
 pub const ACCOUNTS_FILE_NAME: &'static str = "hcb_auth.json";
@@ -63,14 +65,13 @@ pub async fn fetch_request_ip() -> Result<String, ServerFnError> {
         Ok(connection_info) => {
             if let Some(current_ip) = connection_info.peer_addr() {
                 let fetched_ip = current_ip.to_string();
-                log!("IP fetched: {:?}", fetched_ip);
                 Ok(fetched_ip)
             } else {
                 Err(ServerFnError::ServerError("IP not found in HttpRequest.".to_string()))
             }
         },
         Err(e) => {
-            log!("ERROR in IP Fetching: {:?}", e.to_string());
+            error!("ERROR in IP Fetching: {:?}", e.to_string());
             Err(ServerFnError::ServerError(e.to_string()))
         }
     }

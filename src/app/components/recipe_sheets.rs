@@ -1,10 +1,6 @@
-use leptos::{ ev::MouseEvent, html::Input, logging::log, *
-};
-use leptos_router::A;
-use serde::{Serialize, Deserialize};
-
+use leptos::{logging::*, *};
 use crate::app::{
-    elements::{popups::DeletePopupInfo, recipe_elements::*}, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeLight, RecipeServerAction
+    elements::recipe_elements::*, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeLight, RecipeServerAction
 };
 
 
@@ -81,7 +77,7 @@ pub fn RecipeLightSheet(
 #[component]
 pub fn RecipeSheet(
     recipe: Recipe,
-    print: bool,
+    //print: bool,
 ) -> impl IntoView {
 
     let tag_list = {
@@ -224,7 +220,7 @@ pub fn EditableRecipeSheet(
 
     let save_pending = recipe_action.pending();
 
-    let on_save_click = move |ev: MouseEvent| {
+    let on_save_click = move |_| {
         // Get recipe
         let signals = recipe_signals.get_untracked();
         // Gather recipe
@@ -236,8 +232,6 @@ pub fn EditableRecipeSheet(
             instructions:   fetch_entries_from_signals(signals.3.get_untracked()),
             notes:          fetch_entries_from_signals(signals.4.get_untracked()),
         };
-
-        log!("Gathered Recipe => \n{:?}", updated_recipe.clone());
 
         // Check recipe
         match updated_recipe.valid_for_save() {
@@ -255,7 +249,7 @@ pub fn EditableRecipeSheet(
                 }
             },
             Err(e) => {
-                log!("{}", e);
+                error!("{}", e);
             },
         }
     };
@@ -263,46 +257,41 @@ pub fn EditableRecipeSheet(
     view! {
         <div class="editable-recipe" >
 
-            {move || {
-
-                log!("EditableRecipeSheet Rendered ----");
+            {move || view! {
                 
-                view! {
-                
-                    // Name
-                    <EditableRecipeName
-                        name_signal=    name_signal
-                        editable=       true
-                    />
+                // Name
+                <EditableRecipeName
+                    name_signal=    name_signal
+                    editable=       true
+                />
 
-                    // Tags
-                    <EditableEntryList
-                        editable=           true
-                        entry_list_signal=  tags_signal
-                        entry_type=         RecipeEntryType::Tag
-                    />
+                // Tags
+                <EditableEntryList
+                    editable=           true
+                    entry_list_signal=  tags_signal
+                    entry_type=         RecipeEntryType::Tag
+                />
 
-                    // Ingredients
-                    <EditableEntryList
-                        editable=           true
-                        entry_list_signal=  ingredients_signal
-                        entry_type=         RecipeEntryType::Ingredients
-                    />
+                // Ingredients
+                <EditableEntryList
+                    editable=           true
+                    entry_list_signal=  ingredients_signal
+                    entry_type=         RecipeEntryType::Ingredients
+                />
 
-                    // Instructions
-                    <EditableEntryList
-                        editable=           true
-                        entry_list_signal=  instructions_signal
-                        entry_type=         RecipeEntryType::Instructions
-                    />
+                // Instructions
+                <EditableEntryList
+                    editable=           true
+                    entry_list_signal=  instructions_signal
+                    entry_type=         RecipeEntryType::Instructions
+                />
 
-                    // Notes
-                    <EditableEntryList
-                        editable=           true
-                        entry_list_signal=  notes_signal
-                        entry_type=         RecipeEntryType::Notes
-                    />
-                }
+                // Notes
+                <EditableEntryList
+                    editable=           true
+                    entry_list_signal=  notes_signal
+                    entry_type=         RecipeEntryType::Notes
+                />
             }}
 
             // Save Button

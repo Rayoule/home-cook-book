@@ -1,20 +1,17 @@
 use leptos::*;
-use leptos::logging::log;
-use serde::{Deserialize, Serialize};
-use std::{env, fs::File, time::{Duration, SystemTime, UNIX_EPOCH}};
-use std::io::BufReader;
-
-use super::auth_utils::LoginAccountCollection;
-use crate::app::components::auth::auth_utils::{
-    LoginAccount, UserLoginState,
-};
-
-#[cfg(feature = "ssr")]
 use crate::app::components::auth::auth_utils::*;
+
 #[cfg(feature = "ssr")]
-use actix_web::web::Data;
-#[cfg(feature = "ssr")]
-use std::sync::{Arc, Mutex, MutexGuard};
+use {
+    leptos::logging::log,
+    std::{env, fs::File, time::{Duration, SystemTime}},
+    std::io::BufReader,
+    super::auth_utils::LoginAccountCollection,
+    //crate::app::components::auth::auth_utils::*,
+    actix_web::web::Data,
+    std::sync::MutexGuard,
+    crate::app::components::auth::auth_utils::SharedLoginStates
+};
 
 
 #[server]
@@ -65,11 +62,9 @@ pub async fn server_logout() -> Result<(), ServerFnError> {
 pub async fn check_account_credentials(submission: &LoginAccount) -> Result<bool, ServerFnError> {
     // Get the current working directory
     let current_dir = env::current_dir()?;
-    //log!("Current directory: {:?}", current_dir);
 
     // Combine the path and filename
     let file_path = current_dir.join(ACCOUNTS_FILE_NAME);
-    //log!("Attempting to open: {:?}", file_path);
 
     // Open the file
     let file = File::open(&file_path)?;
@@ -77,9 +72,6 @@ pub async fn check_account_credentials(submission: &LoginAccount) -> Result<bool
 
     // Deserialize the JSON into a `LoginStates` struct
     let accounts: LoginAccountCollection = serde_json::from_reader(reader)?;
-
-    // DEBUG
-    //log!("{:?}", &accounts);
 
     // Check if it contains the submitted account
     Ok(accounts.contains_account(submission))
@@ -90,11 +82,7 @@ pub async fn check_account_credentials(submission: &LoginAccount) -> Result<bool
 #[cfg(feature = "ssr")]
 pub async fn check_login() -> Result<bool, ServerFnError> {
 
-    log!("SERVER -> Checking login");
-
     // Fetch state
-    use actix_web::web::Data;
-    use crate::app::components::auth::auth_utils::SharedLoginStates;
     let shared_login_states: Data<SharedLoginStates> = leptos_actix::extract::<Data<SharedLoginStates>>().await?;
     // Get the ownership of the Arc<> inside SharedLoginStates.states
     let shared_login_states = shared_login_states.get_ref().states.clone();
@@ -124,14 +112,12 @@ pub async fn check_login() -> Result<bool, ServerFnError> {
     let mut is_logged_in = false;
     use std::ops::DerefMut;
     shared_login_states_lock.deref_mut().retain_mut(|logged_user: &mut UserLoginState| {
-        let login_duration = Duration::from_secs(LOG_PERSISTANCE_DURATION_SECONDS);
         // If IP is logged in
         if logged_user.current_ip == cur_ip {
             is_logged_in = true;
             logged_user.log_date = current_time;
             true
         } else {
-            log!("TEST: IP not matching...");
             // IP not matching -> not that user
             // We return true so that the entry is not removed
             true
@@ -185,7 +171,6 @@ pub async fn log_out_user() -> Result<(), ServerFnError> {
     log!("Attempt to log out user");
 
     // Fetch state
-    use actix_web::web::Data;
     use crate::app::components::auth::auth_utils::SharedLoginStates;
     let shared_login_states: Data<SharedLoginStates> = leptos_actix::extract::<Data<SharedLoginStates>>().await?;
     // Get the ownership of the Arc<> inside SharedLoginStates.states

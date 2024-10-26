@@ -1,16 +1,18 @@
-use components::recipe_server_functions::apply_json_save;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
-use leptos::logging::log;
-
+use leptos::logging::*;
 use itertools::Itertools;
-
 use crate::app::{
     components::{
         pages::*,
         recipe::*,
-        recipe_server_functions::{get_all_recipes_light, recipe_function}, round_menu::*,
+        round_menu::*,
+        recipe_server_functions::{
+            apply_json_save,
+            get_all_recipes_light,
+            recipe_function
+        },
         auth::{
             auth_utils::LoginAccount, auth_server_functions::{
                 server_try_login, server_login_check
@@ -33,6 +35,10 @@ pub struct LoginCheckResource(Resource<(usize, usize, usize), bool>);
 #[derive(Clone)]
 pub struct IsPrintMode(RwSignal<bool>);
 #[derive(Clone)]
+pub struct IsSettingsMenuOpen(RwSignal<bool>);
+#[derive(Clone)]
+pub struct IsTagsMenuOpen(RwSignal<bool>);
+#[derive(Clone)]
 pub struct ApplySaveFromJson(Action<String, bool>);
 #[derive(Clone)]
 pub struct TryLoginAction(Action<LoginAccount, bool>);
@@ -51,12 +57,14 @@ pub struct DeleteInfoSignal(RwSignal<Option<DeletePopupInfo>>);
 
 #[component]
 pub fn App() -> impl IntoView {
-    log!("Rendering App");
+
+    log!("Start <App/> rendering.");
+
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
 
     // PageName signal
-    let (get_page_name, set_page_name) = create_signal("".to_owned());
+    let (_, set_page_name) = create_signal("".to_owned());
     provide_context(PageNameSetter(set_page_name));
 
 
@@ -69,22 +77,21 @@ pub fn App() -> impl IntoView {
 
 
 
+    // Settings Menu
+    provide_context(IsSettingsMenuOpen(create_rw_signal(false)));
+    // Tags Menu
+    provide_context(IsTagsMenuOpen(create_rw_signal(false)));
+
 
     // LOGIN
-
     // Add Is Logged In in context
     let is_logged_in_signal = create_rw_signal(false);
     provide_context(IsLoggedIn(is_logged_in_signal));
-    create_effect(move |_| {
-        log!("IsLoggedIn changed to -> {:?}", is_logged_in_signal.get());
-    });
-
 
     // Redirect to "/" if logged in
     let rw_wants_redirect = create_rw_signal(false);
     create_effect(move |_| {
         if rw_wants_redirect.get() {
-            log!("GOING to navigate to home !");
             let navigate = leptos_router::use_navigate();
             navigate("/", Default::default());
         }
@@ -106,7 +113,7 @@ pub fn App() -> impl IntoView {
                     }
                 },
                 Err(e) => {
-                    log!("Error trying login: {:?}", e.to_string());
+                    error!("Error trying login: {:?}", e.to_string());
                     false
                 },
             }
@@ -118,7 +125,7 @@ pub fn App() -> impl IntoView {
     // reload action
     let reload_action = create_action( |_: &()| {
         //login_check_resource.refetch();
-        async { log!("RELOAD!"); }
+        async { () }
     });
     // This is needed so the login_check_resource is evaluated again on refresh
     reload_action.dispatch(());
@@ -131,22 +138,19 @@ pub fn App() -> impl IntoView {
             reload_action.version().get()
         ),
         move |_| {
-            log!("RESOURCE -> Checking login"); 
             async move {
                 match server_login_check().await {
                     Ok(succeeded) => {
                         if succeeded {
-                            log!("Login Check RESOURCE Succeeded.");
                             is_logged_in_signal.set(true);
                             true
                         } else {
-                            log!("Login Check RESOURCE Failed.");
                             is_logged_in_signal.set(false);
                             false
                         }
                     },
                     Err(e) => {
-                        log!("Error checking login: {:?}", e.to_string());
+                        error!("Error checking login: {:?}", e.to_string());
                         false
                     },
                 }
@@ -162,7 +166,7 @@ pub fn App() -> impl IntoView {
         async move {
             match apply_json_save(save).await {
                 Err(e) => {
-                    log!("ERROR: {:?}", e.to_string());
+                    error!("ERROR: {:?}", e.to_string());
                     false
                 },
                 _ => true,
@@ -197,7 +201,6 @@ pub fn App() -> impl IntoView {
                     .collect::<Vec<String>>()
             } else { vec![] };
         ingr_list.sort_by_key(|t| t.to_lowercase().clone());
-        //log!("All Ingredients:\n{:?}", &ingr_list);
         all_ingredients_signal.set(ingr_list);
     });
     provide_context(AllIngredientsSignal(all_ingredients_signal));
@@ -217,27 +220,17 @@ pub fn App() -> impl IntoView {
                     .collect::<Vec<String>>()
             } else { vec![] };
         tag_list.sort_by_key(|t| t.to_lowercase().clone());
-        //log!("All Tags:\n{:?}", &tag_list);
         all_tags_signal.set(tag_list);
     });
     provide_context(AllTagsSignal(all_tags_signal));
 
     // Selected Tags
     let selected_tags = create_rw_signal::<Vec<String>>(vec![]);
-    create_effect(move |_| {
-        log!("Selected tags changed:\n{:?}", selected_tags.get());
-    });
     provide_context(SelectedTagsRwSignal(selected_tags));
 
     // Print Mode
     let is_print_mode = create_rw_signal(false);
     create_effect(move |_| {
-        log!("BOUUUUUM");
-        let print_mode = use_params::<RecipeModeParam>()
-            .get()
-            .unwrap_or_default()
-            .mode
-            .is_some_and(|page_mode| page_mode == RecipePageMode::Print);
         let print_mode = 
             use_params_map().get().get("mode").is_some_and(|mode| {
                 mode.to_owned() == "print".to_string()
@@ -263,9 +256,7 @@ pub fn App() -> impl IntoView {
         // content for this welcome page
         <Router>
 
-            <HeaderMenu
-                page_name=get_page_name
-            />
+            <HeaderMenu/>
 
             <main>
 
@@ -274,7 +265,6 @@ pub fn App() -> impl IntoView {
 
                 <Routes>
                     <Route path="/"                     view=AllRecipes />
-                    //<Route path="/login"                view=LoginPage />
                     <Route path="/new-recipe"           view=NewRecipePage />
                     <Route path="/recipe/:id/:mode"     view=RecipePage />
                     <Route path="/backup"               view=BackupPage />
@@ -296,10 +286,8 @@ pub fn set_page_name(name: &str) {
 
 
 #[component(transparent)]
-pub fn CheckLogin(
-    //children: ChildrenFn,
-)-> impl IntoView
-{
+pub fn CheckLogin()-> impl IntoView {
+
     let check_login_resource =
         use_context::<LoginCheckResource>()
             .expect("Expected to find LoginCheckAction in context")
@@ -310,16 +298,7 @@ pub fn CheckLogin(
             fallback=move || view!{ <p>{"Wait for Login Check..."}</p> }
         >
             {move || {
-                match check_login_resource.get() {
-                    Some(login_result) => {
-                        if login_result {
-                            log!("Login check: Success!");
-                        } else {
-                            log!("Login check: Fail.");
-                        }
-                    },
-                    None    => log!("Login check: Login Pending..."),
-                }
+                let _ = check_login_resource.get();
             }.into_view()}
         </Suspense>
     }
@@ -337,49 +316,3 @@ pub fn check_login_wall() {
         }
     });
 }
-
-
-/*#[component(transparent)]
-pub fn LoginWall(
-    children: ChildrenFn,
-    #[prop(optional)]
-    is_login_page: bool,
-)-> impl IntoView
-{
-    let check_login_resource = use_context::<LoginCheckResource>().expect("Expected to find LoginCheckAction in context").0;
-    let children_stored = store_value(children);
-
-    let rw_enable_login = create_rw_signal(true);
-
-    // If login check failed, then redirect to login
-    create_effect(move |_| {
-        if !rw_enable_login.get() {
-            let navigate = leptos_router::use_navigate();
-            navigate("/login", Default::default());
-        }
-    });
-
-    view!{
-        <Suspense
-            fallback=move || view!{ <p>{"Wait for Login Check..."}</p> }
-        >
-            <Show
-                when=move || {
-                    let login_check = check_login_resource.get();
-                    // We validate login if the resource is None so it can work on the server.
-                    // On the client, the Suspense will prevent the children to display anyway.
-                    let login_check_result = login_check.is_none_or(|x| x);
-
-                    let check = is_login_page || login_check_result;
-                    rw_enable_login.set(check);
-                    check
-                }
-                fallback=move || {
-                    view! {<p>{"Login Failed."}</p>}
-                }
-            >
-                { children_stored.with_value(|children| children()) }
-            </Show>
-        </Suspense>
-    }
-}*/

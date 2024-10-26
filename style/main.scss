@@ -58,7 +58,7 @@ ul {
 
 	height: var(--header-height);
 	
-	color: rgb(0, 0, 0);
+	color: black;
 	
 	background-color: var(--color-1);
 }
@@ -81,6 +81,8 @@ svg {
 
 		// Option 1
 		fill: var(--color-5);
+		stroke: var(--color-5);
+		stroke-width: 7px;
 
 		// Option 2
 		//fill: var(--color-1);

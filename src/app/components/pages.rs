@@ -1,7 +1,7 @@
 use elements::{logo_svg::LogoSVG, recipe_elements::SettingsMenu};
 use leptos::*;
 use leptos_router::*;
-use leptos::logging::log;
+use leptos::logging::*;
 use std::sync::Arc;
 
 use crate::app::{
@@ -20,8 +20,20 @@ pub fn LoginMenu() -> impl IntoView {
 
     set_page_name("Login");
 
+    // get settings menu context
+    let is_settings_menu_open =
+        use_context::<IsSettingsMenuOpen>()
+            .expect("Expected to find IsSettingsMenuOpen in context.")
+            .0;
 
     let try_login_action = use_context::<TryLoginAction>().expect("Expected to find TryLoginAction in context.").0;
+    let try_login_action_value = try_login_action.value();
+    create_effect(move |_| {
+        // If login is succesful, then close settings menu
+        if try_login_action_value.get().is_some_and(|result| result) {
+            is_settings_menu_open.set(false);
+        }
+    });
 
     // setup submission signals (username, password)
     let submission = create_signal((String::new(), String::new()));
@@ -39,8 +51,6 @@ pub fn LoginMenu() -> impl IntoView {
             username: name_input().expect("name <input> should be mounted").value(),
             password: password_input().expect("password <input> should be mounted").value()
         };
-
-        log!("Login submission: {:?}", &login_account);
 
         try_login_action.dispatch(login_account);
     };
@@ -115,10 +125,10 @@ pub fn NewRecipePage() -> impl IntoView {
                         let navigate = leptos_router::use_navigate();
                         navigate(&path, Default::default());
                     } else {
-                        log!("Error fetching recipe by name, no ID fetched.")
+                        error!("Error fetching recipe by name, no ID fetched.")
                     }
                 },
-                Err(_) => log!("Error fetching recipe by name with name: {:?}", name),
+                Err(_) => error!("Error fetching recipe by name with name: {:?}", name),
             }
         }
     });
@@ -133,14 +143,14 @@ pub fn NewRecipePage() -> impl IntoView {
                 Ok(_) => {
                     let name = submitted_name.get();
                     if name.len() < 1 {
-                        log!("ERROR: Won't fetch the id with an empty recipe name.");
+                        error!("ERROR: Won't fetch the id with an empty recipe name.");
                     } else {
                         fetch_id_and_redirect.dispatch(name);
                     }
                 },
-                Err(e) => log!("ERROR: Error in getting recipe submission ID: {:?}", e.to_string()),
+                Err(e) => error!("ERROR: Error in getting recipe submission ID: {:?}", e.to_string()),
             }
-        } else { log!("No action ID yet") }
+        }
     });
 
     view! {
@@ -341,7 +351,7 @@ pub fn RecipePage() -> impl IntoView {
                             view! {
                                 <RecipeSheet
                                     recipe= recipe
-                                    print=  false
+                                    //print=  false
                                 />
                             }
                         },
@@ -359,7 +369,7 @@ pub fn RecipePage() -> impl IntoView {
                             view! {
                                 <RecipeSheet
                                     recipe= recipe
-                                    print=  true
+                                    //print=  true
                                 />
                             }
                         },
@@ -598,7 +608,7 @@ pub fn NotFound() -> impl IntoView {
 
 #[component]
 pub fn HeaderMenu(
-    page_name: ReadSignal<String>
+    //page_name: ReadSignal<String>
 ) -> impl IntoView {
 
     // Don't show the header if in Print mode
@@ -609,7 +619,6 @@ pub fn HeaderMenu(
                 .split('/')
                 .last()
                 .is_some_and(|last_word| last_word == "print");
-        log!("{:?}", is_print);
         is_print
     };
 
