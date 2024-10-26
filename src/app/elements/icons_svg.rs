@@ -23,7 +23,6 @@ pub fn CloseTagsSVG() -> impl IntoView {
                 11.4697Z"
             />
         </svg>
-        <p>"yolo"</p>
     }
 }
 
