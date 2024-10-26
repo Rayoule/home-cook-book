@@ -78,9 +78,11 @@ pub fn App() -> impl IntoView {
 
 
     // Settings Menu
-    provide_context(IsSettingsMenuOpen(create_rw_signal(false)));
+    let is_settings_menu_open = create_rw_signal(false);
+    provide_context(IsSettingsMenuOpen(is_settings_menu_open));
     // Tags Menu
-    provide_context(IsTagsMenuOpen(create_rw_signal(false)));
+    let is_tags_menu_open = create_rw_signal(false);
+    provide_context(IsTagsMenuOpen(is_tags_menu_open));
 
 
     // LOGIN

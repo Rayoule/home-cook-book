@@ -17,8 +17,8 @@ Home Cook Book
 
     X button clear qui disparait (tags-container)
     - on peut scroller dans les menus (tags/settings)
-    - bouttons top qui restent affichés dans les menus
-    - backup menu qui surgit
+    X bouttons top qui restent affichés dans les menus
+    X backup menu qui surgit
     - enlever settings menu backup quand on est sur la page backup
 
 		

@@ -1,6 +1,10 @@
 use leptos::*;
 use leptos::ev::MouseEvent;
-use crate::app::{IsSettingsMenuOpen, IsTagsMenuOpen};
+use crate::app::{
+    elements::icons_svg::CloseTagsSVG,
+    IsSettingsMenuOpen,
+    IsTagsMenuOpen
+};
 
 
 #[component]
@@ -61,7 +65,7 @@ pub fn TagList(
 
     let on_unroll_click = move |ev:MouseEvent| {
         ev.stop_propagation();
-        is_tags_menu_open.update(|b| *b = !*b);
+        is_tags_menu_open.set(true);
     };
     
 
@@ -85,6 +89,16 @@ pub fn TagList(
                 is_tags_menu_open.set(false);
             }
         >
+
+            <button
+                class="close-tag-menu-button"
+                on:click=move |ev: MouseEvent| {
+                    ev.stop_propagation();
+                    is_tags_menu_open.set(false);
+                }
+            >
+                <CloseTagsSVG/>
+            </button>
 
             <ul
                 class="tag-list"

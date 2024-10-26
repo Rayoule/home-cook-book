@@ -1,4 +1,7 @@
-use elements::{logo_svg::LogoSVG, recipe_elements::SettingsMenu};
+use elements::{
+    icons_svg::LogoSVG,
+    recipe_elements::SettingsMenu,
+};
 use leptos::*;
 use leptos_router::*;
 use leptos::logging::*;

@@ -33,7 +33,6 @@
     margin: 0;
 }
 
-
 body {
 	background-color: var(--color-1);
 	font-family: sans-serif;
@@ -1062,10 +1061,6 @@ textarea#text-input {
 	position: relative;
 
 	z-index: 101;
-	//position: fixed;
-
-	//top: 0px;
-	//right: 0px;
 
 	height: 35px;
 	width: 70px;
@@ -1089,6 +1084,7 @@ textarea#text-input {
 	}
 
 	&.is-enabled {
+		display: none;
 		background-color: rgba(0, 0, 0, 0);
 	}
 
@@ -1096,6 +1092,27 @@ textarea#text-input {
 		content: "#"; /* Insert a # symbol before the button's text */
 		margin-right: 5px; /* Optional: add some space between the # and the button text */
 	}
+}
+.close-tag-menu-button {
+	
+	font-size: larger;
+
+	height: 50px;
+	width: 50px;
+
+	z-index: 101;
+	position: absolute;
+	top: 70px;
+	right: 35px;
+
+	color: black;
+
+	background-color: #00000000;
+	border: none;
+}
+.close-tags-svg {
+	height: 150px;
+	width: 150px;
 }
 .tags-container {
 	z-index: 100;
