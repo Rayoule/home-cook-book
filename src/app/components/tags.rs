@@ -35,6 +35,11 @@ pub fn TagList(
             .collect_view()
     };
 
+    let is_tags_menu_open =
+        use_context::<IsTagsMenuOpen>()
+            .expect("Expected to find IsTagsMenuOpen in context.")
+            .0;
+
     let on_clear_tags_click = move |ev: MouseEvent| {
         ev.stop_propagation();
         // clear selected_tags_signal
@@ -48,12 +53,9 @@ pub fn TagList(
                     *is_tag_selected = false;
                 });
             });
+        // Then close the menu
+        is_tags_menu_open.set(false);
     };
-
-    let is_tags_menu_open =
-        use_context::<IsTagsMenuOpen>()
-            .expect("Expected to find IsTagsMenuOpen in context.")
-            .0;
 
     let on_unroll_click = move |ev:MouseEvent| {
         ev.stop_propagation();

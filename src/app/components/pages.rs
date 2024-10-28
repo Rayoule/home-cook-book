@@ -473,13 +473,13 @@ pub fn AllRecipes() -> impl IntoView {
                     <div>
 
                         <div class="search-container">
+                            <div>
+                                {tags_component}
+                            </div>
                             <RecipeSearchBar
                                 search_input=search_input
                                 request_search_clear=request_search_clear
                             />
-                            <div>
-                                {tags_component}
-                            </div>
                         </div>
 
                         <DeleteRecipePopup/>

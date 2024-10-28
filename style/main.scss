@@ -261,7 +261,7 @@ svg {
 
 	background-color: var(--color-1);
 
-	margin-right: 10px;
+	margin-left: 10px;
 	padding-left: 10px;
 	//padding-right: 25px;
 
@@ -282,7 +282,6 @@ svg {
 .search-bar-button {
 	font: inherit;
     cursor: pointer;
-    
 
 	position: relative;
 	right: 5px;
@@ -1169,22 +1168,24 @@ textarea#text-input {
 
 	display: flex;
 
-	top: calc(var(--menu-height) * -1);
-	right: 0;
+	//top: calc(var(--menu-height) * -1);
+	left: -100vw;
+	top: 0;
 
-	height: var(--menu-height);
+	//height: var(--menu-height);
+	height: 100vh;
 	width: 100vw;
 
 	background-color: var(--tag-list-color);
 	box-shadow: none;
 
 	&.unrolled {
-		top: 0;
+		left: 0;
 		box-shadow: var(--menu-shadow);
 	}
 
 	transition:
-		top var(--menu-open-speed) ease-out,
+		left var(--menu-open-speed) ease-out,
 		box-shadow var(--menu-open-speed) ease-out
 	;
 }
