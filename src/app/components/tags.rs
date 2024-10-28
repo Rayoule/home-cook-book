@@ -1,9 +1,6 @@
 use leptos::*;
 use leptos::ev::MouseEvent;
-use crate::app::{
-    elements::icons_svg::CloseTagsSVG,
-    IsTagsMenuOpen
-};
+use crate::app::IsTagsMenuOpen;
 
 
 #[component]
