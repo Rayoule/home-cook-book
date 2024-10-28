@@ -2,7 +2,6 @@ use leptos::*;
 use leptos::ev::MouseEvent;
 use crate::app::{
     elements::icons_svg::CloseTagsSVG,
-    IsSettingsMenuOpen,
     IsTagsMenuOpen
 };
 
@@ -35,6 +34,7 @@ pub fn TagList(
             .map(|(tag_state, set_tag_state)| {
                 view_from_tag_state(tag_state, set_tag_state, selected_tags_signal)
             })
+            .rev()
             .collect_view()
     };
 
@@ -57,11 +57,6 @@ pub fn TagList(
         use_context::<IsTagsMenuOpen>()
             .expect("Expected to find IsTagsMenuOpen in context.")
             .0;
-    
-    let is_settings_menu_open =
-        use_context::<IsSettingsMenuOpen>()
-            .expect("Expected to find IsSettingsMenuOpen in context.")
-            .0;
 
     let on_unroll_click = move |ev:MouseEvent| {
         ev.stop_propagation();
@@ -71,16 +66,20 @@ pub fn TagList(
 
     view! {
 
-        <Show
-            when=move || { !is_settings_menu_open.get() }
+        <button
+            class="unroll-tags-button"
+            on:click=on_unroll_click
         >
-            <button
-                class="unroll-tags-button"
-                class:is-enabled=is_tags_menu_open
-                on:click=on_unroll_click
-            >
-            </button>
-        </Show>
+        </button>
+
+        <div
+            class="background-blocker tags-blocker"
+            class:is-enabled=is_tags_menu_open
+            on:click=move |ev| {
+                ev.stop_propagation();
+                is_tags_menu_open.set(false);
+            }
+        ></div>
 
         <div
             class="tags-container"
@@ -90,7 +89,7 @@ pub fn TagList(
             }
         >
 
-            <button
+            /*<button
                 class="close-tag-menu-button"
                 on:click=move |ev: MouseEvent| {
                     ev.stop_propagation();
@@ -98,7 +97,7 @@ pub fn TagList(
                 }
             >
                 <CloseTagsSVG/>
-            </button>
+            </button>*/
 
             <ul
                 class="tag-list"

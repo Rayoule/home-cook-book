@@ -552,27 +552,29 @@ pub fn SettingsMenu() -> impl IntoView {
         }
     });
 
-    let is_tags_menu_open =
-        use_context::<IsTagsMenuOpen>()
-            .expect("Expected to find IsTagsMenuOpen in context.")
-            .0;
-
 
     view! {
-        <Show
-            when=move || { !is_tags_menu_open.get() }
-        >
-            <button
-                class = "settings-menu-button"
-                on:click=move |_| is_settings_menu_open.update(|b| *b = !*b)
-            >
-                //{"Settings"}
-            </button>
-        </Show>
+        <button
+            class = "settings-menu-button"
+            on:click=move |_| is_settings_menu_open.update(|b| *b = !*b)
+        ></button>
+
+        <div
+            class = "background-blocker settings-blocker"
+            class:is-enabled=is_settings_menu_open
+            on:click=move |ev| {
+                ev.stop_propagation();
+                is_settings_menu_open.set(false);
+            }
+        ></div>
 
         <div
             class = "settings-menu"
             class:is-open=is_settings_menu_open
+            on:click=move |ev| {
+                ev.stop_propagation();
+                is_settings_menu_open.set(false);
+            }
         >
 
             <Show
@@ -580,7 +582,9 @@ pub fn SettingsMenu() -> impl IntoView {
                 fallback=move || view! {
                     <div
                         class="login-container"
-                        //class:is-open=is_menu_open
+                        on:click=move |ev| {
+                            ev.stop_propagation();
+                        }
                     >
                         <LoginMenu/>
                     </div>
@@ -609,9 +613,15 @@ pub fn SettingsMenu() -> impl IntoView {
                     }
                 > "Logout" </button>
 
-                
-
             </Show>
+
+            <button
+                class="settings-menu-close-button"
+                on:click=move |ev| {
+                    ev.stop_propagation();
+                    is_settings_menu_open.set(false);
+                }
+            ></button>
 
         </div>
     }
