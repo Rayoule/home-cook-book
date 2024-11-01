@@ -1,19 +1,28 @@
+use ev::MouseEvent;
 use leptos::{logging::*, *};
 use crate::app::{
-    elements::recipe_elements::*,
-    Recipe, RecipeActionDescriptor,
-    RecipeEntry, RecipeEntryType,
-    RecipeLight, RecipeServerAction,
-    ThemeColor
+    elements::recipe_elements::*, IsLoggedIn, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeLight, RecipeServerAction, ThemeColor
 };
 
 
 
 #[component]
-pub fn RecipeLightSheet(
+pub fn RecipeCard(
     recipe_light: RecipeLight,
     custom_color_style: ThemeColor,
 ) -> impl IntoView {
+
+    // Is logged in ?
+    let is_logged_in =
+        use_context::<IsLoggedIn>()
+            .expect("Expected to find IsLoggedIn in context")
+            .0;
+    
+    // Recipe Action
+    let recipe_action =
+        use_context::<RecipeServerAction>()
+            .expect("To find RecipeServerAction in context.")
+            .0;
 
     // Setup context with the recipe light getter
     let (recipe_id_getter, _) = create_signal(recipe_light.id.clone());
@@ -30,46 +39,127 @@ pub fn RecipeLightSheet(
         navigate(&path, Default::default());
     };
 
+    let is_menu_open = create_rw_signal(false);
+    let on_menu_click = move |ev: MouseEvent| {
+        ev.stop_propagation();
+        is_menu_open.update(|b| *b = !*b);
+    };
+
+    let menu_fallback = {move || {
+        let tag_list =
+            recipe_tags
+                .clone()
+                .unwrap_or_else(|| vec![])
+                .into_iter()
+                .map(move |t| {
+
+                    view! {
+                        <li class= "recipe-light">
+                            <span
+                                class= "recipe-light"
+                            >
+                                {t.name}
+                            </span>
+                        </li>
+                }})
+                .collect_view();
+
+        view!{
+            <h3 class="recipe-light name">{ recipe_name.clone() }</h3>
+
+            <ul class= "recipe-light">
+                {tag_list}
+            </ul>
+        }
+    }};
+    let menu_fallback = store_value(menu_fallback);
+
+    let recipe_card_style = move || {
+        if is_menu_open.get() {
+            "background-color: var(--theme-color-bg);".to_string()
+            + &custom_color_style.as_border_main_color()
+        } else {
+            custom_color_style.as_bg_main_color() + &custom_color_style.as_alt_color()
+        }
+    };
+
+    let recipe_card_button_style = move || {
+        if is_menu_open.get() {
+            custom_color_style.as_bg_main_color()
+        } else {
+            "background-color: var(--theme-color-bg);".to_string()
+        }
+    };
+
     view! {
         <div
-            class="recipe-light-container"
+            class="recipe-card"
+            class:into-menu=is_menu_open
+            style=recipe_card_style
             on:click=on_click
-            style=&custom_color_style.as_bg_main_color()
+            on:mouseleave=move |_| {
+                is_menu_open.set(false);
+            }
         >
 
-            <RecipeLightSubMenu
-                recipe_id=recipe_id_getter
-            />
+            <button
+                class="recipe-card-button"
+                style=recipe_card_button_style
+                on:click=on_menu_click
+            >
+            </button>
 
-            <h3 class="recipe-light name">{ recipe_name }</h3>
+            <Show
+                when=is_menu_open
+                fallback=menu_fallback
+            >
 
-            // Tag list
-            {move || {
-                let tag_list =
-                    recipe_tags
-                        .clone()
-                        .unwrap_or_else(|| vec![])
-                        .into_iter()
-                        .map(move |t| {
+                <Show
+                    when=is_logged_in
+                >
+                    <span
+                        class= "sub-menu-option"
+                        style=custom_color_style.as_visible_color()
+                        on:click=move |ev| {
+                            ev.stop_propagation();
+                            let path =
+                                "/recipe/".to_owned()
+                                + &recipe_id_getter.get_untracked().to_string()
+                                + "/editable";
+                            let navigate = leptos_router::use_navigate();
+                            navigate(&path, Default::default());
+                        }
+                    >{"Edit"}</span>
 
-                            view! {
-                                <li class= "recipe-light">
-                                    <span
-                                        class= "recipe-light"
-                                    >
-                                        {t.name}
-                                    </span>
-                                </li>
-                        }})
-                        .collect_view();
 
-                view!{
-                    <ul class= "recipe-light">
-                        {tag_list}
-                    </ul>
-                }
-            }}
-            
+                    <span
+                        class= "sub-menu-option"
+                        style=custom_color_style.as_visible_color()
+                        on:click=move |_| {
+                            recipe_action.dispatch(RecipeActionDescriptor::Duplicate(recipe_id_getter.get()));
+                        }
+                    >{"Duplicate"}</span>
+
+
+                </Show>
+
+                <span
+                    class= "sub-menu-option"
+                    style=custom_color_style.as_visible_color()
+                    on:click=move |_| {
+                        let print_path =
+                            "/recipe/".to_owned()
+                            + &recipe_id_getter.get().to_string()
+                            + "/print";
+                        let window = web_sys::window().expect("window should be available");
+                        window
+                            .open_with_url_and_target(&print_path, "_blank")
+                            .unwrap();
+                    }
+                >{"Print"}</span>
+
+            </Show>
+
         </div>
     }
 }

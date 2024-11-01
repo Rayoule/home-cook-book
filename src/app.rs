@@ -7,7 +7,6 @@ use crate::app::{
     components::{
         pages::*,
         recipe::*,
-        round_menu::*,
         recipe_server_functions::{
             apply_json_save,
             get_all_recipes_light,
@@ -32,8 +31,6 @@ pub struct PageNameSetter(WriteSignal<String>);
 pub struct IsLoggedIn(RwSignal<bool>);
 #[derive(Clone)]
 pub struct LoginCheckResource(Resource<(usize, usize, usize), bool>);
-#[derive(Clone)]
-pub struct IsPrintMode(RwSignal<bool>);
 #[derive(Clone)]
 pub struct IsSettingsMenuOpen(RwSignal<bool>);
 #[derive(Clone)]
@@ -229,18 +226,6 @@ pub fn App() -> impl IntoView {
     // Selected Tags
     let selected_tags = create_rw_signal::<Vec<String>>(vec![]);
     provide_context(SelectedTagsRwSignal(selected_tags));
-
-    // Print Mode
-    let is_print_mode = create_rw_signal(false);
-    create_effect(move |_| {
-        let print_mode = 
-            use_params_map().get().get("mode").is_some_and(|mode| {
-                mode.to_owned() == "print".to_string()
-            });
-        is_print_mode.set(print_mode);
-    });
-
-    provide_context(IsPrintMode(is_print_mode));
 
     // Delete Infos: If this is Some(id), then display the popup that will delete the recipe with this id
     let delete_popup_info = create_rw_signal::<Option<DeletePopupInfo>>(None);

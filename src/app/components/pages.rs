@@ -2,6 +2,7 @@ use elements::{
     icons_svg::LogoSVG,
     recipe_elements::SettingsMenu,
 };
+use ev::MouseEvent;
 use leptos::*;
 use leptos_router::*;
 use leptos::logging::*;
@@ -11,7 +12,7 @@ use crate::app::{
     *,
     components::{
         recipe_server_functions::*, recipe_sheets::{
-            EditableRecipeSheet, RecipeLightSheet, RecipeSheet
+            EditableRecipeSheet, RecipeCard, RecipeSheet
         }, tags::*, download_upload::{DownloadAll, UploadAll},
     },
     elements::molecules::*,
@@ -101,9 +102,6 @@ pub fn NewRecipePage() -> impl IntoView {
             .0;
     let action_submitted = recipe_action.input();
     let action_done_id = recipe_action.value();
-
-
-    let round_menu_info = create_signal(RoundMenuInfo::default());
 
     // store the submitted recipe name
     let submitted_name = create_rw_signal("".to_owned());
@@ -263,52 +261,6 @@ pub fn RecipePage() -> impl IntoView {
         use_context::<RecipeServerAction>()
             .expect("To find RecipeServerAction in context.")
             .0;
-    
-    let round_menu_info = {
-        let recipe_mode = get_recipe_mode(false);
-        RoundMenuInfo {
-            buttons: {
-                match recipe_mode {
-                    RecipePageMode::Display => vec![
-                        RoundMenuButton::Edit,
-                        RoundMenuButton::Print,
-                    ].into(),
-                    RecipePageMode::Editable => vec![
-                        RoundMenuButton::Delete,
-                    ].into(),
-                    RecipePageMode::Print => vec![
-                    ].into(),
-                }
-            },
-            recipe_id: Some(get_recipe_id_param(false)),
-            hide_return_button: recipe_mode == RecipePageMode::Print
-        }
-    };
-    // RoundMenu setup for this page
-    let round_menu_info = create_signal(round_menu_info);
-
-    // Update RoundMenu buttons
-    create_effect(move |_| {
-        let recipe_mode = get_recipe_mode(true);
-        round_menu_info.1.update(|rmi| {
-            rmi.recipe_id = Some(get_recipe_id_param(true));
-            rmi.buttons = {
-                match recipe_mode {
-                    RecipePageMode::Display => vec![
-                        RoundMenuButton::Edit,
-                        RoundMenuButton::Print,
-                    ].into(),
-                    RecipePageMode::Editable => vec![
-                        RoundMenuButton::Delete,
-                    ].into(),
-                    RecipePageMode::Print => vec![
-                    ].into(),
-                }
-            };
-            rmi.hide_return_button =
-                recipe_mode == RecipePageMode::Print;
-        });
-    });
 
     // Recipe resource
     let recipe_resource = create_resource(
@@ -436,6 +388,28 @@ impl ThemeColor {
         + &self.alt_color()
         + ";"
     }
+    pub fn as_border_main_color(&self) -> String {
+        "border-color: ".to_string()
+        + &self.main_color()
+        + ";"
+    }
+    pub fn as_border_alt_color(&self) -> String {
+        "border-color: ".to_string()
+        + &self.alt_color()
+        + ";"
+    }
+    pub fn as_visible_color(&self) -> String {
+        let col = match self {
+            ThemeColor::Color1 => self.main_color(),
+            ThemeColor::Color2 => self.main_color(),
+            ThemeColor::Color3 => self.alt_color(),
+            ThemeColor::Color4 => self.alt_color(),
+        };
+
+        "color: ".to_string()
+        + &col
+        + ";"
+    }
 
     pub fn random() -> Self {
         use rand::Rng;
@@ -456,14 +430,11 @@ pub fn AllRecipes() -> impl IntoView {
 
     set_page_name("Recipes");
 
-    // Round Menu setup for this page
-    let round_menu_info = create_signal(
-        RoundMenuInfo {
-            buttons: vec![ RoundMenuButton::New ].into(),
-            hide_return_button: true,
-            ..Default::default()
-        }
-    );
+    // Is logged in
+    let is_logged_in =
+        use_context::<IsLoggedIn>()
+            .expect("Expected to find IsLoggedIn in context.")
+            .0;
 
     let selected_tags_signal =
         use_context::<SelectedTagsRwSignal>()
@@ -520,6 +491,23 @@ pub fn AllRecipes() -> impl IntoView {
                 view! {
                     <div>
 
+                        <DeleteRecipePopup/>
+
+                        <Show
+                            when=is_logged_in
+                        >
+                            <button
+                                class="new-recipe-button"
+                                on:click=move |ev: MouseEvent| {
+                                    ev.stop_propagation();
+                                    let navigate = leptos_router::use_navigate();
+                                    navigate("/new-recipe", Default::default());
+                                }
+                            >
+                                <span>"+"</span>
+                            </button>
+                        </Show>
+
                         <div class="search-container">
                             <div>
                                 {tags_component}
@@ -529,8 +517,6 @@ pub fn AllRecipes() -> impl IntoView {
                                 request_search_clear=request_search_clear
                             />
                         </div>
-
-                        <DeleteRecipePopup/>
 
                         <div class="recipe-list-container">
                             {move || {
@@ -580,7 +566,7 @@ pub fn AllRecipes() -> impl IntoView {
                                                             let style_color = COLORS[color_id];
                                                             
                                                             view! {
-                                                                <RecipeLightSheet
+                                                                <RecipeCard
                                                                     recipe_light=recipe
                                                                     custom_color_style=style_color
                                                                 />
@@ -598,10 +584,6 @@ pub fn AllRecipes() -> impl IntoView {
                 }
             }}
         </Transition>
-        
-        <RoundMenu
-            info=round_menu_info.0
-        />
     }
 }
 
