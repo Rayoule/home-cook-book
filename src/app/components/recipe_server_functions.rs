@@ -180,39 +180,34 @@ pub async fn get_all_recipes_light() -> Result<Vec<RecipeLight>, ServerFnError> 
 
 
 #[server]
-pub async fn get_recipe_by_id(recipe_id: Option<u16>) -> Result<Recipe, ServerFnError> {
+pub async fn get_recipe_by_id(recipe_id: u16) -> Result<Recipe, ServerFnError> {
     use self::ssr::*;
+
+    log!("Getting RECIPE with ID: {:?}", recipe_id);
 
     // fake API delay
     if FAKE_API_DELAY { std::thread::sleep(std::time::Duration::from_millis(1250)); }
 
-    if let Some(recipe_id) = recipe_id {
+    let mut conn = db().await?;
 
-        let mut conn = db().await?;
+    let recipe_row =
+        sqlx::query_as::<_, DbRowRecipe>("SELECT * FROM recipes WHERE id = $1")
+            .bind(recipe_id)
+            .fetch_one(&mut conn)
+            .await?;
 
-        let recipe_row =
-            sqlx::query_as::<_, DbRowRecipe>("SELECT * FROM recipes WHERE id = $1")
-                .bind(recipe_id)
-                .fetch_one(&mut conn)
-                .await?;
+    let json_recipe = JsonRecipe {
+        name:           recipe_row.recipe_name,
+        tags:           serde_json::from_str::<JsonRecipeTags>(&recipe_row.recipe_tags)?,
+        ingredients:    serde_json::from_str::<JsonRecipeIngredients>(&recipe_row.recipe_ingredients)?,
+        instructions:   serde_json::from_str::<JsonRecipeInstructions>(&recipe_row.recipe_instructions)?,
+        notes:          serde_json::from_str::<JsonRecipeNotes>(&recipe_row.recipe_notes)?,
+    };
+    let recipe = json_recipe.to_recipe(recipe_row.id);
 
-        let json_recipe = JsonRecipe {
-            name:           recipe_row.recipe_name,
-            tags:           serde_json::from_str::<JsonRecipeTags>(&recipe_row.recipe_tags)?,
-            ingredients:    serde_json::from_str::<JsonRecipeIngredients>(&recipe_row.recipe_ingredients)?,
-            instructions:   serde_json::from_str::<JsonRecipeInstructions>(&recipe_row.recipe_instructions)?,
-            notes:          serde_json::from_str::<JsonRecipeNotes>(&recipe_row.recipe_notes)?,
-        };
-        let recipe = json_recipe.to_recipe(recipe_row.id);
+    log!("Recipe from id: {:?} fetched Successfully.", recipe_id);
 
-        log!("Recipe from id: {:?} fetched Successfully.", recipe_id);
-
-        Ok(recipe)
-    } else {
-        error!("No Recipe ID");
-        leptos_actix::redirect("/");
-        Err(ServerFnError::ServerError("No Recipe ID".to_owned()))
-    }
+    Ok(recipe)
 }
 
 

@@ -1,4 +1,4 @@
-use leptos::{html::Input, logging::*, *};
+use leptos::{logging::*, *};
 use serde::{Serialize, Deserialize};
 
 use crate::app::elements::recipe_elements::*;
@@ -11,7 +11,7 @@ pub struct Recipe {
     pub name: String,
     pub tags:Option<Vec<RecipeTag>>,
     pub ingredients: Option<Vec<RecipeIngredient>>,
-    pub instructions: Option<Vec<RecipeInstruction>>,
+    pub instructions: RecipeInstruction,
     pub notes: Option<Vec<RecipeNote>>,
 }
 
@@ -209,46 +209,26 @@ impl JsonRecipeIngredients {
 
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
-pub struct JsonRecipeInstructions(Option<Vec<String>>);
+pub struct JsonRecipeInstructions(String);
 impl JsonRecipeInstructions {
-    pub fn to_recipe_instructions(self) -> Option<Vec<RecipeInstruction>> {
-        if let Some(instrs) = self.0 {
-            Some(
-                instrs
-                    .into_iter()
-                    .map(|i| RecipeInstruction { content: i })
-                    .collect()
-            )
-        } else {
-            None
-        }
+    pub fn to_recipe_instructions(self) -> RecipeInstruction {
+        RecipeInstruction { content: self.0 }
     }
-    pub fn from_recipe_instructions(recipe_instrs: Option<Vec<RecipeInstruction>>) -> Self {
-        JsonRecipeInstructions(
-            if let Some(recipe_instrs) = recipe_instrs {
-                Some(
-                    recipe_instrs
-                        .into_iter()
-                        .map(|i| i.content)
-                        .collect()
-                )
-            } else {
-                None
-            }
-        )
+    pub fn from_recipe_instructions(recipe_instrs: RecipeInstruction) -> Self {
+        JsonRecipeInstructions(recipe_instrs.content)
     }
 }
 
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
-pub struct JsonRecipeNotes(Option<Vec<(String, String)>>);
+pub struct JsonRecipeNotes(Option<Vec<String>>);
 impl JsonRecipeNotes {
     pub fn to_recipe_notes(self) -> Option<Vec<RecipeNote>> {
         if let Some(notes) = self.0 {
             Some(
                 notes
                     .into_iter()
-                    .map(|(title, content)| RecipeNote { title, content })
+                    .map(|content| RecipeNote { content })
                     .collect()
             )
         } else {
@@ -261,7 +241,7 @@ impl JsonRecipeNotes {
                 Some(
                     recipe_notes
                         .into_iter()
-                        .map(|t| (t.title, t.content))
+                        .map(|t| t.content)
                         .collect()
                 )
             } else {
@@ -338,7 +318,6 @@ impl RecipeEntryType {
 /// RecipeEntry Trait --------
 pub trait RecipeEntry: IntoView + std::fmt::Debug + Clone + Default + 'static {
     fn get_entry_type() -> RecipeEntryType;
-    fn extract_value(nodes_refs: Vec<NodeRef<Input>>) -> Self;
     fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View;
     fn update_field_from_string_input(&mut self, field_id: Option<usize>, input: String);
     fn get_string_from_field(&self, field_id: Option<usize>) -> String;
@@ -371,13 +350,6 @@ impl IntoView for RecipeTag {
 impl RecipeEntry for RecipeTag {
 
     fn get_entry_type() -> RecipeEntryType { RecipeEntryType::Tag }
-
-    fn extract_value(nodes_refs: Vec<NodeRef<Input>>) -> Self {
-        if nodes_refs.len() != 1 { panic!("NodeRefs number is not matching !") }
-        RecipeTag {
-            name: nodes_refs[0].get().expect("<input> to exist").value(),
-        }
-    }
 
     fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View {
         view! {
@@ -431,22 +403,6 @@ impl IntoView for RecipeIngredient {
 impl RecipeEntry for RecipeIngredient {
 
     fn get_entry_type() -> RecipeEntryType { RecipeEntryType::Ingredients }
-
-    fn extract_value(nodes_refs: Vec<NodeRef<Input>>) -> Self {
-        if nodes_refs.len() != 3 { panic!("NodeRefs number is not matching !") }
-        RecipeIngredient {
-            quantity:   {
-                nodes_refs[0]
-                    .get()
-                    .expect("<input> to exist")
-                    .value()
-                    .parse::<u16>()
-                    .expect("to parse into a number !")
-            },
-            unit:       nodes_refs[1].get().expect("<input> to exist").value(),
-            content:    nodes_refs[2].get().expect("<input> to exist").value(),
-        }
-    }
 
     fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View {
         let entry_value = entry.get_untracked();
@@ -561,14 +517,6 @@ impl IntoView for RecipeInstruction {
 impl RecipeEntry for RecipeInstruction {
 
     fn get_entry_type() -> RecipeEntryType { RecipeEntryType::Instructions }
-
-    fn extract_value(nodes_refs: Vec<NodeRef<Input>>) -> Self {
-        if nodes_refs.len() != 1 { panic!("NodeRefs number is not matching !") }
-         
-        RecipeInstruction {
-            content: nodes_refs[0].get().expect("<input> to exist").value()
-        }
-    }
     
     fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View {
         view! {
@@ -598,10 +546,9 @@ impl RecipeEntry for RecipeInstruction {
 
 
 
-/// NoOTES and implementions -----
+/// NOTES and implementions -----
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RecipeNote {
-    pub title: String,
     pub content: String,
 }
 
@@ -609,7 +556,6 @@ impl IntoView for RecipeNote {
     fn into_view(self) -> View {
         view! {
             <div class= "recipe-note-container" >
-                <h1 class="recipe-note" >{self.title}</h1>
                 <h1 class="recipe-note" >{self.content}</h1>
             </div>
         }
@@ -620,79 +566,28 @@ impl IntoView for RecipeNote {
 impl RecipeEntry for RecipeNote {
 
     fn get_entry_type() -> RecipeEntryType { RecipeEntryType::Notes }
-
-    fn extract_value(nodes_refs: Vec<NodeRef<Input>>) -> Self {
-
-        if nodes_refs.len() != 2 { panic!("NodeRefs number is not matching !") }
-         
-        RecipeNote {
-            title:      nodes_refs[0].get().expect("<input> to exist").value(),
-            content:    nodes_refs[1].get().expect("<input> to exist").value(),
-        }
-    }
     
     fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View {
         let entry_value = entry.get_untracked();
         view! {
             <div class= "editable-recipe-note-container">
                 <RecipeEntryInput
-                    class=              "notes title".to_owned()
-                    initial_value=      entry_value.title
-                    placeholder=        "Title".to_owned()
-                    get_entry_signal=   entry
-                    set_entry_signal=   set_entry
-                    field_id=           {0}
-                    is_input=           true
-                />
-
-                <div class="divider notes"></div>
-
-                <RecipeEntryInput
                     class=              "notes note-content".to_owned()
                     initial_value=      entry_value.content
-                    placeholder=        "Content".to_owned()
+                    placeholder=        "Note content...".to_owned()
                     get_entry_signal=   entry
                     set_entry_signal=   set_entry
-                    field_id=           {1}
                 />
             </div>
         }.into_view()
     }
     
-    fn update_field_from_string_input(&mut self, field_id: Option<usize>, input: String) {
-        match field_id {
-
-            Some(0) => self.title = input,
-
-            Some(1) => self.content = input,
-
-            None => {
-                error!("ERROR: No ID provided.")
-            },
-
-            _ => {
-                error!("ERROR: Invalid ID.")
-            },
-
-        }
+    fn update_field_from_string_input(&mut self, _field_id: Option<usize>, input: String) {
+        self.content = input;
     }
     
-    fn get_string_from_field(&self, field_id: Option<usize>) -> String {
-        match field_id {
-
-            Some(0) => self.title.clone(),
-
-            Some(1) => self.content.clone(),
-
-            None => {
-                panic!("ERROR: No ID provided.")
-            },
-
-            _ => {
-                panic!("ERROR: Invalid ID.")
-            },
-
-        }
+    fn get_string_from_field(&self, _field_id: Option<usize>) -> String {
+        self.content.clone()
     }
 }
 

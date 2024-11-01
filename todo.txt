@@ -2,8 +2,10 @@ Home Cook Book
 
 
 	To Do :
+    X Remove list of instructions
+    - Remove round menu
     - Edit Page
-    - Designer le menu (tags, search?)
+    X Designer le menu (tags, search?)
     X Faire Logout
     - Designer le Round Button Menu
     - Designer Menu settings (Home?, Settings, Logout)

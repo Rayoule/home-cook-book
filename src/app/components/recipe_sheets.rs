@@ -1,6 +1,10 @@
 use leptos::{logging::*, *};
 use crate::app::{
-    elements::recipe_elements::*, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeLight, RecipeServerAction
+    elements::recipe_elements::*,
+    Recipe, RecipeActionDescriptor,
+    RecipeEntry, RecipeEntryType,
+    RecipeLight, RecipeServerAction,
+    ThemeColor
 };
 
 
@@ -8,7 +12,7 @@ use crate::app::{
 #[component]
 pub fn RecipeLightSheet(
     recipe_light: RecipeLight,
-    custom_color_style: String,
+    custom_color_style: ThemeColor,
 ) -> impl IntoView {
 
     // Setup context with the recipe light getter
@@ -30,7 +34,7 @@ pub fn RecipeLightSheet(
         <div
             class="recipe-light-container"
             on:click=on_click
-            style=&custom_color_style
+            style=&custom_color_style.as_bg_main_color()
         >
 
             <RecipeLightSubMenu
@@ -111,19 +115,12 @@ pub fn RecipeSheet(
             .collect_view()
     };
 
-    let instruction_list = {
-        recipe
-            .instructions
-            .unwrap_or_else(|| vec![])
-            .into_iter()
-            .map(|instruction| {
-                view! {
-                    <li class="display-recipe instructions">
-                        <span class="display-recipe instructions">{instruction.content}</span>
-                    </li>
-                }
-            })
-            .collect_view()
+    let instructions = {
+            view! {
+                <li class="display-recipe instructions">
+                    <span class="display-recipe instructions">{recipe.instructions.content}</span>
+                </li>
+            }.into_view()
     };
 
     let note_list = {
@@ -134,7 +131,6 @@ pub fn RecipeSheet(
             .map(|note| {
                 view! {
                     <li class="display-recipe notes">
-                        <h4 class="display-recipe notes">{note.title}</h4>
                         <span class="display-recipe notes">{note.content}</span>
                     </li>
                 }
@@ -143,9 +139,15 @@ pub fn RecipeSheet(
     };
 
     view! {
-        <div class="display-recipe-container">
 
-            <h2 class="display-recipe name">{recipe.name}</h2>
+        <RecipeMenu
+            color=ThemeColor::random()
+            editable=false
+            recipe_name=recipe.name
+            recipe_id=recipe.id.expect("Expected Recipe to have a recipe_id")
+        />
+
+        <div class="display-recipe-container">
 
             <div class="display-recipe tags container">
                 <h3 class="display-recipe tags title">"Tags"</h3>
@@ -164,7 +166,7 @@ pub fn RecipeSheet(
             <div class="display-recipe instructions container">
                 <h3 class="display-recipe instructions title">"Instructions"</h3>
                 <ul class="display-recipe instructions">
-                    {instruction_list}
+                    {instructions}
                 </ul>
             </div>
 
@@ -203,10 +205,10 @@ pub fn EditableRecipeSheet(
     // for each category, make a Signal<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>>
     // 0.tags, 1.ingredients, 2.instructions, 3.notes
     let recipe_signals = create_rw_signal((
-        create_rw_signal(recipe.name),
+        create_rw_signal( recipe.name ),
         create_rw_signal( entries_into_signals(recipe.tags) ),
         create_rw_signal( entries_into_signals(recipe.ingredients) ),
-        create_rw_signal( entries_into_signals(recipe.instructions) ),
+        create_signal( recipe.instructions ),
         create_rw_signal( entries_into_signals(recipe.notes) ),
     ));
     let (
@@ -229,7 +231,7 @@ pub fn EditableRecipeSheet(
             name:           signals.0.clone().get_untracked(),
             tags:           fetch_entries_from_signals(signals.1.get_untracked()),
             ingredients:    fetch_entries_from_signals(signals.2.get_untracked()),
-            instructions:   fetch_entries_from_signals(signals.3.get_untracked()),
+            instructions:   signals.3.0.get_untracked(),
             notes:          fetch_entries_from_signals(signals.4.get_untracked()),
         };
 
@@ -255,15 +257,16 @@ pub fn EditableRecipeSheet(
     };
 
     view! {
+
+        <RecipeMenu
+            color=ThemeColor::random()
+            editable=true
+            name_signal=name_signal
+        />
+
         <div class="editable-recipe" >
 
             {move || view! {
-                
-                // Name
-                <EditableRecipeName
-                    name_signal=    name_signal
-                    editable=       true
-                />
 
                 // Tags
                 <EditableEntryList
@@ -280,9 +283,9 @@ pub fn EditableRecipeSheet(
                 />
 
                 // Instructions
-                <EditableEntryList
+                <EditableInstructions
                     editable=           true
-                    entry_list_signal=  instructions_signal
+                    entry_signal=       instructions_signal
                     entry_type=         RecipeEntryType::Instructions
                 />
 

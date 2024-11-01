@@ -158,11 +158,6 @@ pub fn NewRecipePage() -> impl IntoView {
 
     view! {
 
-        <RoundMenu
-            info=round_menu_info.0
-        />
-
-        //<A href="/">{"Return to Home Page"}</A>
         <div class="main-content">
             <EditableRecipeSheet
                 is_new_recipe=  true
@@ -292,10 +287,6 @@ pub fn RecipePage() -> impl IntoView {
     // RoundMenu setup for this page
     let round_menu_info = create_signal(round_menu_info);
 
-    // Update RoundMenu recipe_id
-    /*create_effect(move |_| {
-        round_menu_info.1.update(|rmi| rmi.recipe_id = Some(get_recipe_id_param()));
-    });*/
     // Update RoundMenu buttons
     create_effect(move |_| {
         let recipe_mode = get_recipe_mode(true);
@@ -325,19 +316,23 @@ pub fn RecipePage() -> impl IntoView {
             recipe_action
                 .version()
                 .get(),
-                get_recipe_id_param(true)
+            get_recipe_id_param(true)
         ),
         move |(_, recipe_id)| {
-            get_recipe_by_id(Some(recipe_id))
+            async move {
+                match get_recipe_by_id(recipe_id).await {
+                    Ok(recipe) => Some(recipe),
+                    Err(e) => {
+                        error!("Error fetching recipe by id: {:?}", e.to_string());
+                        None
+                    }
+                }
+            }
         },
     );
 
 
     view! {
-
-        <RoundMenu
-            info=round_menu_info.0
-        />
 
         <DeleteRecipePopup/>
 
@@ -346,7 +341,7 @@ pub fn RecipePage() -> impl IntoView {
             {move || {
                 let recipe = recipe_resource.get();
 
-                if let Some(Ok(recipe)) = recipe {
+                if let Some(Some(recipe)) = recipe {
 
                     match get_recipe_mode(true) {
                         RecipePageMode::Display => {
@@ -354,7 +349,6 @@ pub fn RecipePage() -> impl IntoView {
                             view! {
                                 <RecipeSheet
                                     recipe= recipe
-                                    //print=  false
                                 />
                             }
                         },
@@ -372,13 +366,12 @@ pub fn RecipePage() -> impl IntoView {
                             view! {
                                 <RecipeSheet
                                     recipe= recipe
-                                    //print=  true
                                 />
                             }
                         },
                     }
                 } else {
-                    {"waiting for resource..."}.into_view()
+                    {"Recipe empty."}.into_view()
                 }
             }}
         </Transition>
@@ -389,12 +382,73 @@ pub fn RecipePage() -> impl IntoView {
 
 
 // Colors to iterate from
-const COLORS: [&str; 4] = [
-    "var(--color-1)",
-    "var(--color-2)",
-    "var(--color-3)",
-    "var(--color-4)"
+const COLORS: [ThemeColor; 4] = [
+    ThemeColor::Color1,
+    ThemeColor::Color2,
+    ThemeColor::Color3,
+    ThemeColor::Color4
 ];
+
+
+// Colors
+#[derive(Clone, Copy)]
+pub enum ThemeColor {
+    Color1,
+    Color2,
+    Color3,
+    Color4
+}
+impl ThemeColor {
+    fn main_color(&self) -> String {
+        match self {
+            ThemeColor::Color1 => "var(--theme-color-1)",
+            ThemeColor::Color2 => "var(--theme-color-2)",
+            ThemeColor::Color3 => "var(--theme-color-3)",
+            ThemeColor::Color4 => "var(--theme-color-4)",
+        }.to_string()
+    }
+    fn alt_color(&self) -> String {
+        match self {
+            ThemeColor::Color1 => "var(--theme-color-1-alt)",
+            ThemeColor::Color2 => "var(--theme-color-2-alt)",
+            ThemeColor::Color3 => "var(--theme-color-3-alt)",
+            ThemeColor::Color4 => "var(--theme-color-4-alt)",
+        }.to_string()
+    }
+
+    pub fn as_bg_main_color(&self) -> String {
+        "background-color: ".to_string()
+        + &self.main_color()
+        + ";"
+    }
+    pub fn as_bg_alt_color(&self) -> String {
+        "background-color: ".to_string()
+        + &self.alt_color()
+        + ";"
+    }
+    pub fn as_main_color(&self) -> String {
+        "color: ".to_string()
+        + &self.main_color()
+        + ";"
+    }
+    pub fn as_alt_color(&self) -> String {
+        "color: ".to_string()
+        + &self.alt_color()
+        + ";"
+    }
+
+    pub fn random() -> Self {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        match rng.gen_range(0..4) {
+            0 => ThemeColor::Color1,
+            1 => ThemeColor::Color2,
+            2 => ThemeColor::Color3,
+            3 => ThemeColor::Color4,
+            _ => unreachable!(),
+        }
+    }
+}
 
 /// Renders the home page of your application.
 #[component]
@@ -437,14 +491,8 @@ pub fn AllRecipes() -> impl IntoView {
 
     view! {
 
-        /*<svg
-            src="assets/garlic-icon.svg"
-            class="logo"
-            on:click=move |_| {
-                let navigate = leptos_router::use_navigate();
-                navigate("/", Default::default());
-            }
-        ></svg>*/
+        <SettingsMenu/>
+
         <div class="logo" >
             <LogoSVG/>
         </div>
@@ -530,12 +578,11 @@ pub fn AllRecipes() -> impl IntoView {
                                                             let idx = i + random_number;
                                                             let color_id: usize = idx % COLORS.len();
                                                             let style_color = COLORS[color_id];
-                                                            let style_string = "background-color: ".to_string() + style_color + ";";
                                                             
                                                             view! {
                                                                 <RecipeLightSheet
                                                                     recipe_light=recipe
-                                                                    custom_color_style=style_string
+                                                                    custom_color_style=style_color
                                                                 />
                                                             }
                                                         })
@@ -631,18 +678,6 @@ pub fn HeaderMenu(
             when=move || { !print_mode() }
         >
             <header class="header-menu">
-                /*<h3
-                    class="logo"
-                    on:click=on_home_click
-                >{"Home Cook Book"}</h3>*/
-                /*<img
-                    src="assets/garlic-icon.svg"
-                    class="logo"
-                    on:click=move |_| {
-                        let navigate = leptos_router::use_navigate();
-                        navigate("/", Default::default());
-                    };
-                ></img>*/
                 <SettingsMenu/>
             </header>
         </Show>

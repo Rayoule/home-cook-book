@@ -11,52 +11,207 @@ use crate::app::{
 
 
 #[component]
-pub fn EditableRecipeName(
+pub fn RecipeMenu(
+    color: ThemeColor,
     editable: bool,
-    /// Provide this if not editable
     #[prop(optional)]
-    name: Option<String>,
+    recipe_name: Option<String>,
+    #[prop(optional)]
+    name_signal: Option<RwSignal<String>>,
+    #[prop(optional)]
+    recipe_id: Option<u16>,
+) -> impl IntoView {
+
+    // Is logged in
+    let is_logged_in =
+        use_context::<IsLoggedIn>()
+            .expect("Expected to find IsLoggedIn in context.")
+            .0;
+
+    let menu_open = create_rw_signal(false);
+
+    let recipe_name = recipe_name.unwrap_or_else(|| String::new());
+
+    if !editable {
+
+        view! {
+
+            <button
+                style=&color.as_alt_color()
+                class="recipe-menu-button back"
+            >
+                "Back"
+            </button>
+
+            <button
+                style=&color.as_alt_color()
+                class="recipe-menu-button"
+                on:click=move |ev| {
+                    ev.stop_propagation();
+                    menu_open.update(|b| *b = !*b);
+                }
+            >
+                "Menu Button"
+            </button>
+    
+            <div
+                class="recipe-menu"
+                style=&color.as_bg_main_color()
+                class:is-open=menu_open
+            >
+    
+                <Show
+                    when=menu_open
+                    fallback=move || view! {
+                        <h2
+                            style=&color.as_alt_color()
+                            class="recipe-name"
+                            class:menu-open=menu_open
+                        >
+                            { recipe_name.clone() }
+                        </h2>
+                    }
+                >
+    
+                    <Show
+                        when=is_logged_in
+                    >
+                        <button
+                            style=&color.as_alt_color()
+                            class="recipe-menu-option"
+                            on:click=move |ev: MouseEvent| {
+                                ev.stop_propagation();
+                                let recipe_id = recipe_id.expect("to find recipe_id for button Edit.");
+                                let edit_path = "/recipe/".to_owned() + &recipe_id.to_string() + "/editable";
+                                let navigate = leptos_router::use_navigate();
+                                navigate(&edit_path, Default::default());
+                            }
+                        >
+                            "Edit"
+                        </button>
+                    </Show>
+    
+                    <button
+                        style=&color.as_alt_color()
+                        class="recipe-menu-option"
+                        on:click=move |ev| {
+                            ev.stop_propagation();
+                            let recipe_id = recipe_id.expect("to find recipe_id for button Edit.");
+                            let print_path = "/recipe/".to_owned() + &recipe_id.to_string() + "/print";
+                            let window = web_sys::window().expect("window should be available");
+                            window
+                                .open_with_url_and_target(&print_path, "_blank")
+                                .unwrap();
+                        }
+                    >
+                        "Print"
+                    </button>
+    
+                    <Show
+                        when=is_logged_in
+                    >
+                        <button
+                            style=&color.as_alt_color()
+                            class="recipe-menu-option"
+                            on:click=move |ev: MouseEvent| {
+                                ev.stop_propagation();
+                                let recipe_id = recipe_id.expect("to find recipe_id for button Edit.");
+                                let delete_info_signal =
+                                    use_context::<DeleteInfoSignal>()
+                                        .expect("To find DeleteInfoSignal in context.")
+                                        .0;
+                                delete_info_signal.set( Some( DeletePopupInfo(recipe_id)) );
+                            }
+                        >
+                            "Delete"
+                        </button>
+                    </Show>
+    
+                </Show>
+    
+            </div>
+        }.into_view()
+
+    } else {
+
+        view! {
+
+            <div
+                class="recipe-menu"
+                class:is-open=menu_open
+            >
+
+                <button
+                    style=&color.as_alt_color()
+                    class="recipe-menu-button back"
+                >
+                    "Back"
+                </button>
+
+                <button
+                    style=&color.as_alt_color()
+                    class="recipe-menu-button save"
+                >
+                    "Save"
+                </button>
+
+                { move || {
+                    if let Some(name_signal) = name_signal {
+                        view! {
+                                <input
+                                    class="text-input recipe-name"
+                                    class:menu-open=menu_open
+                                    type="text"
+                                    id="text-input"
+                                    placeholder="Recipe Name..."
+                                    maxlength="45"
+                                    // get_untracked() because this is only initial value
+                                    value=name_signal.get_untracked()
+                                    // update name_signal on input
+                                    on:input=move |ev| {
+                                        name_signal.set(event_target_value(&ev))
+                                    }
+                                />
+                        }.into_view()
+                    } else {
+                        error!("ERROR: No Name Signal provided.");
+                        ().into_view()
+                    }
+                }}
+
+            </div>
+            
+        }.into_view()
+    }
+}
+
+
+#[component]
+pub fn EditableRecipeName(
     /// Provide this if editable
     #[prop(optional)]
     name_signal: Option<RwSignal<String>>,
 ) -> impl IntoView {
 
-    if !editable {
-        if let Some(name) = name {
-            view! {
-                <div
-                    class= { "name" }
-                >
-                    <h1>{name}</h1>
-                </div>
-            }.into_view()
-        } else {
-            error!("ERROR: No Name provided.");
-            ().into_view()
-        }
-        
+    if let Some(name_signal) = name_signal {
+        view! {
+                <input
+                    class="text-input name"
+                    type="text"
+                    id="text-input"
+                    placeholder="Recipe Name..."
+                    maxlength="45"
+                    // get_untracked() because this is only initial value
+                    value=name_signal.get_untracked()
+                    // update name_signal on input
+                    on:input=move |ev| {
+                        name_signal.set(event_target_value(&ev))
+                    }
+                />
+        }.into_view()
     } else {
-
-        if let Some(name_signal) = name_signal {
-            view! {
-                    <input
-                        class="text-input name"
-                        type="text"
-                        id="text-input"
-                        placeholder="Recipe Name..."
-                        maxlength="45"
-                        // get_untracked() because this is only initial value
-                        value=name_signal.get_untracked()
-                        // update name_signal on input
-                        on:input=move |ev| {
-                            name_signal.set(event_target_value(&ev))
-                        }
-                    />
-            }.into_view()
-        } else {
-            error!("ERROR: No Name Signal provided.");
-            ().into_view()
-        }
+        error!("ERROR: No Name Signal provided.");
+        ().into_view()
     }
 }
 
@@ -209,6 +364,71 @@ pub fn EditableEntryList<T: RecipeEntry>(
                         }.into_view()
                     } else { ().into_view() }
                 }
+            </div>
+        }
+        .into_view()
+    }
+}
+
+
+#[component]
+pub fn EditableInstructions<T: RecipeEntry>( 
+    editable: bool,
+    entry_type: RecipeEntryType,
+    /// Needed if not editable
+    #[prop(optional)]
+    entry_list: Option<T>,
+    /// Needed if editable
+    #[prop(optional)]
+    entry_signal: Option<(ReadSignal<T>, WriteSignal<T>)>,
+) -> impl IntoView {
+
+    let (entry_type_title, style_class) = entry_type.title_and_class();
+
+    if !editable {
+
+        // Component in non editable mode
+        view! {
+            <div class={style_class.clone() + " container list"} >
+                <h1>{entry_type_title}</h1>
+                <ul class={style_class.clone()}>
+                    {
+                        entry_list
+                            .into_iter()
+                            .map(|entry| {
+                                view! {
+                                    <li class={style_class.clone()} id="entry-li">
+                                        { entry.into_view() }
+                                    </li>
+                                }
+                            })
+                            .collect_view()
+                    }
+                </ul>
+            </div>
+        }
+        .into_view()
+    } else {
+
+        let (entry, set_entry) = entry_signal.unwrap_or(create_signal(T::default()));
+
+        view! {
+            <div class={style_class.clone() + " container editable"}>
+
+                <h3 id="field-title" class=style_class.clone() >{entry_type_title}</h3>
+
+                <li class={style_class.clone()} id="entry-li">
+                    {
+                        if !editable {
+                            entry.into_view()
+                        } else {
+                            view! {
+                                { T::into_editable_view(entry, set_entry) }
+                            }
+                        }
+                    }
+                </li>
+
             </div>
         }
         .into_view()
@@ -450,11 +670,9 @@ pub fn RecipeLightSubMenu(
 
     let is_menu = create_rw_signal(false);
 
-    //let edit_path: String = "/recipe/".to_owned() + &recipe_id.get_untracked().to_string() + "/editable";
-
     let on_sub_menu_click = move |ev: MouseEvent| {
         ev.stop_propagation();
-        is_menu.set(!is_menu.get());
+        is_menu.update(|b| *b = !*b);
     };
     
     view! {
