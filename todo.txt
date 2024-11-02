@@ -2,6 +2,8 @@ Home Cook Book
 
 
 	To Do :
+    - RecipePage broken if text too long
+    - Random colors on RecipeCards ?
     - Edit Page:
       - fix save button
       - add RecipeMenu (with name within)
