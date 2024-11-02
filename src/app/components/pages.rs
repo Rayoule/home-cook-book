@@ -6,6 +6,7 @@ use ev::MouseEvent;
 use leptos::*;
 use leptos_router::*;
 use leptos::logging::*;
+use rand::rngs::ThreadRng;
 use std::sync::Arc;
 
 use crate::app::{
@@ -79,7 +80,7 @@ pub fn LoginMenu() -> impl IntoView {
                     node_ref=password_input
                 />
                 <br/>
-                <button class="login-button" type="submit"> "Ok" </button>
+                <button class="login-button" type="submit"> "ok" </button>
             </form>
         </div>
     }
@@ -422,6 +423,15 @@ impl ThemeColor {
             _ => unreachable!(),
         }
     }
+
+    /*pub fn recipe_headling_color(&self) -> String {
+        match self {
+            ThemeColor::Color1 => self.as_main_color(),
+            ThemeColor::Color2 => self.as_main_color(),
+            ThemeColor::Color3 => self.as_alt_color(),
+            ThemeColor::Color4 => todo!(),
+        }
+    }*/
 }
 
 /// Renders the home page of your application.

@@ -2,14 +2,19 @@ Home Cook Book
 
 
 	To Do :
+    - Edit Page:
+      - fix save button
+      - add RecipeMenu (with name within)
+    - Merge ingredients units and qty
+    - bug on delete tag (wrong tag)
     X Remove list of instructions
-    - Remove round menu
+    X Remove round menu
     - Edit Page
     X Designer le menu (tags, search?)
     X Faire Logout
-    - Designer le Round Button Menu
-    - Designer Menu settings (Home?, Settings, Logout)
-    - Enlever le "transform: translate(0.5%, -0.5%);" décalage sub-menu
+    X Designer le Round Button Menu
+    X Designer Menu settings (Home?, Settings, Logout)
+    X Enlever le "transform: translate(0.5%, -0.5%);" décalage sub-menu
     X "unrollable-tag-panel" div inutile dans tags.rs
     - Crashes:
       X Refresh Edit page
@@ -18,7 +23,7 @@ Home Cook Book
     - Est-ce que des images hebergée ailleurs pourrait convenir ?
 
     X button clear qui disparait (tags-container)
-    - on peut scroller dans les menus (tags/settings)
+    X on peut scroller dans les menus (tags/settings)
     X bouttons top qui restent affichés dans les menus
     X backup menu qui surgit
     - enlever settings menu backup quand on est sur la page backup

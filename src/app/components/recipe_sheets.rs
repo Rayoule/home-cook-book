@@ -171,7 +171,6 @@ pub fn RecipeCard(
 #[component]
 pub fn RecipeSheet(
     recipe: Recipe,
-    //print: bool,
 ) -> impl IntoView {
 
     let tag_list = {
@@ -207,8 +206,8 @@ pub fn RecipeSheet(
 
     let instructions = {
             view! {
-                <li class="display-recipe instructions">
-                    <span class="display-recipe instructions">{recipe.instructions.content}</span>
+                <li class="display-recipe instructions content">
+                    {recipe.instructions.content}
                 </li>
             }.into_view()
     };
@@ -220,7 +219,10 @@ pub fn RecipeSheet(
             .into_iter()
             .map(|note| {
                 view! {
-                    <li class="display-recipe notes">
+                    <li
+                        style=move || { ThemeColor::random().as_border_main_color() }
+                        class="display-recipe notes"
+                    >
                         <span class="display-recipe notes">{note.content}</span>
                     </li>
                 }
@@ -228,10 +230,12 @@ pub fn RecipeSheet(
             .collect_view()
     };
 
+    let theme_color = create_rw_signal(ThemeColor::random());
+
     view! {
 
         <RecipeMenu
-            color=ThemeColor::random()
+            color=theme_color
             editable=false
             recipe_name=recipe.name
             recipe_id=recipe.id.expect("Expected Recipe to have a recipe_id")
@@ -239,31 +243,43 @@ pub fn RecipeSheet(
 
         <div class="display-recipe-container">
 
-            <div class="display-recipe tags container">
-                <h3 class="display-recipe tags title">"Tags"</h3>
-                <ul class="display-recipe tags">
-                    {tag_list}
-                </ul>
-            </div>
-
             <div class="display-recipe ingredients container">
-                <h3 class="display-recipe ingredients title">"Ingredients"</h3>
+                <h3
+                    style=move || { theme_color.get().as_visible_color() }
+                    class="display-recipe ingredients title"
+                >"Ingredients"</h3>
                 <ul class="display-recipe ingredients">
                     {ingredient_list}
                 </ul>
             </div>
 
-            <div class="display-recipe instructions container">
-                <h3 class="display-recipe instructions title">"Instructions"</h3>
+            <div class="display-recipe instructions container" >
+                <h3
+                    style=move || { theme_color.get().as_visible_color() }
+                    class="display-recipe instructions title"
+                >"Instructions"</h3>
                 <ul class="display-recipe instructions">
                     {instructions}
                 </ul>
             </div>
 
             <div class="display-recipe notes container">
-                <h3 class="display-recipe notes title">"Notes"</h3>
+                <h3
+                    style=move || { theme_color.get().as_visible_color() }
+                    class="display-recipe notes title"
+                >"Notes"</h3>
                 <ul class="display-recipe notes">
                     {note_list}
+                </ul>
+            </div>
+
+            <div class="display-recipe tags container">
+                <h3
+                    style=move || { theme_color.get().as_visible_color() }
+                    class="display-recipe tags title"
+                >"Tags"</h3>
+                <ul class="display-recipe tags">
+                    {tag_list}
                 </ul>
             </div>
 
@@ -346,10 +362,12 @@ pub fn EditableRecipeSheet(
         }
     };
 
+    let theme_color = create_rw_signal(ThemeColor::random());
+
     view! {
 
         <RecipeMenu
-            color=ThemeColor::random()
+            color=theme_color
             editable=true
             name_signal=name_signal
         />

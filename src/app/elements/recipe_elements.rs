@@ -12,7 +12,7 @@ use crate::app::{
 
 #[component]
 pub fn RecipeMenu(
-    color: ThemeColor,
+    color: RwSignal<ThemeColor>,
     editable: bool,
     #[prop(optional)]
     recipe_name: Option<String>,
@@ -35,49 +35,53 @@ pub fn RecipeMenu(
     if !editable {
 
         view! {
-
-            <button
-                style=&color.as_alt_color()
-                class="recipe-menu-button back"
-            >
-                "Back"
-            </button>
-
-            <button
-                style=&color.as_alt_color()
-                class="recipe-menu-button"
-                on:click=move |ev| {
-                    ev.stop_propagation();
-                    menu_open.update(|b| *b = !*b);
-                }
-            >
-                "Menu Button"
-            </button>
     
             <div
                 class="recipe-menu"
-                style=&color.as_bg_main_color()
                 class:is-open=menu_open
+                class:not-logged-in=move || { !is_logged_in.get() }
+                style=move || { color.get().as_bg_main_color() }
             >
+
+                <button
+                    class="recipe-menu-button back"
+                    on:click=move |ev| {
+                        ev.stop_propagation();
+                        let navigate = leptos_router::use_navigate();
+                        navigate("/", Default::default());
+                    }
+                >
+                </button>
+
+                <button
+                    class="recipe-menu-button menu"
+                    on:click=move |ev| {
+                        ev.stop_propagation();
+                        menu_open.update(|b| *b = !*b);
+                    }
+                >
+                </button>
+
+                <Show
+                    when=move || { !menu_open.get() }
+                >
+                    <h2
+                        style=move || { color.get().as_alt_color() }
+                        class="recipe-name"
+                        class:menu-open=menu_open
+                    >
+                        { recipe_name.clone() }
+                    </h2>
+                </Show>
     
                 <Show
                     when=menu_open
-                    fallback=move || view! {
-                        <h2
-                            style=&color.as_alt_color()
-                            class="recipe-name"
-                            class:menu-open=menu_open
-                        >
-                            { recipe_name.clone() }
-                        </h2>
-                    }
                 >
-    
                     <Show
                         when=is_logged_in
                     >
                         <button
-                            style=&color.as_alt_color()
+                            style=move || { color.get().as_alt_color() }
                             class="recipe-menu-option"
                             on:click=move |ev: MouseEvent| {
                                 ev.stop_propagation();
@@ -92,7 +96,7 @@ pub fn RecipeMenu(
                     </Show>
     
                     <button
-                        style=&color.as_alt_color()
+                        style=move || { color.get().as_alt_color() }
                         class="recipe-menu-option"
                         on:click=move |ev| {
                             ev.stop_propagation();
@@ -111,7 +115,7 @@ pub fn RecipeMenu(
                         when=is_logged_in
                     >
                         <button
-                            style=&color.as_alt_color()
+                            style=move || { color.get().as_alt_color() }
                             class="recipe-menu-option"
                             on:click=move |ev: MouseEvent| {
                                 ev.stop_propagation();
@@ -142,14 +146,14 @@ pub fn RecipeMenu(
             >
 
                 <button
-                    style=&color.as_alt_color()
+                    style=move || { color.get().as_alt_color() }
                     class="recipe-menu-button back"
                 >
                     "Back"
                 </button>
 
                 <button
-                    style=&color.as_alt_color()
+                    style=move || { color.get().as_alt_color() }
                     class="recipe-menu-button save"
                 >
                     "Save"
@@ -689,6 +693,7 @@ pub fn SettingsMenu() -> impl IntoView {
     view! {
         <button
             class = "settings-menu-button"
+            class:menu-open=is_settings_menu_open
             on:click=move |_| is_settings_menu_open.update(|b| *b = !*b)
         ></button>
 
@@ -747,14 +752,6 @@ pub fn SettingsMenu() -> impl IntoView {
                 > "Logout" </button>
 
             </Show>
-
-            <button
-                class="settings-menu-close-button"
-                on:click=move |ev| {
-                    ev.stop_propagation();
-                    is_settings_menu_open.set(false);
-                }
-            ></button>
 
         </div>
     }
