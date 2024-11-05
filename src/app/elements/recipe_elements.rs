@@ -341,13 +341,56 @@ pub fn EditableEntryList<T: RecipeEntry>(
                                         } else {
 
                                             view! {
+                                                <div
+                                                    class="sorting-container"
+                                                >
+                                                    <Show
+                                                        when=move || { id != rw_entries.get()[0].0 } // don't show if this is the first entry
+                                                    >
+                                                        <button
+                                                            class="sort-up"
+                                                            on:click=move |ev| {
+                                                                ev.stop_propagation();
+                                                                rw_entries.update(|entries| {
+                                                                    if let Some(index) = entries.iter().position(|&x| x.0 == id) {
+                                                                        if index > 0 {
+                                                                            entries.swap(index, index - 1);
+                                                                        }
+                                                                    }
+                                                                });
+                                                            }
+                                                        ></button>
+                                                    </Show>
+                                                    <Show
+                                                        when=move || {
+                                                            let entries = rw_entries.get();
+                                                            let last_index = entries.len() - 1;
+                                                            id != entries[last_index].0
+                                                        } // don't show if this is the last entry
+                                                    >
+                                                        <button
+                                                            class="sort-down"
+                                                            on:click=move |ev| {
+                                                                ev.stop_propagation();
+                                                                rw_entries.update(|entries| {
+                                                                    if let Some(index) = entries.iter().position(|&x| x.0 == id) {
+                                                                        if index < entries.len() - 1 {
+                                                                            entries.swap(index, index + 1);
+                                                                        }
+                                                                    }
+                                                                });
+                                                            }
+                                                        ></button>
+                                                    </Show>
+                                                </div>
 
                                                 {
                                                     T::into_editable_view(entry, set_entry)
                                                 }
         
                                                 <button class="remove-button"
-                                                    on:click=move |_| {
+                                                    on:click=move |ev| {
+                                                        ev.stop_propagation();
                                                         // we are going to assign new ids since we remove an entry
                                                         let mut new_id_counter: u16 = 0;
 

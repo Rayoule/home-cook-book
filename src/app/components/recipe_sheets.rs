@@ -1,5 +1,7 @@
 use ev::MouseEvent;
-use leptos::{logging::*, *};
+use html::Div;
+use leptos::*;
+use leptos_use::on_click_outside;
 use crate::app::{
     elements::recipe_elements::*, IsLoggedIn, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeIngredient, RecipeInstruction, RecipeLight, RecipeNote, RecipeServerAction, RecipeTag, ThemeColor
 };
@@ -45,6 +47,10 @@ pub fn RecipeCard(
         is_menu_open.update(|b| *b = !*b);
     };
 
+    // Click Outside to close menu
+    let card_ref: NodeRef<Div> = create_node_ref();
+    let _ = on_click_outside(card_ref, move |_| is_menu_open.set(false));
+
     let menu_fallback = {move || {
         let tag_list =
             recipe_tags
@@ -52,7 +58,6 @@ pub fn RecipeCard(
                 .unwrap_or_else(|| vec![])
                 .into_iter()
                 .map(move |t| {
-
                     view! {
                         <li class= "recipe-light">
                             <span
@@ -93,6 +98,7 @@ pub fn RecipeCard(
 
     view! {
         <div
+            node_ref=card_ref
             class="recipe-card"
             class:into-menu=is_menu_open
             style=recipe_card_style
@@ -349,13 +355,6 @@ pub fn EditableRecipeSheet(
 
             {move || view! {
 
-                // Tags
-                <EditableEntryList
-                    editable=           true
-                    entry_list_signal=  tags_signal
-                    entry_type=         RecipeEntryType::Tag
-                />
-
                 // Ingredients
                 <EditableEntryList
                     editable=           true
@@ -375,6 +374,13 @@ pub fn EditableRecipeSheet(
                     editable=           true
                     entry_list_signal=  notes_signal
                     entry_type=         RecipeEntryType::Notes
+                />
+
+                // Tags
+                <EditableEntryList
+                    editable=           true
+                    entry_list_signal=  tags_signal
+                    entry_type=         RecipeEntryType::Tag
                 />
             }}
             
