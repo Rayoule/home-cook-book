@@ -173,17 +173,16 @@ impl JsonRecipeTags {
 
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
-pub struct JsonRecipeIngredients(Option<Vec<(u16, String, String)>>);
+pub struct JsonRecipeIngredients(Option<Vec<(String, String)>>);
 impl JsonRecipeIngredients {
     pub fn to_recipe_ingredients(self) -> Option<Vec<RecipeIngredient>> {
         if let Some(ingrs) = self.0 {
             Some(
                 ingrs
                     .into_iter()
-                    .map(|(qty, unit, content)| RecipeIngredient {
-                        quantity: qty,
-                        unit: unit,
-                        content: content,
+                    .map(|(qty_unit, content)| RecipeIngredient {
+                        qty_unit,
+                        content,
                     })
                     .collect()
             )
@@ -197,7 +196,7 @@ impl JsonRecipeIngredients {
                 Some(
                     recipe_ingrs
                         .into_iter()
-                        .map(|i| (i.quantity, i.unit, i.content))
+                        .map(|i| (i.qty_unit, i.content))
                         .collect()
                 )
             } else {
@@ -383,8 +382,7 @@ impl RecipeEntry for RecipeTag {
 /// INGREDIENTS and implementions -----
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RecipeIngredient {
-    pub quantity: u16,
-    pub unit: String,
+    pub qty_unit: String,
     pub content: String,
 }
 
@@ -392,8 +390,7 @@ impl IntoView for RecipeIngredient {
 
     fn into_view(self) -> View {
         view! {
-            <p>{self.quantity.to_string()}</p>
-            <p>{self.unit}</p>
+            <p>{self.qty_unit}</p>
             <p>{self.content}</p>
         }
         .into_view()
@@ -409,24 +406,11 @@ impl RecipeEntry for RecipeIngredient {
         view! {
             <RecipeEntryInput
                 class=              "ingredients quantity".to_owned()
-                initial_value=      entry_value.quantity.to_string()
+                initial_value=      entry_value.qty_unit.to_string()
                 placeholder=        "Quantity".to_owned()
                 get_entry_signal=   entry
                 set_entry_signal=   set_entry
                 field_id=           {0}
-                is_input=           true
-                is_only_numbers=    true
-            />
-
-            <div class="divider ingredients"></div>
-
-            <RecipeEntryInput
-                class=              "ingredients unit".to_owned()
-                initial_value=      entry_value.unit
-                placeholder=        "Unit".to_owned()
-                get_entry_signal=   entry
-                set_entry_signal=   set_entry
-                field_id=           {1}
                 is_input=           true
             />
 
@@ -438,7 +422,7 @@ impl RecipeEntry for RecipeIngredient {
                 placeholder=        "Ingredient".to_owned()
                 get_entry_signal=   entry
                 set_entry_signal=   set_entry
-                field_id=           {2}
+                field_id=           {1}
                 is_input=           true
             />
         }
@@ -448,19 +432,9 @@ impl RecipeEntry for RecipeIngredient {
     fn update_field_from_string_input(&mut self, field_id: Option<usize>, input: String) {
         match field_id {
 
-            Some(0) => self.quantity = {
-                match input.parse::<u16>() {
-                    Ok(n) => n,
-                    Err(e) => {
-                        error!("{}", "ERROR: Could not parse input because: -> ".to_owned() + &e.to_string());
-                        0
-                    },
-                }
-            },
+            Some(0) => self.qty_unit = input,
 
-            Some(1) => self.unit = input,
-
-            Some(2) => self.content = input,
+            Some(1) => self.content = input,
 
             None => {
                 error!("ERROR: No ID provided.")
@@ -476,11 +450,9 @@ impl RecipeEntry for RecipeIngredient {
     fn get_string_from_field(&self, field_id: Option<usize>) -> String {
         match field_id {
 
-            Some(0) => self.quantity.to_string().clone(),
+            Some(0) => self.qty_unit.to_string().clone(),
 
-            Some(1) => self.unit.clone(),
-
-            Some(2) => self.content.clone(),
+            Some(1) => self.content.clone(),
 
             None => {
                 panic!("ERROR: No ID provided.")

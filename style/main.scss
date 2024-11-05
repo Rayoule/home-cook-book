@@ -130,6 +130,11 @@ svg {
 		right: 2.5vh;
 	}
 
+	&.save {
+		top: 2.5vh;
+		right: 2.5vh;
+	}
+
 	&.back {
 		top: 2.5vh;
 		left: 2.5vh;
@@ -558,10 +563,6 @@ ul.recipe-light li::before {
 
     border-radius: 15px;
 	border: none;
-
-	/*&:focus {
-		scale: 10;
-	}*/
 }
 .sub-menu-option {
 	cursor: pointer;

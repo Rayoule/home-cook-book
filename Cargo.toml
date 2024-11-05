@@ -21,7 +21,6 @@ leptos_router = { version = "0.6", features = ["nightly"] }
 server_fn = { version = "0.6", features = [
   "multipart",
 ] }
-#multipart= "0.17.1"
 log = "0.4.22"
 simple_logger = "5.0.0"
 sqlx = { version = "0.8.2", features = [

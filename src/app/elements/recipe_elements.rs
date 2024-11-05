@@ -1,7 +1,7 @@
 use leptos::{
     *, logging::*,
 };
-use components::auth::auth_server_functions::server_logout;
+use components::{auth::auth_server_functions::server_logout, recipe};
 use ev::MouseEvent;
 use gloo_timers::callback::Timeout;
 use crate::app::{
@@ -10,16 +10,25 @@ use crate::app::{
 };
 
 
+type RecipeSignals =
+    RwSignal<(
+        RwSignal<String>,
+        RwSignal<Vec<(u16, (ReadSignal<RecipeTag>, WriteSignal<RecipeTag>))>>,
+        RwSignal<Vec<(u16, (ReadSignal<RecipeIngredient>, WriteSignal<RecipeIngredient>))>>,
+        (ReadSignal<RecipeInstruction>, WriteSignal<RecipeInstruction>),
+        RwSignal<Vec<(u16, (ReadSignal<RecipeNote>, WriteSignal<RecipeNote>))>>
+    )>;
+
 #[component]
 pub fn RecipeMenu(
     color: RwSignal<ThemeColor>,
     editable: bool,
-    #[prop(optional)]
-    recipe_name: Option<String>,
-    #[prop(optional)]
-    name_signal: Option<RwSignal<String>>,
-    #[prop(optional)]
     recipe_id: Option<u16>,
+    recipe_static_name: String,
+    #[prop(optional)]
+    is_new_recipe: Option<bool>,
+    #[prop(optional)]
+    recipe_signals: Option<RecipeSignals>,
 ) -> impl IntoView {
 
     // Is logged in
@@ -30,9 +39,9 @@ pub fn RecipeMenu(
 
     let menu_open = create_rw_signal(false);
 
-    let recipe_name = recipe_name.unwrap_or_else(|| String::new());
-
     if !editable {
+
+        let recipe_id = recipe_id.expect("Expected recipe ID to be Some for non edit mode");
 
         view! {
     
@@ -44,6 +53,7 @@ pub fn RecipeMenu(
             >
 
                 <button
+                    style=move || { color.get().as_alt_color() }
                     class="recipe-menu-button back"
                     on:click=move |ev| {
                         ev.stop_propagation();
@@ -54,6 +64,7 @@ pub fn RecipeMenu(
                 </button>
 
                 <button
+                    style=move || { color.get().as_alt_color() }
                     class="recipe-menu-button menu"
                     on:click=move |ev| {
                         ev.stop_propagation();
@@ -70,7 +81,7 @@ pub fn RecipeMenu(
                         class="recipe-name"
                         class:menu-open=menu_open
                     >
-                        { recipe_name.clone() }
+                        { recipe_static_name.clone() }
                     </h2>
                 </Show>
     
@@ -85,7 +96,7 @@ pub fn RecipeMenu(
                             class="recipe-menu-option"
                             on:click=move |ev: MouseEvent| {
                                 ev.stop_propagation();
-                                let recipe_id = recipe_id.expect("to find recipe_id for button Edit.");
+                                let recipe_id = recipe_id;
                                 let edit_path = "/recipe/".to_owned() + &recipe_id.to_string() + "/editable";
                                 let navigate = leptos_router::use_navigate();
                                 navigate(&edit_path, Default::default());
@@ -100,7 +111,7 @@ pub fn RecipeMenu(
                         class="recipe-menu-option"
                         on:click=move |ev| {
                             ev.stop_propagation();
-                            let recipe_id = recipe_id.expect("to find recipe_id for button Edit.");
+                            let recipe_id = recipe_id;
                             let print_path = "/recipe/".to_owned() + &recipe_id.to_string() + "/print";
                             let window = web_sys::window().expect("window should be available");
                             window
@@ -119,7 +130,7 @@ pub fn RecipeMenu(
                             class="recipe-menu-option"
                             on:click=move |ev: MouseEvent| {
                                 ev.stop_propagation();
-                                let recipe_id = recipe_id.expect("to find recipe_id for button Edit.");
+                                let recipe_id = recipe_id;
                                 let delete_info_signal =
                                     use_context::<DeleteInfoSignal>()
                                         .expect("To find DeleteInfoSignal in context.")
@@ -138,49 +149,103 @@ pub fn RecipeMenu(
 
     } else {
 
+        let recipe_action =
+        use_context::<RecipeServerAction>()
+            .expect("To find RecipeServerAction in context.")
+            .0;
+        let save_pending = recipe_action.pending();
+
+        let is_new_recipe = is_new_recipe.expect("Expected is_new_recipe to be provided.");
+
+        let recipe_signals = recipe_signals.expect("Expected recipe_signals to be provided.");
+        let ( name_signal, _, _, _, _ ) = recipe_signals.get_untracked();
+
+        let on_save_click = move |ev: MouseEvent| {
+            ev.stop_propagation();
+            // Get recipe
+            let signals = recipe_signals.get_untracked();
+            // Gather recipe
+            use components::recipe_sheets::fetch_entries_from_signals;
+            let updated_recipe: Recipe = Recipe {
+                id:             recipe_id,
+                name:           signals.0.clone().get_untracked(),
+                tags:           fetch_entries_from_signals(signals.1.get_untracked()),
+                ingredients:    fetch_entries_from_signals(signals.2.get_untracked()),
+                instructions:   signals.3.0.get_untracked(),
+                notes:          fetch_entries_from_signals(signals.4.get_untracked()),
+            };
+    
+            // Check recipe
+            match updated_recipe.valid_for_save() {
+                Ok(_) => {
+                    if is_new_recipe {
+                        recipe_action.dispatch(RecipeActionDescriptor::Add(updated_recipe));
+                    } else {
+                        let id = updated_recipe.id;
+                        recipe_action.dispatch(RecipeActionDescriptor::Save(updated_recipe));
+                        if let Some(id) = id {
+                            let path = "/recipe/".to_string() + &id.to_string() + "/display";
+                            let navigate = leptos_router::use_navigate();
+                            navigate(&path, Default::default());
+                        }
+                    }
+                },
+                Err(e) => {
+                    error!("{}", e);
+                },
+            }
+        };
+
         view! {
 
             <div
                 class="recipe-menu"
                 class:is-open=menu_open
+                class:not-logged-in=move || { !is_logged_in.get() }
+                style=move || { color.get().as_bg_main_color() }
             >
 
-                <button
-                    style=move || { color.get().as_alt_color() }
-                    class="recipe-menu-button back"
+                <Show
+                    when=move || { !save_pending.get() }
                 >
-                    "Back"
-                </button>
+                    <button
+                        style=move || { color.get().as_alt_color() }
+                        class="recipe-menu-button back"
+                        on:click=move |ev| {
+                            ev.stop_propagation();
+                            let navigate = leptos_router::use_navigate();
+                            navigate("/", Default::default());
+                        }
+                    >
+                        "Back"
+                    </button>
 
-                <button
-                    style=move || { color.get().as_alt_color() }
-                    class="recipe-menu-button save"
-                >
-                    "Save"
-                </button>
+                    <button
+                        style=move || { color.get().as_alt_color() }
+                        class="recipe-menu-button save"
+                        on:click=on_save_click
+                    >
+                        "Save"
+                    </button>
+                </Show>
 
                 { move || {
-                    if let Some(name_signal) = name_signal {
-                        view! {
-                                <input
-                                    class="text-input recipe-name"
-                                    class:menu-open=menu_open
-                                    type="text"
-                                    id="text-input"
-                                    placeholder="Recipe Name..."
-                                    maxlength="45"
-                                    // get_untracked() because this is only initial value
-                                    value=name_signal.get_untracked()
-                                    // update name_signal on input
-                                    on:input=move |ev| {
-                                        name_signal.set(event_target_value(&ev))
-                                    }
-                                />
-                        }.into_view()
-                    } else {
-                        error!("ERROR: No Name Signal provided.");
-                        ().into_view()
-                    }
+                    view! {
+                            <input
+                                class="text-input recipe-name"
+                                class:menu-open=menu_open
+                                type="text"
+                                id="text-input"
+                                placeholder="Recipe Name..."
+                                maxlength="45"
+                                // get_untracked() because this is only initial value
+                                value=name_signal.get_untracked()
+                                // update name_signal on input
+                                on:input=move |ev| {
+                                    name_signal.set(event_target_value(&ev))
+                                }
+                            />
+                    }.into_view()
                 }}
 
             </div>
@@ -188,37 +253,6 @@ pub fn RecipeMenu(
         }.into_view()
     }
 }
-
-
-#[component]
-pub fn EditableRecipeName(
-    /// Provide this if editable
-    #[prop(optional)]
-    name_signal: Option<RwSignal<String>>,
-) -> impl IntoView {
-
-    if let Some(name_signal) = name_signal {
-        view! {
-                <input
-                    class="text-input name"
-                    type="text"
-                    id="text-input"
-                    placeholder="Recipe Name..."
-                    maxlength="45"
-                    // get_untracked() because this is only initial value
-                    value=name_signal.get_untracked()
-                    // update name_signal on input
-                    on:input=move |ev| {
-                        name_signal.set(event_target_value(&ev))
-                    }
-                />
-        }.into_view()
-    } else {
-        error!("ERROR: No Name Signal provided.");
-        ().into_view()
-    }
-}
-
 
 
 
@@ -523,12 +557,9 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
     field_id: Option<usize>,
     #[prop(optional)]
     is_input: Option<bool>,
-    #[prop(optional)]
-    is_only_numbers: Option<bool>,
 ) -> impl IntoView {
 
     let is_input = is_input.unwrap_or_default();
-    let is_only_numbers = is_only_numbers.unwrap_or_default();
 
     let initial_value = if initial_value.is_empty() { None } else { Some(initial_value) };
 
@@ -584,7 +615,7 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
             >
                 <input
                     class=          class
-                    type=           { if is_only_numbers {"number"} else {"text"} }
+                    type=           "text"
                     id=             "text-input"
                     value=          initial_value
                     placeholder=    placeholder

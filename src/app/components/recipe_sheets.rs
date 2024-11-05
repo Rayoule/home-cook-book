@@ -1,7 +1,7 @@
 use ev::MouseEvent;
 use leptos::{logging::*, *};
 use crate::app::{
-    elements::recipe_elements::*, IsLoggedIn, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeLight, RecipeServerAction, ThemeColor
+    elements::recipe_elements::*, IsLoggedIn, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeIngredient, RecipeInstruction, RecipeLight, RecipeNote, RecipeServerAction, RecipeTag, ThemeColor
 };
 
 
@@ -135,7 +135,8 @@ pub fn RecipeCard(
                     <span
                         class= "sub-menu-option"
                         style=custom_color_style.as_visible_color()
-                        on:click=move |_| {
+                        on:click=move |ev| {
+                            ev.stop_propagation();
                             recipe_action.dispatch(RecipeActionDescriptor::Duplicate(recipe_id_getter.get()));
                         }
                     >{"Duplicate"}</span>
@@ -146,7 +147,8 @@ pub fn RecipeCard(
                 <span
                     class= "sub-menu-option"
                     style=custom_color_style.as_visible_color()
-                    on:click=move |_| {
+                    on:click=move |ev| {
+                        ev.stop_propagation();
                         let print_path =
                             "/recipe/".to_owned()
                             + &recipe_id_getter.get().to_string()
@@ -196,8 +198,8 @@ pub fn RecipeSheet(
             .map(|ingredient| {
                 view! {
                     <li class="display-recipe ingredients">
-                        <span class="display-recipe ingredients">{ingredient.quantity} {ingredient.unit}</span>
-                        <span class="display-recipe ingredients">{ingredient.content}</span>
+                        <span class="display-recipe ingredients units">{ingredient.qty_unit}</span>
+                        <span class="display-recipe ingredients content">{ingredient.content}</span>
                     </li>
                 }
             })
@@ -237,8 +239,8 @@ pub fn RecipeSheet(
         <RecipeMenu
             color=theme_color
             editable=false
-            recipe_name=recipe.name
-            recipe_id=recipe.id.expect("Expected Recipe to have a recipe_id")
+            recipe_static_name=recipe.name
+            recipe_id=recipe.id
         />
 
         <div class="display-recipe-container">
@@ -289,6 +291,16 @@ pub fn RecipeSheet(
 
 
 
+
+type RecipeSignals =
+    RwSignal<(
+        RwSignal<String>,
+        RwSignal<Vec<(u16, (ReadSignal<RecipeTag>, WriteSignal<RecipeTag>))>>,
+        RwSignal<Vec<(u16, (ReadSignal<RecipeIngredient>, WriteSignal<RecipeIngredient>))>>,
+        (ReadSignal<RecipeInstruction>, WriteSignal<RecipeInstruction>),
+        RwSignal<Vec<(u16, (ReadSignal<RecipeNote>, WriteSignal<RecipeNote>))>>
+    )>;
+
 #[component]
 pub fn EditableRecipeSheet(
     #[prop(optional)]
@@ -296,11 +308,6 @@ pub fn EditableRecipeSheet(
     #[prop(optional)]
     is_new_recipe: Option<bool>,
 ) -> impl IntoView {
-
-    let recipe_action =
-        use_context::<RecipeServerAction>()
-            .expect("To find RecipeServerAction in context.")
-            .0;
 
     let is_new_recipe = is_new_recipe.unwrap_or_else(|| false);
 
@@ -310,7 +317,7 @@ pub fn EditableRecipeSheet(
     // Needed for move into closure view
     // for each category, make a Signal<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>>
     // 0.tags, 1.ingredients, 2.instructions, 3.notes
-    let recipe_signals = create_rw_signal((
+    let recipe_signals: RecipeSignals = create_rw_signal((
         create_rw_signal( recipe.name ),
         create_rw_signal( entries_into_signals(recipe.tags) ),
         create_rw_signal( entries_into_signals(recipe.ingredients) ),
@@ -318,49 +325,12 @@ pub fn EditableRecipeSheet(
         create_rw_signal( entries_into_signals(recipe.notes) ),
     ));
     let (
-        name_signal,
+        _,
         tags_signal,
         ingredients_signal,
         instructions_signal,
         notes_signal
     ) = recipe_signals.get_untracked();
-
-
-    let save_pending = recipe_action.pending();
-
-    let on_save_click = move |_| {
-        // Get recipe
-        let signals = recipe_signals.get_untracked();
-        // Gather recipe
-        let updated_recipe = Recipe {
-            id:             recipe.id.clone(),
-            name:           signals.0.clone().get_untracked(),
-            tags:           fetch_entries_from_signals(signals.1.get_untracked()),
-            ingredients:    fetch_entries_from_signals(signals.2.get_untracked()),
-            instructions:   signals.3.0.get_untracked(),
-            notes:          fetch_entries_from_signals(signals.4.get_untracked()),
-        };
-
-        // Check recipe
-        match updated_recipe.valid_for_save() {
-            Ok(_) => {
-                if is_new_recipe {
-                    recipe_action.dispatch(RecipeActionDescriptor::Add(updated_recipe));
-                } else {
-                    let id = updated_recipe.id;
-                    recipe_action.dispatch(RecipeActionDescriptor::Save(updated_recipe));
-                    if let Some(id) = id {
-                        let path = "/recipe/".to_string() + &id.to_string() + "/display";
-                        let navigate = leptos_router::use_navigate();
-                        navigate(&path, Default::default());
-                    }
-                }
-            },
-            Err(e) => {
-                error!("{}", e);
-            },
-        }
-    };
 
     let theme_color = create_rw_signal(ThemeColor::random());
 
@@ -369,7 +339,10 @@ pub fn EditableRecipeSheet(
         <RecipeMenu
             color=theme_color
             editable=true
-            name_signal=name_signal
+            recipe_static_name="".to_string()
+            recipe_id=recipe.id
+            is_new_recipe=is_new_recipe
+            recipe_signals=recipe_signals
         />
 
         <div class="editable-recipe" >
@@ -404,25 +377,6 @@ pub fn EditableRecipeSheet(
                     entry_type=         RecipeEntryType::Notes
                 />
             }}
-
-            // Save Button
-            <Show
-                when=save_pending
-                fallback=move || view! {
-                    <div
-                        class="save-button-container"
-                    >
-                        <button
-                            class="round-menu-first-button"
-                            on:click=on_save_click
-                        >
-                            {"Save"}
-                        </button>
-                    </div>
-                }.into_view()
-            >
-                <p>"wait for save"</p>
-            </Show>
             
         </div>
     }
@@ -443,7 +397,7 @@ fn entries_into_signals<T: RecipeEntry>(entries: Option<Vec<T>>) -> Vec<(u16, (R
     } else { vec![] }
 }
 
-fn fetch_entries_from_signals<T: RecipeEntry>(signals: Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>) -> Option<Vec<T>> {
+pub fn fetch_entries_from_signals<T: RecipeEntry>(signals: Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>) -> Option<Vec<T>> {
     if signals.len() > 0 {
         let entries = signals
             .iter()

@@ -334,15 +334,6 @@ pub fn RecipePage() -> impl IntoView {
 
 
 
-// Colors to iterate from
-const COLORS: [ThemeColor; 4] = [
-    ThemeColor::Color1,
-    ThemeColor::Color2,
-    ThemeColor::Color3,
-    ThemeColor::Color4
-];
-
-
 // Colors
 #[derive(Clone, Copy)]
 pub enum ThemeColor {
@@ -423,15 +414,6 @@ impl ThemeColor {
             _ => unreachable!(),
         }
     }
-
-    /*pub fn recipe_headling_color(&self) -> String {
-        match self {
-            ThemeColor::Color1 => self.as_main_color(),
-            ThemeColor::Color2 => self.as_main_color(),
-            ThemeColor::Color3 => self.as_alt_color(),
-            ThemeColor::Color4 => todo!(),
-        }
-    }*/
 }
 
 /// Renders the home page of your application.
@@ -564,17 +546,10 @@ pub fn AllRecipes() -> impl IntoView {
                                                     }.into_view()
                                                 } else {
                                                     // else collect recipe views
-                                                    use rand::Rng;
-                                                    let mut rng = rand::thread_rng();
-                                                    let random_number: usize = rng.gen_range(0..5); // 0 to 4 inclusive
                                                     recipes
                                                         .into_iter()
-                                                        .enumerate()
-                                                        .map(move |(i, recipe)| {
-                                                            let idx = i + random_number;
-                                                            let color_id: usize = idx % COLORS.len();
-                                                            let style_color = COLORS[color_id];
-                                                            
+                                                        .map(move |recipe| {
+                                                            let style_color = ThemeColor::random();
                                                             view! {
                                                                 <RecipeCard
                                                                     recipe_light=recipe

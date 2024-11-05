@@ -4,9 +4,9 @@ Home Cook Book
 	To Do :
     - on:moveout broken on RecipeCards
     - RecipePage broken if text too long
-    - Random colors on RecipeCards ?
+    X Random colors on RecipeCards ?
     - Edit Page:
-      - fix save button
+      X fix save button
       - add RecipeMenu (with name within)
     - Merge ingredients units and qty
     - bug on delete tag (wrong tag)
