@@ -354,7 +354,6 @@ impl RecipeEntry for RecipeTag {
         view! {
             <RecipeEntryInput
                 class=              "tags".to_owned()
-                initial_value=      entry.get_untracked().name
                 placeholder=        "Tag Name...".to_owned()
                 get_entry_signal=   entry
                 set_entry_signal=   set_entry
@@ -402,11 +401,9 @@ impl RecipeEntry for RecipeIngredient {
     fn get_entry_type() -> RecipeEntryType { RecipeEntryType::Ingredients }
 
     fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View {
-        let entry_value = entry.get_untracked();
         view! {
             <RecipeEntryInput
                 class=              "ingredients quantity".to_owned()
-                initial_value=      entry_value.qty_unit.to_string()
                 placeholder=        "Quantity".to_owned()
                 get_entry_signal=   entry
                 set_entry_signal=   set_entry
@@ -414,11 +411,10 @@ impl RecipeEntry for RecipeIngredient {
                 is_input=           true
             />
 
-            <div class="divider ingredients"></div>
+            <div class="divider ingredients" ></div>
 
             <RecipeEntryInput
                 class=              "ingredients ingredients-content".to_owned()
-                initial_value=      entry_value.content
                 placeholder=        "Ingredient".to_owned()
                 get_entry_signal=   entry
                 set_entry_signal=   set_entry
@@ -494,7 +490,6 @@ impl RecipeEntry for RecipeInstruction {
         view! {
             <RecipeEntryInput
                 class=              "instructions".to_owned()
-                initial_value=      entry.get_untracked().content
                 placeholder=        "Instruction content...".to_owned()
                 get_entry_signal=   entry
                 set_entry_signal=   set_entry
@@ -540,12 +535,10 @@ impl RecipeEntry for RecipeNote {
     fn get_entry_type() -> RecipeEntryType { RecipeEntryType::Notes }
     
     fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View {
-        let entry_value = entry.get_untracked();
         view! {
             <div class= "editable-recipe-note-container">
                 <RecipeEntryInput
                     class=              "notes note-content".to_owned()
-                    initial_value=      entry_value.content
                     placeholder=        "Note content...".to_owned()
                     get_entry_signal=   entry
                     set_entry_signal=   set_entry

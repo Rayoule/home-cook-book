@@ -5,7 +5,7 @@ use leptos::*;
 pub fn CloseTagsSVG() -> impl IntoView {
 
     view! {
-        <svg class="close-tags-svg" viewBox="0 -0.5 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg class="close-tags-svg" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
                 fill="#000000"
                 d="M6.96967 16.4697C6.67678 16.7626 6.67678 17.2374 6.96967 17.5303C7.26256 17.8232 7.73744 17.8232 8.03033
@@ -108,5 +108,42 @@ pub fn LogoSVG() -> impl IntoView {
     }
 
 
+}
+
+
+
+#[component]
+pub fn SortUpSVG() -> impl IntoView {
+    view! {
+        <svg
+            class="sort-icon-svg"
+            xmlns="http://www.w3.org/2000/svg"
+            stroke="none"
+            fill="black"
+        >
+            <path
+                d="M8 1.25a2.101 2.101 0 00-1.785.996l.64.392-.642-.388-5.675 9.373-.006.01a2.065 2.065 0 00.751 2.832c.314.183.67.281
+                1.034.285h11.366a2.101 2.101 0 001.791-1.045 2.064 2.064 0 00-.006-2.072L9.788 2.25l-.003-.004A2.084 2.084 0 008 1.25z"
+            />
+        </svg>
+    }
+}
+
+#[component]
+pub fn SortDownSVG() -> impl IntoView {
+    view! {
+        <svg
+            class="sort-icon-svg"
+            xmlns="http://www.w3.org/2000/svg"
+            stroke="none"
+            fill="black"
+            transform="rotate(180)"
+        >
+            <path
+                d="M8 1.25a2.101 2.101 0 00-1.785.996l.64.392-.642-.388-5.675 9.373-.006.01a2.065 2.065 0 00.751 2.832c.314.183.67.281
+                1.034.285h11.366a2.101 2.101 0 001.791-1.045 2.064 2.064 0 00-.006-2.072L9.788 2.25l-.003-.004A2.084 2.084 0 008 1.25z"
+            />
+        </svg>
+    }
 }
 

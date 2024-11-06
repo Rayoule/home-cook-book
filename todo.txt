@@ -2,7 +2,7 @@ Home Cook Book
 
 
 	To Do :
-    - on:moveout broken on RecipeCards
+    X on:moveout broken on RecipeCards
     - RecipePage broken if text too long
     X Random colors on RecipeCards ?
     - Edit Page:

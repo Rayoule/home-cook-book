@@ -1,6 +1,6 @@
 use ev::MouseEvent;
 use html::Div;
-use leptos::*;
+use leptos::{logging::*, *};
 use leptos_use::on_click_outside;
 use crate::app::{
     elements::recipe_elements::*, IsLoggedIn, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeIngredient, RecipeInstruction, RecipeLight, RecipeNote, RecipeServerAction, RecipeTag, ThemeColor
@@ -103,9 +103,9 @@ pub fn RecipeCard(
             class:into-menu=is_menu_open
             style=recipe_card_style
             on:click=on_click
-            on:mouseleave=move |_| {
+            /*on:mouseleave=move |_| {
                 is_menu_open.set(false);
-            }
+            }*/
         >
 
             <button
@@ -162,7 +162,10 @@ pub fn RecipeCard(
                         let window = web_sys::window().expect("window should be available");
                         window
                             .open_with_url_and_target(&print_path, "_blank")
-                            .unwrap();
+                            .unwrap_or_else(|_| {
+                                error!("No Window found.");
+                                None
+                            });
                     }
                 >{"Print"}</span>
 
