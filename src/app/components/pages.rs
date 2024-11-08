@@ -1,5 +1,5 @@
 use elements::{
-    icons_svg::LogoSVG,
+    icons_svg::{BackButtonSVG, LogoSVG},
     recipe_elements::SettingsMenu,
 };
 use ev::MouseEvent;
@@ -585,6 +585,19 @@ pub fn BackupPage() -> impl IntoView {
     let has_been_backed_up: RwSignal<bool> = create_rw_signal(false);
 
     view! {
+
+        <SettingsMenu/>
+
+        <button
+            class="recipe-menu-button back backup-page"
+            on:click=move |ev| {
+                ev.stop_propagation();
+                let navigate = leptos_router::use_navigate();
+                navigate("/", Default::default());
+            }
+        >
+            <BackButtonSVG backup_page=true />
+        </button>
 
         //<h2>"Download current Cook Book save or Upload save to current Cook Book."</h2>
         <div class="save-page-container" >

@@ -52,6 +52,8 @@
 	--buttons-width: 4.35rem;
 
 	--drop-menu-border-radius: 25px;
+
+	--border-margin: 1rem;
 }
 
 * {
@@ -126,38 +128,50 @@ svg {
 	box-shadow: var(--shadow);
 
 	&.menu {
-		top: 2.5vh;
-		right: 2.5vh;
+		top: 1.1rem;
+		right: 1.1rem;
 	}
 
 	&.save {
-		top: 2.5vh;
-		right: 2.5vh;
-	}
-
-	&.back {
-		top: 2.5vh;
-		left: 2.5vh;
-
-		background-color: none;
+		position: fixed;
 
 		font-weight: bold;
 
-		&::after {
-			content: "<"
+		top: 1.1rem;
+		right: 1.1rem;
+
+		color: var(--theme-color-bg-alt);
+
+		width: var(--buttons-width);
+	}
+
+	&.back {
+		top: 1.1rem;
+		left: 1.1rem;
+
+		background-color: #00000000;
+		border-radius: 80px;
+		box-shadow: none;
+	}
+}
+svg {
+	&.back-icon-svg {
+		height: var(--buttons-height);
+		width: var(--buttons-height);
+		fill: var(--theme-color-bg);
+		
+		filter: drop-shadow(var(--shadow));
+
+		&.backup-page {
+			fill: var(--theme-color-menu);
 		}
 	}
 }
 .recipe-menu {
 
-	position: sticky;
+	position: relative;
 
 	overflow: hidden;
-
-	display: flex;
-	flex-direction: column; /* Pour empiler les éléments en colonne */
-	justify-content: center;
-	align-items: center;
 
 	top: 0;
 	right:0;
@@ -173,21 +187,16 @@ svg {
 	;
 
 	&.is-open {
+		display: flex;
+		flex-direction: column; /* Pour empiler les éléments en colonne */
+		justify-content: center;
+		align-items: center;
+
 		height: calc(var(--menu-height) + 5rem);
 
 		&.not-logged-in {
 			height: var(--menu-height);
 		}
-	}
-}
-.recipe-name {
-	/*margin-top: auto;
-	margin-bottom: 20px;*/
-
-	padding-top: 10vh;
-
-	&.menu-open {
-		opacity: 0%;
 	}
 }
 .recipe-menu-option {
@@ -329,7 +338,7 @@ svg {
 	height: 35px;
 	width: 70px;
 
-	margin: 25px;
+	margin: 0.5rem 0;
 
 	border: 1px solid black; 
 	border-radius: 100px;
@@ -509,11 +518,11 @@ svg {
 	}
 }
 ul.recipe-light {
-	border-radius: 15px;
 	box-sizing: border-box;
-
-	margin: 0px 0px;
-	padding: 0px 0px;
+	max-height: 3.1rem;
+	overflow-y: hidden;
+	margin: 0;
+	padding: 0;
 }
 ul.recipe-light li::before {
     content: "#";
@@ -670,19 +679,35 @@ ul.recipe-light li::before {
 		}
 	}
 
+	&.ingredients {
+		width: 100%;
 
-	&.notes {
+		&.units {
+			text-align: right;
+			width: 25%;
+			margin-right: 1rem;
+		}
 
-		h4 {
-			//margin-bottom: 7px;
+		&.content {
+			width: 75%;
 		}
 	}
+}
+.display-recipe-name {
+	position: absolute;
+	bottom: 2rem;
+	left: 0;
+	width: 100%;
 }
 
 
 .editable-recipe {
 	text-align: left;
 	max-width: var(--recipe-max-width);
+
+	margin: 0 var(--border-margin);
+	padding-top: 3rem;
+	padding-bottom: 3rem;
 
 	.name {
 		margin-bottom: 50px;
@@ -724,10 +749,8 @@ ul.recipe-light li::before {
 	width: 100%;
 
 	border: none;
-	background-color: #ffffff00;
+	background-color: #ffffff;
     border-radius: 15px;
-
-	transition: border 0.1s ease-out, transform 0.1 ease-out;
 
 	&.name {
 		font-size: x-large;
@@ -737,19 +760,51 @@ ul.recipe-light li::before {
 		border: 1px solid var(--text-input-border-color);
 	}
 
+	&.recipe-name {
+		font-weight: x-large;
+		font-size: larger;
+
+		width: auto;
+		padding: 0.25rem;
+
+		background-color: white;
+	
+		&.menu-open {
+			opacity: 0%;
+		}
+	}
+
 	&.tags {
-		overflow-y: visible;
-		height: var(--text-input-height);
-		min-width: 50px;
+		text-align: left;
+
+		width: fit-content;
+		min-width: 2rem;
+		
+		overflow: visible;
+
+		background-color: #00000000;
+
+		padding-right: 0.25rem;
+		padding-left: 0.5rem;
+
+		&.wrapper {
+			width: fit-content;
+			height: fit-content;
+			min-width: 0;
+		}
 	}
 
 	&.ingredients {
+		display: inline-block;
 		height: var(--text-input-height);
 		width: 100%;
 
+		background-color: #00000000;
+
 		&.wrapper {
+			margin-left: 1rem;
 			&.quantity {
-				width: 25%;
+				width: 30%;
 			}
 		}
 
@@ -771,11 +826,8 @@ ul.recipe-light li::before {
 
 	&.notes {
 		text-align: left;
-		width: 100%;
 	
-		&.title {
-			font-weight: bold;
-		}
+		padding: 0.5rem 0.5rem;
 	}
 
 	&.save-input {
@@ -785,6 +837,22 @@ ul.recipe-light li::before {
 		width: inherit;
 	}
 }
+.editable-ingredients-wrapper {
+	display: flex;
+	flex-direction: row;
+
+	width: 100%;
+	background-color: white;
+	border-radius: 2rem;
+}
+
+.recipe-name-input-container {
+	position: absolute;
+
+	width: 100%;
+	bottom: 2rem;
+	left: 0;
+}
 
 
 ul.tags {
@@ -792,75 +860,42 @@ ul.tags {
 	flex-wrap: wrap;
 }
 
-.sorting-container {
-	height: var(--text-input-height);
-	width: 2rem;
-
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-}
-.sorting-button {
-	width: fit-content;
-	height: fit-content;
-
-	padding: 0 0;
-
-	background-color: #00000000;
-	border: none;
-}
-svg {
-	&.sort-icon-svg {
-		width: 1rem;
-		height: 1rem;
-	
-		fill: var(--theme-color-menu);
-	}
-}
-
 
 
 li#entry-li {
 	display: flex;
 	flex-direction: row;
+	align-items: center;
 
 	width: 100%;
 
-	padding: 5px 5px;
-
 	&.tags {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+
 		height: var(--text-input-height);
+		width: fit-content;
+
+		margin-right: 1rem;
+		padding-right: 0.2rem;
+
+		background-color: white;
+		border-radius: 2rem;
 	}
 
 	&.ingredients {
 		height: var(--text-input-height);
 	}
-}
 
-.divider {
-	position: relative;
-
-    background-color: var(--text-input-border-color); /* Bar color (black) */
-
-	&.ingredients {
-		width: 1px;
-		height: var(--text-input-height);
-		margin: 0px 5px;
+	&.instructions {
+		padding: 0px 0px;
 	}
 
-	&.notes {
-		right: 0px;
-		left: 0px;
-		height: 1px;
-		margin: 5px 0px;
-	}
+	&.notes{
+		position: relative;
 
-	&.save {
-		right: 0px;
-		left: 0px;
-		height: 1px;
-		margin: 5px 0px;
+		margin-top: 2rem;
 	}
 }
 
@@ -921,30 +956,20 @@ textarea#text-input {
 	}
 }
 
-// BUTTONS
-#fake-button {
-	display: inline-block;
-	text-align: center;
-	cursor: pointer;
-	
-	transition: box-shadow 0.3s, background-color 0.3s ease, color 0.5s ease, transform 0.1s ease-out;
-    
-    outline: none;
-    border: none;
-
-	&:focus {
-		box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5);
-	}
-}
 
 .add-button {
-	height: 26px;
-  	width: 150px;
+	font-size: large;
+	font-weight: bold;
+
+	height: var(--buttons-height);
+  	width: var(--buttons-width);
 
 	border-radius: 15px;
 
-	color: rgb(0, 0, 0);
-	background-color: #a36322;
+	color: white;
+	background-color: var(--theme-color-2);
+
+	border: none;
 
 	&:hover {
 		background-color: #6d461f;
@@ -960,40 +985,71 @@ textarea#text-input {
 		transform: scale(1.1);
 	}
 }
-
-
-
 .remove-button {
-	margin-left: auto;
-	margin-right: 0px;
+	display: block;
 
+	margin-left: 0.5rem;
+
+	height: 1.2rem;
+	width: 1.2rem;
+
+	background: var(--theme-color-1);
+	border-radius: 2rem;
+	border: none;
+
+	&.notes {
+		position: absolute;
+		right: 0;
+		top: 0;
+
+		transform: translateY(-1.7rem);
+	}
+
+	&.tags {
+		margin-left: 0;
+	}
+}
+.sorting-container {
 	height: var(--text-input-height);
 	width: 2rem;
 
-	background: none;
-	color: rgb(56, 56, 56);
-	border: none;
-	padding: 0;
-	outline: inherit;
+	//position: absolute;
+	//left: 0;
 
-	text-shadow: 0 0 0px rgb(0, 0, 0);
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
 
-	transform: scale(1.2);
+	&.notes {
+		position: absolute;
+		left: 0;
+		top: 0;
 
-	transition:
-		transform 0.05s ease-out
-	;
+		flex-direction: row;
 
-	&:hover {
-		color: black;
-		text-shadow: 0 0 1px rgb(71, 71, 71);
-		transform: scale(1.5);
+		transform: translateY(-1.7rem);
 	}
 
-	&:active {
-		color: black;
-		text-shadow: 0 0 3px rgb(26, 26, 26);
-		transform: scale(1.3);
+	&.tags {
+		display: none;
+	}
+}
+.sorting-button {
+	width: fit-content;
+	height: fit-content;
+
+	padding: 0 0;
+
+	background-color: #00000000;
+	border: none;
+}
+svg {
+	&.sort-icon-svg {
+		width: 1rem;
+		height: 1rem;
+	
+		fill: var(--theme-color-menu);
 	}
 }
 
@@ -1005,14 +1061,12 @@ textarea#text-input {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
-	//justify-content: center;
 
 	height: 70px;
 	z-index: 10;
 
 	top: 10px;
 
-	//margin: 0px 10px;
 	padding: 0 1rem;
 }
 
@@ -1040,14 +1094,6 @@ textarea#text-input {
 		transform 0.1s ease-out,
 		background-color 0.1s ease-out
 	;
-
-	&:hover {
-		//transform: translateY(20px);
-	}
-
-	&:active {
-		//transform: translateY(25px);
-	}
 
 	&.is-enabled {
 		display: none;
@@ -1082,11 +1128,9 @@ textarea#text-input {
 
 	display: flex;
 
-	//top: calc(var(--menu-height) * -1);
 	left: -100vw;
 	top: 0;
 
-	//height: var(--menu-height);
 	height: 100vh;
 	width: 100vw;
 

@@ -283,7 +283,7 @@ pub struct DbRowRecipeID {
 
 
 
-
+#[derive(PartialEq)]
 pub enum RecipeEntryType {
     Tag,
     Ingredients,
@@ -317,65 +317,11 @@ impl RecipeEntryType {
 /// RecipeEntry Trait --------
 pub trait RecipeEntry: IntoView + std::fmt::Debug + Clone + Default + 'static {
     fn get_entry_type() -> RecipeEntryType;
+    fn get_css_class_name() -> String;
     fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View;
     fn update_field_from_string_input(&mut self, field_id: Option<usize>, input: String);
     fn get_string_from_field(&self, field_id: Option<usize>) -> String;
 }
-
-
-
-
-/// TAGs and implementions -----
-#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct RecipeTag {
-    pub name: String,
-    //pub color: [u8; 3],
-}
-
-impl IntoView for RecipeTag {
-
-    fn into_view(self) -> View {
-        view! {
-            <p
-                color= {"red"}
-            >
-                { self.name }
-            </p>
-        }
-        .into_view()
-    }
-}
-
-impl RecipeEntry for RecipeTag {
-
-    fn get_entry_type() -> RecipeEntryType { RecipeEntryType::Tag }
-
-    fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View {
-        view! {
-            <RecipeEntryInput
-                class=              "tags".to_owned()
-                placeholder=        "Tag Name...".to_owned()
-                get_entry_signal=   entry
-                set_entry_signal=   set_entry
-                is_input=           true
-            />
-        }
-        .into_view()
-    }
-    
-    fn update_field_from_string_input(&mut self, _field_id: Option<usize>, input: String) {
-        self.name = input;
-    }
-    
-    fn get_string_from_field(&self, _field_id: Option<usize>) -> String {
-        self.name.clone()
-    }
-}
-
-
-
-
-
 
 
 /// INGREDIENTS and implementions -----
@@ -400,27 +346,33 @@ impl RecipeEntry for RecipeIngredient {
 
     fn get_entry_type() -> RecipeEntryType { RecipeEntryType::Ingredients }
 
+    fn get_css_class_name() -> String {
+        "ingredients".to_string()
+    }
+
     fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View {
         view! {
-            <RecipeEntryInput
-                class=              "ingredients quantity".to_owned()
-                placeholder=        "Quantity".to_owned()
-                get_entry_signal=   entry
-                set_entry_signal=   set_entry
-                field_id=           {0}
-                is_input=           true
-            />
+            <div
+                class="editable-ingredients-wrapper"
+            >
+                <RecipeEntryInput
+                    class=              "ingredients quantity".to_owned()
+                    placeholder=        "Quantity".to_owned()
+                    get_entry_signal=   entry
+                    set_entry_signal=   set_entry
+                    field_id=           {0}
+                    is_input=           true
+                />
 
-            <div class="divider ingredients" ></div>
-
-            <RecipeEntryInput
-                class=              "ingredients ingredients-content".to_owned()
-                placeholder=        "Ingredient".to_owned()
-                get_entry_signal=   entry
-                set_entry_signal=   set_entry
-                field_id=           {1}
-                is_input=           true
-            />
+                <RecipeEntryInput
+                    class=              "ingredients ingredients-content".to_owned()
+                    placeholder=        "Ingredient".to_owned()
+                    get_entry_signal=   entry
+                    set_entry_signal=   set_entry
+                    field_id=           {1}
+                    is_input=           true
+                />
+            </div>
         }
         .into_view()
     }
@@ -485,6 +437,10 @@ impl IntoView for RecipeInstruction {
 impl RecipeEntry for RecipeInstruction {
 
     fn get_entry_type() -> RecipeEntryType { RecipeEntryType::Instructions }
+
+    fn get_css_class_name() -> String {
+        "instructions".to_string()
+    }
     
     fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View {
         view! {
@@ -533,17 +489,19 @@ impl IntoView for RecipeNote {
 impl RecipeEntry for RecipeNote {
 
     fn get_entry_type() -> RecipeEntryType { RecipeEntryType::Notes }
+
+    fn get_css_class_name() -> String {
+        "notes".to_string()
+    }
     
     fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View {
         view! {
-            <div class= "editable-recipe-note-container">
-                <RecipeEntryInput
-                    class=              "notes note-content".to_owned()
-                    placeholder=        "Note content...".to_owned()
-                    get_entry_signal=   entry
-                    set_entry_signal=   set_entry
-                />
-            </div>
+            <RecipeEntryInput
+                class=              "notes note-content".to_owned()
+                placeholder=        "Note content...".to_owned()
+                get_entry_signal=   entry
+                set_entry_signal=   set_entry
+            />
         }.into_view()
     }
     
@@ -573,4 +531,57 @@ pub enum RecipeActionDescriptor {
     Delete(u16),
     // With recipe ID
     Duplicate(u16),
+}
+
+
+
+/// TAGs and implementions -----
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RecipeTag {
+    pub name: String,
+    //pub color: [u8; 3],
+}
+
+impl IntoView for RecipeTag {
+
+    fn into_view(self) -> View {
+        view! {
+            <p
+                color= {"red"}
+            >
+                { self.name }
+            </p>
+        }
+        .into_view()
+    }
+}
+
+impl RecipeEntry for RecipeTag {
+
+    fn get_entry_type() -> RecipeEntryType { RecipeEntryType::Tag }
+
+    fn get_css_class_name() -> String {
+        "tags".to_string()
+    }
+
+    fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>) -> View {
+        view! {
+            <RecipeEntryInput
+                class=              "tags".to_owned()
+                placeholder=        "Tag Name...".to_owned()
+                get_entry_signal=   entry
+                set_entry_signal=   set_entry
+                is_input=           true
+            />
+        }
+        .into_view()
+    }
+    
+    fn update_field_from_string_input(&mut self, _field_id: Option<usize>, input: String) {
+        self.name = input;
+    }
+    
+    fn get_string_from_field(&self, _field_id: Option<usize>) -> String {
+        self.name.clone()
+    }
 }

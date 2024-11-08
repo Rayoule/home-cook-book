@@ -116,7 +116,6 @@ pub fn UploadAll( has_been_backed_up: RwSignal<bool> ) -> impl IntoView {
                             set_content.set(event_target_value(&ev));
                         }
                     > {} </textarea>
-                    <div class="divider save"></div>
                     <button class="upload-save-button" type="submit"> "Ok" </button>
                 </form>
             </Show>

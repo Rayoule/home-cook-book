@@ -360,30 +360,30 @@ pub fn EditableRecipeSheet(
 
                 // Ingredients
                 <EditableEntryList
-                    editable=           true
-                    entry_list_signal=  ingredients_signal
+                    rw_entries=         ingredients_signal
                     entry_type=         RecipeEntryType::Ingredients
+                    theme_color=        theme_color
                 />
 
                 // Instructions
                 <EditableInstructions
-                    editable=           true
                     entry_signal=       instructions_signal
                     entry_type=         RecipeEntryType::Instructions
+                    theme_color=        theme_color
                 />
 
                 // Notes
                 <EditableEntryList
-                    editable=           true
-                    entry_list_signal=  notes_signal
+                    rw_entries=         notes_signal
                     entry_type=         RecipeEntryType::Notes
+                    theme_color=        theme_color
                 />
 
                 // Tags
                 <EditableEntryList
-                    editable=           true
-                    entry_list_signal=  tags_signal
+                    rw_entries=         tags_signal
                     entry_type=         RecipeEntryType::Tag
+                    theme_color=        theme_color
                 />
             }}
             

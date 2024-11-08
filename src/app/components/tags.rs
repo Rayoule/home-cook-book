@@ -88,16 +88,6 @@ pub fn TagList(
             }
         >
 
-            /*<button
-                class="close-tag-menu-button"
-                on:click=move |ev: MouseEvent| {
-                    ev.stop_propagation();
-                    is_tags_menu_open.set(false);
-                }
-            >
-                <CloseTagsSVG/>
-            </button>*/
-
             <ul
                 class="tag-list"
             >

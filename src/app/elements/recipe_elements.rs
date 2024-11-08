@@ -1,4 +1,4 @@
-use elements::icons_svg::{SortDownSVG, SortUpSVG};
+use elements::icons_svg::{BackButtonSVG, SortDownSVG, SortUpSVG};
 use leptos::{
     *, logging::*,
 };
@@ -62,6 +62,7 @@ pub fn RecipeMenu(
                         navigate("/", Default::default());
                     }
                 >
+                    <BackButtonSVG/>
                 </button>
 
                 <button
@@ -79,7 +80,7 @@ pub fn RecipeMenu(
                 >
                     <h2
                         style=move || { color.get().as_alt_color() }
-                        class="recipe-name"
+                        class="display-recipe-name"
                         class:menu-open=menu_open
                     >
                         { recipe_static_name.clone() }
@@ -213,7 +214,6 @@ pub fn RecipeMenu(
                     when=move || { !save_pending.get() }
                 >
                     <button
-                        style=move || { color.get().as_alt_color() }
                         class="recipe-menu-button back"
                         on:click=move |ev| {
                             ev.stop_propagation();
@@ -221,20 +221,20 @@ pub fn RecipeMenu(
                             navigate("/", Default::default());
                         }
                     >
-                        "Back"
+                        <BackButtonSVG/>
                     </button>
 
                     <button
-                        style=move || { color.get().as_alt_color() }
                         class="recipe-menu-button save"
                         on:click=on_save_click
                     >
-                        "Save"
+                        "save"
                     </button>
                 </Show>
 
                 { move || {
                     view! {
+                        <div class="recipe-name-input-container" >
                             <input
                                 class="text-input recipe-name"
                                 class:menu-open=menu_open
@@ -249,6 +249,7 @@ pub fn RecipeMenu(
                                     name_signal.set(event_target_value(&ev))
                                 }
                             />
+                        </div>
                     }.into_view()
                 }}
 
@@ -260,374 +261,184 @@ pub fn RecipeMenu(
 
 
 
+
 #[component]
 pub fn EditableEntryList<T: RecipeEntry>( 
-    editable: bool,
     entry_type: RecipeEntryType,
-    /// Needed if not editable
-    #[prop(optional)]
-    entry_list: Option<Vec<T>>,
-    /// Needed if editable
-    #[prop(optional)]
-    entry_list_signal: Option<RwSignal<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>>>,
+    rw_entries: RwSignal<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>>,
+    theme_color: RwSignal<ThemeColor>,
 ) -> impl IntoView {
 
     let (entry_type_title, style_class) = entry_type.title_and_class();
 
-    if !editable {
-
-        let is_empty =
-            if let Some(entry_list) = &entry_list {
-                entry_list.len() > 0
-            } else { false };
-
-        if is_empty {
-            return ().into_view();
-        } else {
-
-            // Component in non editable mode
-            view! {
-                <div class={style_class.clone() + " container list"} >
-                    <h1>{entry_type_title}</h1>
-                    <ul class={style_class.clone()}>
-                        {
-                            entry_list
-                                .into_iter()
-                                .map(|entry| {
-                                    view! {
-                                        <li class={style_class.clone()} id="entry-li">
-                                            { entry.into_view() }
-                                        </li>
-                                    }
-                                })
-                                .collect_view()
-                        }
-                    </ul>
-                </div>
-            }
-            .into_view()
-        }
-    } else {
-
-        let rw_entries: RwSignal<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>> =
-            entry_list_signal.unwrap_or_else(|| {
-                create_rw_signal(vec![])
-            });
-
-        let add_entry = move |_| {
-            let new_entry_signal = create_signal(T::default());
-            rw_entries.update(move |entries| {
-                
-                // Make sure to set new ID = pushed index
-                let new_id: u16 = entries.len().try_into().expect("to convert usize into u16.");
-
-                entries.push((new_id, new_entry_signal));
-            });
-        };
-
-
-        view! {
-
-            <div class={style_class.clone() + " container editable list"}>
-
-                <h3 id="field-title" class=style_class.clone() >{entry_type_title}</h3>
-
-                <ul class={style_class.clone()}>
-
-                    {move || {
-                        rw_entries
-                            .get()
-                            .into_iter()
-                            .map(|(id, (entry, set_entry))| {
-                                view! {
-                                    <li class={style_class.clone()} id="entry-li">
-                                        {
-                                            if !editable {
-                                                entry.into_view()
-                                            } else {
-    
-                                                view! {
-                                                    <div
-                                                        class="sorting-container"
-                                                    >
-                                                        <Show
-                                                            when=move || { id != rw_entries.get()[0].0 } // don't show if this is the first entry
-                                                        >
-                                                            <button
-                                                                class="sort-up sorting-button"
-                                                                on:click=move |ev| {
-                                                                    ev.stop_propagation();
-                                                                    rw_entries.update(|entries| {
-                                                                        if let Some(index) = entries.iter().position(|&x| x.0 == id) {
-                                                                            if index > 0 {
-                                                                                entries.swap(index, index - 1);
-                                                                            }
-                                                                        }
-                                                                    });
-                                                                }
-                                                            >
-                                                                <SortUpSVG/>
-                                                            </button>
-                                                        </Show>
-                                                        <Show
-                                                            when=move || {
-                                                                let entries = rw_entries.get();
-                                                                let last_index = entries.len() - 1;
-                                                                id != entries[last_index].0
-                                                            } // don't show if this is the last entry
-                                                        >
-                                                            <button
-                                                                class="sort-down sorting-button"
-                                                                on:click=move |ev| {
-                                                                    ev.stop_propagation();
-                                                                    rw_entries.update(|entries| {
-                                                                        if let Some(index) = entries.iter().position(|&x| x.0 == id) {
-                                                                            if index < entries.len() - 1 {
-                                                                                entries.swap(index, index + 1);
-                                                                            }
-                                                                        }
-                                                                    });
-                                                                }
-                                                            >
-                                                                <SortDownSVG/>
-                                                            </button>
-                                                        </Show>
-                                                    </div>
-    
-                                                    {move || {
-                                                        T::into_editable_view(entry, set_entry)
-                                                    }}
+    let add_entry = move |_| {
+        let new_entry_signal = create_signal(T::default());
+        rw_entries.update(move |entries| {
             
-                                                    <button class="remove-button"
-                                                        on:click=move |ev| {
-                                                            ev.stop_propagation();
-                                                            // we are going to assign new ids since we remove an entry
-                                                            let mut new_id_counter: u16 = 0;
-    
-                                                            // iterate in entries
-                                                            rw_entries.update(|entries| {
-                                                                entries.retain_mut(|(entry_id, (signal, _))| {
-    
-                                                                    // check if this is the entry to remove
-                                                                    let keep_this_entry = entry_id != &id;
-    
-                                                                    if keep_this_entry {
-                                                                        // set the new id
-                                                                        *entry_id = new_id_counter;
-                                                                        // increment counter
-                                                                        new_id_counter += 1;
-                                                                    } else {
-                                                                        // NOTE: in this example, we are creating the signals
-                                                                        // in the scope of the parent. This means the memory used to
-                                                                        // store them will not be reclaimed until the parent component
-                                                                        // is unmounted. Here, we're removing the signal early (i.e, before
-                                                                        // the DynamicList is unmounted), so we manually dispose of the signal
-                                                                        // to avoid leaking memory.
-                                                                        //
-                                                                        // This is only necessary with nested signals like this one.
-                                                                        signal.dispose();
-                                                                    }
-    
-                                                                    keep_this_entry
-                                                                })
-                                                            });
-                                                        }
-                                                    >
-                                                        "x"
-                                                    </button>
-                                                }.into_view()
-                                            }
-                                        }
-                                    </li>
-                                }
-                            })
-                            .collect_view()
-                    }}
-                    /*<For
-                        each=move || rw_entries.get()
-                        key=|entry| entry.0
-                        children=move |(id, (entry, set_entry))| {
+            // Make sure to set new ID = pushed index
+            let new_id: u16 = entries.len().try_into().expect("to convert usize into u16.");
 
+            entries.push((new_id, new_entry_signal));
+        });
+    };
+
+
+    view! {
+
+        <div class={style_class.clone() + " container editable list"}>
+
+            <h3
+                id="field-title"
+                class=style_class.clone()
+                style=move || theme_color.get().as_visible_color()
+            >
+                { entry_type_title }
+            </h3>
+
+            <ul class=style_class.clone() >
+
+                {move || {
+                    rw_entries
+                        .get()
+                        .into_iter()
+                        .map(|(id, (entry, set_entry))| {
                             view! {
                                 <li class={style_class.clone()} id="entry-li">
-                                    {
-                                        if !editable {
-                                            entry.into_view()
-                                        } else {
 
-                                            view! {
-                                                <div
-                                                    class="sorting-container"
-                                                >
-                                                    <Show
-                                                        when=move || { id != rw_entries.get()[0].0 } // don't show if this is the first entry
-                                                    >
-                                                        <button
-                                                            class="sort-up"
-                                                            on:click=move |ev| {
-                                                                ev.stop_propagation();
-                                                                rw_entries.update(|entries| {
-                                                                    if let Some(index) = entries.iter().position(|&x| x.0 == id) {
-                                                                        if index > 0 {
-                                                                            entries.swap(index, index - 1);
-                                                                        }
-                                                                    }
-                                                                });
+                                    <div
+                                        class="sorting-container ".to_string() + &T::get_css_class_name()
+                                    >
+
+                                        <Show
+                                            when=move || { id != rw_entries.get()[0].0 } // don't show if this is the first entry
+                                        >
+                                            <button
+                                                class="sort-up sorting-button"
+                                                on:click=move |ev| {
+                                                    ev.stop_propagation();
+                                                    rw_entries.update(|entries| {
+                                                        if let Some(index) = entries.iter().position(|&x| x.0 == id) {
+                                                            if index > 0 {
+                                                                entries.swap(index, index - 1);
                                                             }
-                                                        ></button>
-                                                    </Show>
-                                                    <Show
-                                                        when=move || {
-                                                            let entries = rw_entries.get();
-                                                            let last_index = entries.len() - 1;
-                                                            id != entries[last_index].0
-                                                        } // don't show if this is the last entry
-                                                    >
-                                                        <button
-                                                            class="sort-down"
-                                                            on:click=move |ev| {
-                                                                ev.stop_propagation();
-                                                                rw_entries.update(|entries| {
-                                                                    if let Some(index) = entries.iter().position(|&x| x.0 == id) {
-                                                                        if index < entries.len() - 1 {
-                                                                            entries.swap(index, index + 1);
-                                                                        }
-                                                                    }
-                                                                });
+                                                        }
+                                                    });
+                                                }
+                                            >
+                                                <SortUpSVG/>
+                                            </button>
+                                        </Show>
+                                        <Show
+                                            when=move || {
+                                                let entries = rw_entries.get();
+                                                let last_index = entries.len() - 1;
+                                                id != entries[last_index].0
+                                            } // don't show if this is the last entry
+                                        >
+                                            <button
+                                                class="sort-down sorting-button"
+                                                on:click=move |ev| {
+                                                    ev.stop_propagation();
+                                                    rw_entries.update(|entries| {
+                                                        if let Some(index) = entries.iter().position(|&x| x.0 == id) {
+                                                            if index < entries.len() - 1 {
+                                                                entries.swap(index, index + 1);
                                                             }
-                                                        ></button>
-                                                    </Show>
-                                                </div>
+                                                        }
+                                                    });
+                                                }
+                                            >
+                                                <SortDownSVG/>
+                                            </button>
+                                        </Show>
+                                    </div>
 
-                                                {move || {
-                                                    T::into_editable_view(entry, set_entry)
-                                                }}
-        
-                                                <button class="remove-button"
-                                                    on:click=move |ev| {
-                                                        ev.stop_propagation();
-                                                        // we are going to assign new ids since we remove an entry
-                                                        let mut new_id_counter: u16 = 0;
+                                    {move || {
+                                        T::into_editable_view(entry, set_entry)
+                                    }}
 
-                                                        // iterate in entries
-                                                        rw_entries.update(|entries| {
-                                                            entries.retain_mut(|(entry_id, (signal, _))| {
+                                    <button class="remove-button ".to_string() + &T::get_css_class_name()
+                                        on:click=move |ev| {
+                                            ev.stop_propagation();
+                                            // we are going to assign new ids since we remove an entry
+                                            let mut new_id_counter: u16 = 0;
 
-                                                                // check if this is the entry to remove
-                                                                let keep_this_entry = entry_id != &id;
+                                            // iterate in entries
+                                            rw_entries.update(|entries| {
+                                                entries.retain_mut(|(entry_id, (signal, _))| {
 
-                                                                if keep_this_entry {
-                                                                    // set the new id
-                                                                    *entry_id = new_id_counter;
-                                                                    // increment counter
-                                                                    new_id_counter += 1;
-                                                                } else {
-                                                                    // NOTE: in this example, we are creating the signals
-                                                                    // in the scope of the parent. This means the memory used to
-                                                                    // store them will not be reclaimed until the parent component
-                                                                    // is unmounted. Here, we're removing the signal early (i.e, before
-                                                                    // the DynamicList is unmounted), so we manually dispose of the signal
-                                                                    // to avoid leaking memory.
-                                                                    //
-                                                                    // This is only necessary with nested signals like this one.
-                                                                    signal.dispose();
-                                                                }
+                                                    // check if this is the entry to remove
+                                                    let keep_this_entry = entry_id != &id;
 
-                                                                keep_this_entry
-                                                            })
-                                                        });
+                                                    if keep_this_entry {
+                                                        // set the new id
+                                                        *entry_id = new_id_counter;
+                                                        // increment counter
+                                                        new_id_counter += 1;
+                                                    } else {
+                                                        // NOTE: in this example, we are creating the signals
+                                                        // in the scope of the parent. This means the memory used to
+                                                        // store them will not be reclaimed until the parent component
+                                                        // is unmounted. Here, we're removing the signal early (i.e, before
+                                                        // the DynamicList is unmounted), so we manually dispose of the signal
+                                                        // to avoid leaking memory.
+                                                        //
+                                                        // This is only necessary with nested signals like this one.
+                                                        signal.dispose();
                                                     }
-                                                >
-                                                    "x"
-                                                </button>
-                                            }.into_view()
+
+                                                    keep_this_entry
+                                                })
+                                            });
                                         }
-                                    }
+                                    >
+                                    </button>
+
                                 </li>
                             }
-                        }
-                    />*/
-                </ul>
-                {
-                    if editable {
-                        view! {
-                            <button class="add-button" id="fake-button"
-                                on:click=add_entry
-                            >
-                                "+"
-                            </button>
-                        }.into_view()
-                    } else { ().into_view() }
-                }
-            </div>
-        }
-        .into_view()
+                        })
+                        .collect_view()
+                }}
+            </ul>
+
+            <button class="add-button"
+                on:click=add_entry
+            >
+                "+"
+            </button>
+        </div>
     }
+    .into_view()
 }
 
 
 #[component]
 pub fn EditableInstructions<T: RecipeEntry>( 
-    editable: bool,
     entry_type: RecipeEntryType,
-    /// Needed if not editable
-    #[prop(optional)]
-    entry_list: Option<T>,
-    /// Needed if editable
-    #[prop(optional)]
-    entry_signal: Option<(ReadSignal<T>, WriteSignal<T>)>,
+    entry_signal: (ReadSignal<T>, WriteSignal<T>),
+    theme_color: RwSignal<ThemeColor>
 ) -> impl IntoView {
 
     let (entry_type_title, style_class) = entry_type.title_and_class();
 
-    if !editable {
+    view! {
+        <div class={style_class.clone() + " container editable"}>
 
-        // Component in non editable mode
-        view! {
-            <div class={style_class.clone() + " container list"} >
-                <h1>{entry_type_title}</h1>
-                <ul class={style_class.clone()}>
-                    {
-                        entry_list
-                            .into_iter()
-                            .map(|entry| {
-                                view! {
-                                    <li class={style_class.clone()} id="entry-li">
-                                        { entry.into_view() }
-                                    </li>
-                                }
-                            })
-                            .collect_view()
-                    }
-                </ul>
-            </div>
-        }
-        .into_view()
-    } else {
+            <h3
+                id="field-title"
+                class=style_class.clone()
+                style=move || theme_color.get().as_visible_color()
+            >
+                {entry_type_title}
+            </h3>
 
-        let (entry, set_entry) = entry_signal.unwrap_or(create_signal(T::default()));
+            <li class={style_class.clone()} id="entry-li">
+                { T::into_editable_view(entry_signal.0, entry_signal.1) }
+            </li>
 
-        view! {
-            <div class={style_class.clone() + " container editable"}>
-
-                <h3 id="field-title" class=style_class.clone() >{entry_type_title}</h3>
-
-                <li class={style_class.clone()} id="entry-li">
-                    {
-                        if !editable {
-                            entry.into_view()
-                        } else {
-                            view! {
-                                { T::into_editable_view(entry, set_entry) }
-                            }
-                        }
-                    }
-                </li>
-
-            </div>
-        }
-        .into_view()
+        </div>
     }
+    .into_view()
 }
 
 
@@ -773,18 +584,20 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
                 }
             >
 
-                {move || {
-                    log!("Input rendered.");
-                }}
-
                 <input
                     class=          class
                     type=           "text"
                     id=             "text-input"
                     placeholder=    placeholder
                     value=          move || { get_entry_signal.get_untracked().get_string_from_field(field_id) }
-                    maxlength=      "20"
+                    //maxlength=      "20"
                     node_ref=       input_element
+                    style=          move || {
+                        let input_length = get_input.get().len();
+                        "width: ".to_string()
+                        + &input_length.to_string()
+                        + "ch"
+                    }
                     on:input=       move |ev| {
                         // on input, update entry signal
                         let current_input = event_target_value(&ev);
@@ -927,17 +740,29 @@ pub fn SettingsMenu() -> impl IntoView {
             >
 
                 // Backup
-                <button
-                    class="settings-button backup"
-                    on:click=move |_| {
-                        is_settings_menu_open.set(false);
-
-                        let navigate = leptos_router::use_navigate();
-                        navigate("/backup", Default::default());
+                <Show
+                    when=move || {
+                        let path = use_location().pathname.get();
+                        let is_backup =
+                            path
+                                .split('/')
+                                .last()
+                                .is_some_and(|last_word| last_word == "backup");
+                        !is_backup
                     }
                 >
-                    "Backup"
-                </button>
+                    <button
+                        class="settings-button backup"
+                        on:click=move |_| {
+                            is_settings_menu_open.set(false);
+
+                            let navigate = leptos_router::use_navigate();
+                            navigate("/backup", Default::default());
+                        }
+                    >
+                        "Backup"
+                    </button>
+                </Show>
 
                 // Logout
                 <button

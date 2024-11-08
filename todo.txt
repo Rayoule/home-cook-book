@@ -8,11 +8,11 @@ Home Cook Book
     - Edit Page:
       X fix save button
       - add RecipeMenu (with name within)
-    - Merge ingredients units and qty
-    - bug on delete tag (wrong tag)
+    X Merge ingredients units and qty
+    X bug on delete tag (wrong tag)
     X Remove list of instructions
     X Remove round menu
-    - Edit Page
+    X Edit Page
     X Designer le menu (tags, search?)
     X Faire Logout
     X Designer le Round Button Menu
@@ -29,7 +29,7 @@ Home Cook Book
     X on peut scroller dans les menus (tags/settings)
     X bouttons top qui restent affichés dans les menus
     X backup menu qui surgit
-    - enlever settings menu backup quand on est sur la page backup
+    X enlever settings menu backup quand on est sur la page backup
 
 		
 
