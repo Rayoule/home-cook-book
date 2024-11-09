@@ -2,12 +2,17 @@ Home Cook Book
 
 
 	To Do :
+    - Finish popups
     X on:moveout broken on RecipeCards
     - RecipePage broken if text too long
+    - Fix tags menu
+    - Fix suggestions menu
+    - Finish Print Page
+    - Fix new Ingredients in Edit Mode
     X Random colors on RecipeCards ?
     - Edit Page:
       X fix save button
-      - add RecipeMenu (with name within)
+      X add RecipeMenu (with name within)
     X Merge ingredients units and qty
     X bug on delete tag (wrong tag)
     X Remove list of instructions

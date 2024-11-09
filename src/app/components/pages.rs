@@ -343,7 +343,7 @@ pub enum ThemeColor {
     Color4
 }
 impl ThemeColor {
-    fn main_color(&self) -> String {
+    pub fn main_color(&self) -> String {
         match self {
             ThemeColor::Color1 => "var(--theme-color-1)",
             ThemeColor::Color2 => "var(--theme-color-2)",
@@ -351,7 +351,7 @@ impl ThemeColor {
             ThemeColor::Color4 => "var(--theme-color-4)",
         }.to_string()
     }
-    fn alt_color(&self) -> String {
+    pub fn alt_color(&self) -> String {
         match self {
             ThemeColor::Color1 => "var(--theme-color-1-alt)",
             ThemeColor::Color2 => "var(--theme-color-2-alt)",

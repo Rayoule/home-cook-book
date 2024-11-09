@@ -47,6 +47,7 @@
 	--theme-color-4-alt: #667143;
 
 	--shadow: 2px 3px 5px rgba(0, 0, 0, 0.25);
+	--shadow-dense: 2px 3px 5px rgba(0, 0, 0, 0.7);
 
 	--buttons-height: 2rem;
 	--buttons-width: 4.35rem;
@@ -160,7 +161,7 @@ svg {
 		width: var(--buttons-height);
 		fill: var(--theme-color-bg);
 		
-		filter: drop-shadow(var(--shadow));
+		filter: drop-shadow(var(--shadow-dense));
 
 		&.backup-page {
 			fill: var(--theme-color-menu);
@@ -200,10 +201,42 @@ svg {
 	}
 }
 .recipe-menu-option {
-	height: 25px;
-	width: 50px;
+	font-size: larger;
+	font-weight: bold;
 
-	margin: 15px 0;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+
+	height: 3rem;
+	width: 8rem;
+
+	margin: 0.25rem 0;
+
+	color: var(--theme-color-bg);
+	background-color: #00000000;
+	border: none;
+}
+.recipe-menu-text {
+	margin-left: 0.35rem;
+}
+svg {
+	&.recipe-menu-icon {
+		height: 3rem;
+
+		&.edit {
+			transform: scale(0.8);
+		}
+
+		&.print {
+			transform: scale(0.75);
+		}
+
+		&.delete {
+			stroke-width: 0.01rem;
+			transform: scale(1.2);
+		}
+	}
 }
 
 
@@ -272,7 +305,6 @@ svg {
 
 
 .settings-menu-button {
-
 	position: absolute;
 
 	height: var(--buttons-height);
@@ -296,7 +328,6 @@ svg {
 
 }
 .settings-menu {
-
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
@@ -328,22 +359,56 @@ svg {
 		box-shadow: var(--menu-shadow);
 	}
 }
+.settings-button-container {
+	height: 3rem;
+	width: 8rem;
 
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+}
+.settings-icon {
+	height: 3rem;
+	width: 3rem;
+}
+.settings-button-text {
+	font-size: large;
+	font-weight: bold;
+
+	color: var(--theme-color-bg);
+
+	margin-left: 0.5rem;
+}
+svg {
+	&.settings-icon {
+		fill: var(--theme-color-bg);
+	}
+
+	&.logout-icon-svg {
+		fill: none;
+		stroke: var(--theme-color-bg);
+		stroke-width: 0.13rem;
+	}
+}
 .settings-button {
 
 	cursor: pointer;
 
 	position: relative;
 
-	height: 35px;
-	width: 70px;
+	height: 4rem;
+	width: 8rem;
 
-	margin: 0.5rem 0;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
 
-	border: 1px solid black; 
-	border-radius: 100px;
+	//margin: 0.5rem 0;
 
-	background-color: var(--color-1);
+	border: none;
+	//border-radius: 100px;
+
+	background-color: #00000000;
 
 	transition:
 		transform 0.1s ease-out,

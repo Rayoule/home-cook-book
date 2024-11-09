@@ -1,4 +1,4 @@
-use elements::icons_svg::{BackButtonSVG, SortDownSVG, SortUpSVG};
+use elements::icons_svg::{BackButtonSVG, BackupButtonSVG, CrossButtonSVG, EditButtonSVG, LogoutButtonSVG, PrintButtonSVG, SortDownSVG, SortUpSVG};
 use leptos::{
     *, logging::*,
 };
@@ -104,7 +104,8 @@ pub fn RecipeMenu(
                                 navigate(&edit_path, Default::default());
                             }
                         >
-                            "Edit"
+                            <EditButtonSVG color=color.get().alt_color() />
+                            <p class="recipe-menu-text" >"Edit"</p>
                         </button>
                     </Show>
     
@@ -124,7 +125,8 @@ pub fn RecipeMenu(
                                 });
                         }
                     >
-                        "Print"
+                        <PrintButtonSVG color=color.get().alt_color() />
+                        <p class="recipe-menu-text" >"Print"</p>
                     </button>
     
                     <Show
@@ -143,7 +145,8 @@ pub fn RecipeMenu(
                                 delete_info_signal.set( Some( DeletePopupInfo(recipe_id)) );
                             }
                         >
-                            "Delete"
+                            <CrossButtonSVG color=color.get().alt_color() />
+                            <p class="recipe-menu-text" >"Delete"</p>
                         </button>
                     </Show>
     
@@ -705,7 +708,8 @@ pub fn SettingsMenu() -> impl IntoView {
             class = "settings-menu-button"
             class:menu-open=is_settings_menu_open
             on:click=move |_| is_settings_menu_open.update(|b| *b = !*b)
-        ></button>
+        >
+        </button>
 
         <div
             class = "background-blocker settings-blocker"
@@ -760,7 +764,10 @@ pub fn SettingsMenu() -> impl IntoView {
                             navigate("/backup", Default::default());
                         }
                     >
-                        "Backup"
+                        <BackupButtonSVG/>
+                        <p class="settings-button-text backup" >
+                            "Backup"
+                        </p>
                     </button>
                 </Show>
 
@@ -771,7 +778,12 @@ pub fn SettingsMenu() -> impl IntoView {
                         is_settings_menu_open.set(false);
                         logout_action.dispatch(());
                     }
-                > "Logout" </button>
+                >
+                    <LogoutButtonSVG/>
+                    <p class="settings-button-text logout" >
+                        "Logout"
+                    </p>
+                </button>
 
             </Show>
 
