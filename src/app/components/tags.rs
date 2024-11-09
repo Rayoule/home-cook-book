@@ -54,7 +54,7 @@ pub fn TagList(
                 });
             });
         // Then close the menu
-        is_tags_menu_open.set(false);
+        //is_tags_menu_open.set(false);
     };
 
     let on_unroll_click = move |ev:MouseEvent| {
@@ -87,6 +87,14 @@ pub fn TagList(
                 is_tags_menu_open.set(false);
             }
         >
+
+            <button
+                class="close-tags-button"
+                on:click=move |ev| {
+                    ev.stop_propagation();
+                    is_tags_menu_open.set(false);
+                }
+            ></button>
 
             <ul
                 class="tag-list"

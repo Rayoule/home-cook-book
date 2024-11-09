@@ -1,5 +1,7 @@
 use leptos::{ev::MouseEvent, *};
 
+use crate::app::elements::icons_svg::SearchSVG;
+
 
 // Will display on top of each page in the header
 #[component]
@@ -48,6 +50,12 @@ pub fn RecipeSearchBar(
             class="search-bar"
             on:submit=on_search_submit
         >
+            <button
+                type="submit"
+                class="search-bar-button"
+            >
+                <SearchSVG/>
+            </button>
             <input
                 class="search-bar-input"
                 node_ref=input_element
@@ -60,12 +68,6 @@ pub fn RecipeSearchBar(
                 }
             >
             </input>
-            <button
-                type="submit"
-                class="search-bar-button"
-            >
-                {"🔍"}
-            </button>
         </form>
     }
 }
@@ -92,11 +94,11 @@ pub fn SuggestionList(
                 ().into_view()
             } else if let Some(possible_values) = possible_values {
 
-                let text_input = text_input.get();
+                let text_input = text_input.get().to_lowercase();
 
                 let mut possible_values = possible_values.get();
 
-                possible_values.retain(|s| s.as_str().contains(&text_input));
+                possible_values.retain(|s| s.as_str().to_lowercase().contains(&text_input));
                         
                 let suggestions = possible_values
                     .clone()
@@ -114,7 +116,7 @@ pub fn SuggestionList(
                                     is_input_focused.set(false);
                                 }
                             >
-                                {s}
+                                { s }
                             </li>
                         }
                     })
@@ -135,13 +137,11 @@ pub fn SuggestionList(
 
                 if should_show_menu {
                     view! {
-                        <div>
-                            <ul
-                                class="suggestions-list"
-                            >
-                                {suggestions}
-                            </ul>
-                        </div>
+                        <ul
+                            class="suggestions-list"
+                        >
+                            {suggestions}
+                        </ul>
                     }.into_view()
                 } else {
                     ().into_view()
@@ -150,5 +150,15 @@ pub fn SuggestionList(
                 ().into_view()
             }
         }}
+    }
+}
+
+
+#[component]
+pub fn LoadingElem(text: String) -> impl IntoView {
+    view! {
+        <div class="loading-elem" >
+            <p class="loading-elem-content" > { text } </p>
+        </div>
     }
 }

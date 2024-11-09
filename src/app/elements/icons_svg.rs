@@ -87,6 +87,25 @@ pub fn LogoSVG() -> impl IntoView {
 
 
 #[component]
+pub fn SearchSVG() -> impl IntoView {
+    view! {
+        <svg
+            class="search-icon-svg"
+            viewBox="0 0 100 100"
+            stroke="black"
+            stroke-width="3"
+        >
+            <circle
+                cx="50"
+                cy="50"
+                r="40"
+            />
+        </svg>
+    }
+}
+
+
+#[component]
 pub fn SortUpSVG() -> impl IntoView {
     view! {
         <svg

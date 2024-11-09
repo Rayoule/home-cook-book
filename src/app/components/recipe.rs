@@ -357,7 +357,7 @@ impl RecipeEntry for RecipeIngredient {
             >
                 <RecipeEntryInput
                     class=              "ingredients quantity".to_owned()
-                    placeholder=        "Quantity".to_owned()
+                    placeholder=        "Qty".to_owned()
                     get_entry_signal=   entry
                     set_entry_signal=   set_entry
                     field_id=           {0}
@@ -446,7 +446,7 @@ impl RecipeEntry for RecipeInstruction {
         view! {
             <RecipeEntryInput
                 class=              "instructions".to_owned()
-                placeholder=        "Instruction content...".to_owned()
+                placeholder=        "Instruction content".to_owned()
                 get_entry_signal=   entry
                 set_entry_signal=   set_entry
             />
@@ -498,7 +498,7 @@ impl RecipeEntry for RecipeNote {
         view! {
             <RecipeEntryInput
                 class=              "notes note-content".to_owned()
-                placeholder=        "Note content...".to_owned()
+                placeholder=        "Note content".to_owned()
                 get_entry_signal=   entry
                 set_entry_signal=   set_entry
             />
@@ -568,7 +568,7 @@ impl RecipeEntry for RecipeTag {
         view! {
             <RecipeEntryInput
                 class=              "tags".to_owned()
-                placeholder=        "Tag Name...".to_owned()
+                placeholder=        "Tag".to_owned()
                 get_entry_signal=   entry
                 set_entry_signal=   set_entry
                 is_input=           true

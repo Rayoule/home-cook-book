@@ -1,7 +1,7 @@
 use leptos::*;
 use leptos::logging::*;
 use web_sys::SubmitEvent;
-use crate::app::{components::recipe_server_functions::*, ApplySaveFromJson};
+use crate::app::{components::recipe_server_functions::*, elements::molecules::LoadingElem, ApplySaveFromJson};
 
 /// Download all recipes button
 /// Renders the home page of your application.
@@ -24,7 +24,7 @@ pub fn DownloadAll( has_been_backed_up: RwSignal<bool> ) -> impl IntoView {
 
     view! {
         <Suspense
-            fallback=move || view!{ <p>"Recipes loading."</p> <br/> <p>"Please wait..."</p> }
+            fallback=move || view!{ <LoadingElem text="Loading Recipe...".to_owned() /> }
         >
             {move || {
                 let all_recipes_fetched = all_recipes.get();

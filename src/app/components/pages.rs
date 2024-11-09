@@ -1,3 +1,4 @@
+use components::recipe_sheets::PrintRecipeSheet;
 use elements::{
     icons_svg::{BackButtonSVG, LogoSVG},
     recipe_elements::SettingsMenu,
@@ -297,14 +298,6 @@ pub fn RecipePage() -> impl IntoView {
                 if let Some(Some(recipe)) = recipe {
 
                     match get_recipe_mode(true) {
-                        RecipePageMode::Display => {
-                            // Display Recipe
-                            view! {
-                                <RecipeSheet
-                                    recipe= recipe
-                                />
-                            }
-                        },
                         RecipePageMode::Editable => {
                             // Editable Recipe
                             view! {
@@ -314,7 +307,7 @@ pub fn RecipePage() -> impl IntoView {
                                 />
                             }
                         },
-                        RecipePageMode::Print => {
+                        RecipePageMode::Display => {
                             // Display Recipe
                             view! {
                                 <RecipeSheet
@@ -322,6 +315,14 @@ pub fn RecipePage() -> impl IntoView {
                                 />
                             }
                         },
+                        RecipePageMode::Print => {
+                            // Display Recipe
+                            view! {
+                                <PrintRecipeSheet
+                                    recipe= recipe
+                                />
+                            }
+                        }
                     }
                 } else {
                     {"Recipe empty."}.into_view()
@@ -416,6 +417,52 @@ impl ThemeColor {
     }
 }
 
+
+// Popup Colors
+#[derive(Clone, Copy)]
+pub enum PopupColor {
+    Color1,
+    Color2,
+    Color3,
+}
+impl PopupColor {
+    pub fn window_background_color(&self) -> String {
+        match self {
+            PopupColor::Color1 => "background-color: var(--theme-color-4);",
+            PopupColor::Color2 => "background-color: var(--theme-color-3);",
+            PopupColor::Color3 => "background-color: var(--theme-color-bg);",
+        }.to_string()
+    }
+    pub fn button_right_style(&self) -> String {
+        match self {
+            PopupColor::Color1 => "color: var(--theme-color-bg); background-color: var(--theme-color-popup-1);",
+            PopupColor::Color2 => "color: var(--theme-color-bg); background-color: var(--theme-color-menu);",
+            PopupColor::Color3 => "color: var(--theme-color-bg); background-color: var(--theme-color-popup-2);",
+        }.to_string()
+    }
+    pub fn button_left_style(&self) -> String {
+        match self {
+            PopupColor::Color1 => "color: black; background-color: var(--theme-color-bg);",
+            PopupColor::Color2 => "color: black; background-color: var(--theme-color-bg);",
+            PopupColor::Color3 => "color: var(--theme-color-4-alt); background-color: var(--theme-color-4);",
+        }.to_string()
+    }
+
+    pub fn random() -> Self {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        match rng.gen_range(0..3) {
+            0 => PopupColor::Color1,
+            1 => PopupColor::Color2,
+            2 => PopupColor::Color3,
+            _ => unreachable!(),
+        }
+    }
+}
+
+
+
+
 /// Renders the home page of your application.
 #[component]
 pub fn AllRecipes() -> impl IntoView {
@@ -461,7 +508,7 @@ pub fn AllRecipes() -> impl IntoView {
         </div>
 
         // TagList
-        <Transition fallback=move || view! {<p>"Loading..."</p> }>
+        <Transition fallback=move || view! { <LoadingElem text="Loading Recipes...".to_owned() /> } >
             { move || {
                 let tags_component = {
                     move || {
@@ -632,35 +679,6 @@ pub fn NotFound() -> impl IntoView {
 
     view! {
         <h1>"Not Found"</h1>
-    }
-}
-
-
-#[component]
-pub fn HeaderMenu(
-    //page_name: ReadSignal<String>
-) -> impl IntoView {
-
-    // Don't show the header if in Print mode
-    let print_mode = move || {
-        let path = use_location().pathname.get();
-        let is_print =
-            path
-                .split('/')
-                .last()
-                .is_some_and(|last_word| last_word == "print");
-        is_print
-    };
-
-
-    view! {
-        <Show
-            when=move || { !print_mode() }
-        >
-            <header class="header-menu">
-                <SettingsMenu/>
-            </header>
-        </Show>
     }
 }
 

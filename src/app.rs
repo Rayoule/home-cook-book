@@ -1,3 +1,4 @@
+use ev::MouseEvent;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
@@ -243,11 +244,10 @@ pub fn App() -> impl IntoView {
         // content for this welcome page
         <Router>
 
-            //<HeaderMenu/>
-
             <main>
 
                 <ServerActionPendingPopup/>
+
                 <CheckLogin/>
 
                 <Routes>
@@ -282,7 +282,23 @@ pub fn CheckLogin()-> impl IntoView {
 
     view!{
         <Suspense
-            fallback=move || view!{ <p>{"Wait for Login Check..."}</p> }
+            fallback=move || {
+                let is_print_page =
+                    use_location()
+                        .pathname
+                        .get()
+                        .split('/')
+                        .last()
+                        .is_some_and(|last_word| last_word == "print");
+                
+                if !is_print_page {
+                    view! {
+                        <p class="Login-check-warning" >
+                            "Wait for Login Check..."
+                        </p>
+                    }.into_view()
+                } else { ().into_view() }
+            }
         >
             {move || {
                 let _ = check_login_resource.get();

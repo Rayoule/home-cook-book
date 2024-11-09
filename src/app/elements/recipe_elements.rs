@@ -564,6 +564,7 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
             input_element()
                 .expect("<input> should be mounted")
                 .set_value(&new_suggestion);
+            set_input(new_suggestion);
         }
     });
 
@@ -596,10 +597,12 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
                     //maxlength=      "20"
                     node_ref=       input_element
                     style=          move || {
-                        let input_length = get_input.get().len();
-                        "width: ".to_string()
-                        + &input_length.to_string()
-                        + "ch"
+                        if T::get_entry_type() == RecipeEntryType::Tag {
+                            let input_length = usize::min(get_input.get().len(), 20);
+                            "width: ".to_string()
+                            + &input_length.to_string()
+                            + "ch"
+                        } else { "".to_string() }
                     }
                     on:input=       move |ev| {
                         // on input, update entry signal

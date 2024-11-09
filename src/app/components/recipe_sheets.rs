@@ -1,9 +1,10 @@
 use ev::MouseEvent;
 use html::Div;
 use leptos::{logging::*, *};
+use leptos_router::use_params;
 use leptos_use::on_click_outside;
 use crate::app::{
-    elements::recipe_elements::*, IsLoggedIn, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeIngredient, RecipeInstruction, RecipeLight, RecipeNote, RecipeServerAction, RecipeTag, ThemeColor
+    elements::recipe_elements::*, IsLoggedIn, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeIngredient, RecipeInstruction, RecipeLight, RecipeModeParam, RecipeNote, RecipeServerAction, RecipeTag, ThemeColor
 };
 
 
@@ -192,7 +193,7 @@ pub fn RecipeSheet(
             .map(|tag| {
                 view! {
                     <li class="display-recipe tags">
-                        <span class="display-recipe tags">{tag.name}</span>
+                        { tag.name }
                     </li>
                 }
             })
@@ -244,7 +245,6 @@ pub fn RecipeSheet(
     let theme_color = create_rw_signal(ThemeColor::random());
 
     view! {
-
         <RecipeMenu
             color=theme_color
             editable=false
@@ -291,6 +291,94 @@ pub fn RecipeSheet(
                 >"Tags"</h3>
                 <ul class="display-recipe tags">
                     {tag_list}
+                </ul>
+            </div>
+
+        </div>
+    }
+}
+
+#[component]
+pub fn PrintRecipeSheet(
+    recipe: Recipe,
+) -> impl IntoView {
+    
+    let ingredient_list = {
+        recipe
+            .ingredients
+            .unwrap_or_else(|| vec![])
+            .into_iter()
+            .map(|ingredient| {
+                view! {
+                    <li class="display-recipe ingredients">
+                        <span class="display-recipe ingredients units">{ingredient.qty_unit}</span>
+                        <span class="display-recipe ingredients content">{ingredient.content}</span>
+                    </li>
+                }
+            })
+            .collect_view()
+    };
+
+    let instructions = {
+            view! {
+                <li class="display-recipe instructions content">
+                    { recipe.instructions.content }
+                </li>
+            }.into_view()
+    };
+
+    let note_list = {
+        recipe
+            .notes
+            .unwrap_or_else(|| vec![])
+            .into_iter()
+            .map(|note| {
+                view! {
+                    <li class="display-recipe notes" >
+                        <span class="display-recipe notes">{note.content}</span>
+                    </li>
+                }
+            })
+            .collect_view()
+    };
+
+    // Triggers Print Dialog
+    create_effect(|_| {
+        let _ = web_sys::window().expect("window should be available").print();
+    });
+
+    view! {
+
+        <div class="print-recipe-container">
+
+            <h2 class="print-recipe-name" >
+                { recipe.name }
+            </h2>
+
+            <div class="print-recipe ingredients container">
+                <h3 class="print-recipe ingredients title" >
+                    "Ingredients"
+                </h3>
+                <ul class="print-recipe ingredients">
+                    { ingredient_list }
+                </ul>
+            </div>
+
+            <div class="print-recipe instructions container" >
+                <h3 class="print-recipe instructions title" >
+                    "Instructions"
+                </h3>
+                <ul class="print-recipe instructions">
+                    { instructions }
+                </ul>
+            </div>
+
+            <div class="print-recipe notes container">
+                <h3 class="print-recipe notes title" >
+                    "Notes"
+                </h3>
+                <ul class="print-recipe notes">
+                    { note_list }
                 </ul>
             </div>
 

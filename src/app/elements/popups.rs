@@ -1,7 +1,7 @@
 use leptos::{*, ev::MouseEvent, logging::*};
 
 use crate::app::{
-    DeleteInfoSignal, RecipeActionDescriptor, RecipeServerAction
+    DeleteInfoSignal, PopupColor, RecipeActionDescriptor, RecipeServerAction, ThemeColor
 };
 
 
@@ -14,6 +14,12 @@ pub fn ServerActionPendingPopup()  -> impl IntoView {
             .0
             .pending();
     
+    let popup_color = create_rw_signal(PopupColor::random());
+    create_effect( move |_| {
+        let _ = action_pending.track();
+        popup_color.set(PopupColor::random());
+    });
+    
     view! {
         <Show
             when=move || action_pending.get()
@@ -24,8 +30,11 @@ pub fn ServerActionPendingPopup()  -> impl IntoView {
                     ev.stop_propagation();
                 }
             >
-                <div class="popup-window">
-                    <p>{"Please Wait..."}</p>
+                <div
+                    class="popup-window server-action"
+                    style=popup_color.get().window_background_color()
+                >
+                    <p class="wait-for-server" > "Wait for server ..." </p>
                 </div>
             </div>
         </Show>
@@ -68,20 +77,41 @@ pub fn DeleteRecipePopup() -> impl IntoView {
         delete_info_signal.set(None);
     };
 
+    let popup_color = create_rw_signal(PopupColor::random());
+    create_effect( move |_| {
+        let _ = delete_info_signal.track();
+        popup_color.set(PopupColor::random());
+    });
+
     view! {
         <Show
             when=move || { delete_info_signal.get().is_some() }
         >
             <div
                 class="popup"
-                on:click=move |ev| {
-                    ev.stop_propagation();
-                }
+                on:click=on_no_click
             >
-                <div class="popup-window">
-                    <p> { "Do you wish to DELETE this recipe ?" } </p>
-                    <button on:click=on_no_click > {"NO, CANCEL"} </button>
-                    <button on:click=on_sure_click > {"YES, DELETE"} </button>
+                <div
+                    class="popup-window"
+                    style=popup_color.get().window_background_color()
+                >
+                    <p class="popup-text"> { "Do you wish to DELETE this recipe ?" } </p>
+                    <div class="popup-option-container" >
+                        <button
+                            class="popup-option"
+                            style=popup_color.get().button_left_style()
+                            on:click=on_no_click
+                        >
+                            <p class="popup-option-text" >"no"</p>
+                        </button>
+                        <button
+                            class="popup-option"
+                            style=popup_color.get().button_right_style()
+                            on:click=on_sure_click
+                        >
+                            <p class="popup-option-text" >"yes"</p>
+                        </button>
+                    </div>
                 </div>
             </div>
         </Show>
