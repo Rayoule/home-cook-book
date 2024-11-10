@@ -2,7 +2,7 @@ use elements::icons_svg::{BackButtonSVG, BackupButtonSVG, CrossButtonSVG, EditBu
 use leptos::{
     *, logging::*,
 };
-use components::{auth::auth_server_functions::server_logout, recipe};
+use components::auth::auth_server_functions::server_logout;
 use ev::MouseEvent;
 use gloo_timers::callback::Timeout;
 use crate::app::{

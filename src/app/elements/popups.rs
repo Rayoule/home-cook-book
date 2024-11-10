@@ -1,7 +1,7 @@
 use leptos::{*, ev::MouseEvent, logging::*};
 
 use crate::app::{
-    DeleteInfoSignal, PopupColor, RecipeActionDescriptor, RecipeServerAction, ThemeColor
+    DeleteInfoSignal, PopupColor, RecipeActionDescriptor, RecipeServerAction
 };
 
 

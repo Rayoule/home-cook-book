@@ -7,7 +7,6 @@ use ev::MouseEvent;
 use leptos::*;
 use leptos_router::*;
 use leptos::logging::*;
-use rand::rngs::ThreadRng;
 use std::sync::Arc;
 
 use crate::app::{

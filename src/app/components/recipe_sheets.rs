@@ -1,10 +1,9 @@
 use ev::MouseEvent;
 use html::Div;
 use leptos::{logging::*, *};
-use leptos_router::use_params;
 use leptos_use::on_click_outside;
 use crate::app::{
-    elements::recipe_elements::*, IsLoggedIn, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeIngredient, RecipeInstruction, RecipeLight, RecipeModeParam, RecipeNote, RecipeServerAction, RecipeTag, ThemeColor
+    elements::recipe_elements::*, IsLoggedIn, Recipe, RecipeActionDescriptor, RecipeEntry, RecipeEntryType, RecipeIngredient, RecipeInstruction, RecipeLight, RecipeNote, RecipeServerAction, RecipeTag, ThemeColor
 };
 
 
