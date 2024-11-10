@@ -399,13 +399,12 @@ svg {
 
 	position: relative;
 
-	//height: 35px;
-	//width: 150px;
+	height: var(--buttons-height);
 
 	margin: 25px;
 	padding: 10px 15px;
 
-	border: 1px solid black; 
+	border: none;
 	border-radius: 100px;
 
 	background-color: var(--theme-color-menu);
@@ -477,7 +476,12 @@ svg {
 }
 
 
-
+.all-recipes {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	
+}
 .recipe-list-container {
 
 	display: grid;
@@ -487,6 +491,8 @@ svg {
 	align-items: center;
 
 	place-items: center;
+
+	max-width: var(--recipe-dynamic-max-width);
 
 	padding: 0 1rem;
 	padding-bottom: 10rem;
@@ -578,6 +584,8 @@ ul.recipe-light li::before {
 
 	line-height: 12px;
 
+	overflow: hidden;
+
 	&.name {
 		text-align: left;
 		font-size: large;
@@ -587,7 +595,6 @@ ul.recipe-light li::before {
 
 	li {
 		display : inline-block;
-		
 		
 		text-align: left;
 	
@@ -765,7 +772,7 @@ ul.recipe-light li::before {
 
 
 .print-recipe-container {
-	max-width: var(--recipe-max-width);
+	max-width: var(--recipe-dynamic-max-width);
 	text-align: left;
 }
 
@@ -1219,17 +1226,16 @@ svg {
 .search-container {
 
 	position: sticky;
+	top: 10px;
+	z-index: 10;
 
 	display: flex;
 	flex-direction: row;
 	align-items: center;
 
 	height: 70px;
-	z-index: 10;
-
-	top: 10px;
-
-	padding: 0 1rem;
+	
+	padding: 0 var(--border-margin);
 }
 
 
@@ -1596,19 +1602,29 @@ ul.tag-list {
 	padding-top: 30vh;
 }
 .upload-save-form {
-	height: fit-content;
-	width: fit-content;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
 
-	border: 1px solid rgb(80, 80, 80);
+	height: auto;
+	width: var(--recipe-dynamic-max-width);
+
 	border-radius: 25px;
 
-	margin: 5px 5px;
+	padding: 1rem var(--border-margin);
 }
 .upload-save-button {
-	height: 30px;
-	width: 50px;
+	height: var(--buttons-height);
+	width: var(--buttons-width);
 
-	margin-bottom: 5px;
+	background-color: var(--theme-color-menu);
+	color: var(--theme-color-bg);
+	border: none;
+	border-radius: 2rem;
+
+	margin-bottom: 5rem;
+	margin-top: 1rem;
 }
 
 

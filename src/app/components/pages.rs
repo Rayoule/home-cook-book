@@ -527,7 +527,7 @@ pub fn AllRecipes() -> impl IntoView {
 
 
                 view! {
-                    <div>
+                    <div class="all-recipes">
 
                         <DeleteRecipePopup/>
 
