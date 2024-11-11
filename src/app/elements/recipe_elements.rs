@@ -1,10 +1,12 @@
-use elements::icons_svg::{BackButtonSVG, BackupButtonSVG, CrossButtonSVG, EditButtonSVG, LogoutButtonSVG, PrintButtonSVG, SortDownSVG, SortUpSVG};
+use elements::icons_svg::{BackButtonSVG, BackupButtonSVG, CrossButtonSVG, EditButtonSVG, LogoutButtonSVG, PrintButtonSVG, RemoveSVG, SortSVG};
+use html::{Div, Li};
 use leptos::{
     *, logging::*,
 };
 use components::auth::auth_server_functions::server_logout;
 use ev::MouseEvent;
 use gloo_timers::callback::Timeout;
+use leptos_use::on_click_outside;
 use crate::app::{
     *,
     elements::molecules::*
@@ -285,7 +287,6 @@ pub fn EditableEntryList<T: RecipeEntry>(
         });
     };
 
-
     view! {
 
         <div class={style_class.clone() + " container editable list"}>
@@ -305,14 +306,36 @@ pub fn EditableEntryList<T: RecipeEntry>(
                         .get()
                         .into_iter()
                         .map(|(id, (entry, set_entry))| {
+
+                            let recipe_entry_menu_signal = create_rw_signal(RecipeEntryMenuMode::Closed);
+
                             view! {
-                                <li class={style_class.clone()} id="entry-li">
+                                <li
+                                    class={style_class.clone()}
+                                    id="entry-li"
+                                >
 
                                     <div
                                         class="sorting-container ".to_string() + &T::get_css_class_name()
                                     >
 
-                                        <Show
+                                        <button
+                                            class="sort-up sorting-button"
+                                            on:click=move |ev| {
+                                                ev.stop_propagation();
+                                                recipe_entry_menu_signal.update(|mode| {
+                                                    *mode = match *mode {
+                                                        RecipeEntryMenuMode::Closed => RecipeEntryMenuMode::Sort,
+                                                        RecipeEntryMenuMode::Sort   => RecipeEntryMenuMode::Closed,
+                                                        RecipeEntryMenuMode::Delete => RecipeEntryMenuMode::Sort,
+                                                    };
+                                                });
+                                            }
+                                        >
+                                            <SortSVG/>
+                                        </button>
+
+                                        /*<Show
                                             when=move || { id != rw_entries.get()[0].0 } // don't show if this is the first entry
                                         >
                                             <button
@@ -353,14 +376,30 @@ pub fn EditableEntryList<T: RecipeEntry>(
                                             >
                                                 <SortDownSVG/>
                                             </button>
-                                        </Show>
+                                        </Show>*/
                                     </div>
 
                                     {move || {
-                                        T::into_editable_view(entry, set_entry)
+                                        T::into_editable_view(entry, set_entry, Some(recipe_entry_menu_signal))
                                     }}
 
-                                    <button class="remove-button ".to_string() + &T::get_css_class_name()
+                                    <button
+                                        class="remove-button ".to_string() + &T::get_css_class_name()
+                                        on:click=move |ev| {
+                                            ev.stop_propagation();
+                                            recipe_entry_menu_signal.update(|mode| {
+                                                *mode = match mode {
+                                                    RecipeEntryMenuMode::Closed => RecipeEntryMenuMode::Delete,
+                                                    RecipeEntryMenuMode::Sort   => RecipeEntryMenuMode::Delete,
+                                                    RecipeEntryMenuMode::Delete => RecipeEntryMenuMode::Closed,
+                                                };
+                                            });
+                                        }
+                                    >
+                                        <RemoveSVG/>
+                                    </button>
+
+                                    /*<button class="remove-button ".to_string() + &T::get_css_class_name()
                                         on:click=move |ev| {
                                             ev.stop_propagation();
                                             // we are going to assign new ids since we remove an entry
@@ -395,7 +434,8 @@ pub fn EditableEntryList<T: RecipeEntry>(
                                             });
                                         }
                                     >
-                                    </button>
+                                        <RemoveSVG/>
+                                    </button>*/
 
                                 </li>
                             }
@@ -416,13 +456,15 @@ pub fn EditableEntryList<T: RecipeEntry>(
 
 
 #[component]
-pub fn EditableInstructions<T: RecipeEntry>( 
+pub fn EditableInstructions( 
     entry_type: RecipeEntryType,
-    entry_signal: (ReadSignal<T>, WriteSignal<T>),
+    entry_signal: (ReadSignal<RecipeInstruction>, WriteSignal<RecipeInstruction>),
     theme_color: RwSignal<ThemeColor>
 ) -> impl IntoView {
 
     let (entry_type_title, style_class) = entry_type.title_and_class();
+
+    let menu = create_rw_signal(RecipeEntryMenuMode::Closed);
 
     view! {
         <div class={style_class.clone() + " container editable"}>
@@ -436,7 +478,7 @@ pub fn EditableInstructions<T: RecipeEntry>(
             </h3>
 
             <li class={style_class.clone()} id="entry-li">
-                { T::into_editable_view(entry_signal.0, entry_signal.1) }
+                { RecipeInstruction::into_editable_view(entry_signal.0, entry_signal.1, Some(menu)) }
             </li>
 
         </div>
@@ -525,6 +567,8 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
     get_entry_signal: ReadSignal<T>,
     set_entry_signal: WriteSignal<T>,
     class: String,
+    #[prop(optional)]
+    entry_menu: Option<RwSignal<RecipeEntryMenuMode>>,
     /// If the entry has multiple fields
     #[prop(optional)]
     field_id: Option<usize>,
@@ -648,29 +692,43 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
         } = leptos_use::use_textarea_autosize(textarea);
 
         view! {
-            <textarea
-                class=          class
-                node_ref=       textarea
-                type=           "text"
-                id=             "text-input"
-                placeholder=    placeholder
-                prop:value=          move || { get_entry_signal.get_untracked().get_string_from_field(field_id) }
-    
-                // on input
-                on:input=move |ev| {
-
-                    // resize box to fit text
-                    #[cfg(feature= "hydrate")]
-                    set_content.set(event_target_value(&ev));
-
-                    // update entry signal
-                    set_entry_signal.update(|recipe_entry| {
-                        recipe_entry.update_field_from_string_input(field_id, event_target_value(&ev))
-                    });
-                }
+            <div
+                class="text-area-input-wrapper ".to_string() + &class
             >
-                //{move || { get_entry_signal.get().get_string_from_field(field_id) }}
-            </textarea>
+
+                <textarea
+                    class=          class
+                    node_ref=       textarea
+                    type=           "text"
+                    id=             "text-input"
+                    placeholder=    placeholder
+                    prop:value=          move || { get_entry_signal.get_untracked().get_string_from_field(field_id) }
+        
+                    // on input
+                    on:input=move |ev| {
+
+                        // resize box to fit text
+                        #[cfg(feature= "hydrate")]
+                        set_content.set(event_target_value(&ev));
+
+                        // update entry signal
+                        set_entry_signal.update(|recipe_entry| {
+                            recipe_entry.update_field_from_string_input(field_id, event_target_value(&ev))
+                        });
+                    }
+                ></textarea>
+
+                {move || {
+                    if let Some(menu) = entry_menu {
+                        view! {
+                            <RecipeEntryMenu
+                                menu_rw_signal=menu
+                            />
+                        }.into_view()
+                    } else { ().into_view() }
+                }}
+
+            </div>
         }
         .into_view()
     }
@@ -793,3 +851,45 @@ pub fn SettingsMenu() -> impl IntoView {
         </div>
     }
 }
+
+
+#[derive(Clone, PartialEq)]
+pub enum RecipeEntryMenuMode {
+    Closed,
+    Sort,
+    Delete,
+}
+#[component]
+pub fn RecipeEntryMenu(
+    menu_rw_signal: RwSignal<RecipeEntryMenuMode>,
+) -> impl IntoView {
+
+    view! {
+        <div
+            class="recipe-entry-menu"
+            class:open=move || { menu_rw_signal.get() != RecipeEntryMenuMode::Closed }
+            class:delete=move || { menu_rw_signal.get() == RecipeEntryMenuMode::Delete }
+            class:sort=move || { menu_rw_signal.get() == RecipeEntryMenuMode::Sort }
+        >
+            <Show
+                when=move || { menu_rw_signal.get() == RecipeEntryMenuMode::Sort }
+            >
+                <button class="recipe-entry-menu-button move-up">
+                    "move up"
+                </button>
+                <button class="recipe-entry-menu-button move-down">
+                    "move down"
+                </button>
+            </Show>
+            <Show
+                when=move || { menu_rw_signal.get() == RecipeEntryMenuMode::Delete }
+            >
+                <button class="recipe-entry-menu-button delete">
+                    "remove"
+                </button>
+            </Show>
+        </div>
+    }
+}
+
+

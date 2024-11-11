@@ -141,6 +141,38 @@ pub fn SortDownSVG() -> impl IntoView {
 
 
 #[component]
+pub fn SortSVG() -> impl IntoView {
+    view! {
+        <svg
+        class="sort-icon-svg"
+            viewBox="0 0 16 16"
+        >
+            <path
+                d="M3.25 1A2.25 2.25 0 001 3.25v9.5A2.25 2.25 0 003.25 15h9.5A2.25 2.25
+                0 0015 12.75v-9.5A2.25 2.25 0 0012.75 1h-9.5z"
+            />
+        </svg>
+    }
+}
+
+#[component]
+pub fn RemoveSVG() -> impl IntoView {
+    view! {
+        <svg
+            class="remove-icon-svg"
+            viewBox="0 0 100 100"
+        >
+            <circle
+                cx="50"
+                cy="50"
+                r="40"
+            />
+        </svg>
+    }
+}
+
+
+#[component]
 pub fn BackButtonSVG(
     #[prop(optional)]
     backup_page: bool

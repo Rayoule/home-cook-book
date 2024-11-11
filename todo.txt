@@ -2,6 +2,10 @@ Home Cook Book
 
 
 	To Do :
+    - move up, move down and delete functions for edit mode in recipe entries menu
+    - enable the click elsewhere
+    X losange + validation in edit mode ingredients
+    X ingredients textarea
     X Waiting for check Login
     X Loading popup
     X Finish popups:
