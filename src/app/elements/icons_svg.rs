@@ -141,6 +141,30 @@ pub fn SortDownSVG() -> impl IntoView {
 
 
 #[component]
+pub fn SortUpDownVG(
+    is_up: bool
+) -> impl IntoView {
+    let class =
+        "sort-up-down-icon-svg ".to_string()
+        + if is_up { "up" } else { "down" };
+
+    view! {
+        <svg
+            class=&class
+            viewBox="0 0 24 24"
+            fill="none"
+        >
+            <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M16 14L12 10L8 14"
+            />
+        </svg>
+    }
+}
+
+
+#[component]
 pub fn SortSVG() -> impl IntoView {
     view! {
         <svg

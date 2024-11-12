@@ -391,13 +391,18 @@ svg {
 }
 .download-backup-button {
 
-	font-size: small;
+	font-size: larger;
+	font-weight: bold;
 	text-decoration: none;
 	color: inherit;
 
 	cursor: pointer;
 
 	position: relative;
+
+	display: flex;
+	align-items: center;
+	justify-content: center;
 
 	height: var(--buttons-height);
 
@@ -407,10 +412,11 @@ svg {
 	border: none;
 	border-radius: 100px;
 
+	color: var(--theme-color-bg);
 	background-color: var(--theme-color-menu);
 }
 .backup-warning {
-	font-size: small;
+	font-size: medium;
 }
 
 
@@ -582,11 +588,15 @@ ul.recipe-light li::before {
 }
 .recipe-light {
 
-	line-height: 12px;
+	line-height: 1rem;
 
 	overflow: hidden;
 
 	&.name {
+		overflow: visible;
+
+		//line-height: 1rem;
+
 		text-align: left;
 		font-size: large;
 
@@ -1111,48 +1121,7 @@ textarea#text-input {
 }
 
 
-.recipe-entry-menu {
-	position: absolute;
 
-	display: none;
-
-	z-index: 15;
-
-	top: 0;
-	bottom: 0;
-	right: 0;
-	left: 0;
-
-	background-color: #00000000;
-	border-radius: 1rem;
-
-	&.open {
-		display: flex;
-		flex-direction: row;
-		align-items: center;
-		justify-content: center;
-	}
-
-	&.delete {
-		background-color: var(--theme-color-1);
-	}
-
-	&.sort {
-		background-color: var(--theme-color-menu);
-	}
-}
-.recipe-entry-menu-button {
-	font-size: 1rem;
-	font-weight: bold;
-
-	margin: 0 1rem;
-
-	transform: translateY(-0.1rem);
-
-	color: var(--theme-color-bg);
-	background-color: #00000000;
-	border: none;
-}
 
 
 // OTHER -------------------------------------------------
@@ -1274,6 +1243,52 @@ svg {
 	background-color: #00000000;
 	border: none;
 }
+.recipe-entry-menu {
+	position: absolute;
+
+	display: none;
+
+	z-index: 15;
+
+	top: 0;
+	bottom: 0;
+	right: 0;
+	left: 0;
+
+	background-color: #00000000;
+	border-radius: 1rem;
+
+	&.open {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+	}
+
+	&.delete {
+		background-color: var(--theme-color-1);
+	}
+
+	&.sort {
+		background-color: var(--theme-color-menu);
+	}
+}
+.recipe-entry-menu-button {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+
+	font-size: 1rem;
+	font-weight: bold;
+
+	margin: 0 1rem;
+
+	transform: translateY(-0.1rem);
+
+	color: var(--theme-color-bg);
+	background-color: #00000000;
+	border: none;
+}
 svg {
 	&.sort-icon-svg {
 		width: 1.15rem;
@@ -1281,6 +1296,23 @@ svg {
 	
 		fill: var(--theme-color-menu);
 		transform: rotate(45deg);
+	}
+
+	&.sort-up-down-icon-svg {
+		width: 3rem;
+		height: 3rem;
+
+		stroke: var(--theme-color-bg);
+		stroke-width: 0.1rem;
+
+
+		&.up {
+			//
+		}
+
+		&.down {
+			transform: Rotate(180deg);
+		}
 	}
 }
 
@@ -1505,7 +1537,7 @@ ul.tag-list {
 .popup-window {
 	position: relative;
 
-	width: 100%;
+	width: min(var(--recipe-dynamic-max-width), 25rem);
 	height: 10rem;
 
 	margin: 1rem;
@@ -1677,6 +1709,9 @@ ul.tag-list {
 	padding: 1rem var(--border-margin);
 }
 .upload-save-button {
+	font-size: medium;
+	font-weight: bold;
+
 	height: var(--buttons-height);
 	width: var(--buttons-width);
 

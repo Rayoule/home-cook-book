@@ -1,7 +1,8 @@
 use leptos::*;
 use leptos::logging::*;
 use web_sys::SubmitEvent;
-use crate::app::{components::recipe_server_functions::*, elements::molecules::LoadingElem, ApplySaveFromJson};
+use crate::app::{components::recipe_server_functions::*, elements::molecules::LoadingElem, ApplySaveFromJson, PopupColor};
+extern crate chrono;
 
 /// Download all recipes button
 /// Renders the home page of your application.
@@ -30,12 +31,18 @@ pub fn DownloadAll( has_been_backed_up: RwSignal<bool> ) -> impl IntoView {
                 let all_recipes_fetched = all_recipes.get();
                 if let Some(Some(data)) = all_recipes_fetched {
                     let encoded_data = format!("data:text/plain;charset=utf-8,{}", urlencoding::encode(&data));
-                    view!{
+                    let date_fmt = chrono::Local::now().format("%Y-%m-%d--%H:%M:%S").to_string();
+                    let save_name =
+                        "all_recipes_json".to_string()
+                        + &date_fmt
+                        + ".json";
+
+                    view! {
                         <a
                             href =      {encoded_data}
-                            download =  "all_recipes_json.txt"
+                            download =  &save_name
                             on:click =  move |_| { has_been_backed_up.set(true) }
-                            class="download-backup-button"
+                            class=      "download-backup-button"
                         >
                             "Download All"
                         </a>
@@ -63,6 +70,7 @@ pub fn UploadAll( has_been_backed_up: RwSignal<bool> ) -> impl IntoView {
         use_context::<ApplySaveFromJson>()
             .expect("Expected to find ApplyJsonSave in context")
             .0;
+    let upload_pending = upload_save_action.pending();
     let save_action_value = upload_save_action.value();
     create_effect(move |_| {
         if let Some(true) = save_action_value.get() {
@@ -87,6 +95,12 @@ pub fn UploadAll( has_been_backed_up: RwSignal<bool> ) -> impl IntoView {
         upload_save_action.dispatch(value);
     };
 
+    let popup_color = create_rw_signal(PopupColor::random());
+    create_effect(move |_| {
+        let _ = upload_save_action.version().get();
+        popup_color.set(PopupColor::random());
+    });
+
     view! {
         <Show
             when = has_been_backed_up
@@ -100,24 +114,36 @@ pub fn UploadAll( has_been_backed_up: RwSignal<bool> ) -> impl IntoView {
                 when = move || { !save_done.get() }
                 fallback = move || view! { <p>"Save has been done !"</p> }
             >
-                <form
-                    on:submit =     on_submit
-                    class=          "upload-save-form"
+                <Show
+                    when = move || { !upload_pending.get() }
+                    fallback = move || view! {
+                            <div
+                                class="popup-window server-action"
+                                style=popup_color.get().window_background_color()
+                            >
+                                <p class="wait-for-server" > "Wait for server ..." </p>
+                            </div>
+                    }
                 >
-                    <textarea
-                        class=          "save-input"
-                        node_ref=       textarea
-                        id=             "text-input"
-                        type=           "text"
-                        placeholder=    "Paste JSON save here"
-                        on:input=move |ev| {
-                            // resize box to fit text
-                            #[cfg(feature= "hydrate")]
-                            set_content.set(event_target_value(&ev));
-                        }
-                    > {} </textarea>
-                    <button class="upload-save-button" type="submit"> "Ok" </button>
-                </form>
+                    <form
+                        on:submit =     on_submit
+                        class=          "upload-save-form"
+                    >
+                        <textarea
+                            class=          "save-input"
+                            node_ref=       textarea
+                            id=             "text-input"
+                            type=           "text"
+                            placeholder=    "Paste JSON save here"
+                            on:input=move |ev| {
+                                // resize box to fit text
+                                #[cfg(feature= "hydrate")]
+                                set_content.set(event_target_value(&ev));
+                            }
+                        > {} </textarea>
+                        <button class="upload-save-button" type="submit"> "Ok" </button>
+                    </form>
+                </Show>
             </Show>
         </Show>
         

@@ -1,4 +1,4 @@
-use elements::icons_svg::{BackButtonSVG, BackupButtonSVG, CrossButtonSVG, EditButtonSVG, LogoutButtonSVG, PrintButtonSVG, RemoveSVG, SortSVG};
+use elements::icons_svg::{BackButtonSVG, BackupButtonSVG, CrossButtonSVG, EditButtonSVG, LogoutButtonSVG, PrintButtonSVG, RemoveSVG, SortSVG, SortUpDownVG};
 use html::{Div, Li};
 use leptos::{
     *, logging::*,
@@ -266,7 +266,19 @@ pub fn RecipeMenu(
 
 
 
-
+#[derive(Clone)]
+pub struct RecipeEntryMenuInfo<T: RecipeEntry> {
+    pub mode: RwSignal<RecipeEntryMenuMode>,
+    pub all_entries: RwSignal<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>>,
+    pub current_entry: ReadSignal<T>,
+    pub current_id: u16,
+}
+#[derive(Clone, PartialEq)]
+pub enum RecipeEntryMenuMode {
+    Closed,
+    Sort,
+    Delete,
+}
 #[component]
 pub fn EditableEntryList<T: RecipeEntry>( 
     entry_type: RecipeEntryType,
@@ -308,6 +320,13 @@ pub fn EditableEntryList<T: RecipeEntry>(
                         .map(|(id, (entry, set_entry))| {
 
                             let recipe_entry_menu_signal = create_rw_signal(RecipeEntryMenuMode::Closed);
+
+                            let entry_menu_info = RecipeEntryMenuInfo {
+                                mode: recipe_entry_menu_signal,
+                                all_entries: rw_entries,
+                                current_entry: entry,
+                                current_id: id
+                            };
 
                             view! {
                                 <li
@@ -379,8 +398,9 @@ pub fn EditableEntryList<T: RecipeEntry>(
                                         </Show>*/
                                     </div>
 
+                                    // Entry
                                     {move || {
-                                        T::into_editable_view(entry, set_entry, Some(recipe_entry_menu_signal))
+                                        T::into_editable_view(entry, set_entry, Some(entry_menu_info.clone()))
                                     }}
 
                                     <button
@@ -455,6 +475,7 @@ pub fn EditableEntryList<T: RecipeEntry>(
 }
 
 
+
 #[component]
 pub fn EditableInstructions( 
     entry_type: RecipeEntryType,
@@ -463,8 +484,6 @@ pub fn EditableInstructions(
 ) -> impl IntoView {
 
     let (entry_type_title, style_class) = entry_type.title_and_class();
-
-    let menu = create_rw_signal(RecipeEntryMenuMode::Closed);
 
     view! {
         <div class={style_class.clone() + " container editable"}>
@@ -478,7 +497,7 @@ pub fn EditableInstructions(
             </h3>
 
             <li class={style_class.clone()} id="entry-li">
-                { RecipeInstruction::into_editable_view(entry_signal.0, entry_signal.1, Some(menu)) }
+                { RecipeInstruction::into_editable_view(entry_signal.0, entry_signal.1, None) }
             </li>
 
         </div>
@@ -568,7 +587,7 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
     set_entry_signal: WriteSignal<T>,
     class: String,
     #[prop(optional)]
-    entry_menu: Option<RwSignal<RecipeEntryMenuMode>>,
+    entry_menu_info: Option<RecipeEntryMenuInfo<T>>,
     /// If the entry has multiple fields
     #[prop(optional)]
     field_id: Option<usize>,
@@ -719,10 +738,10 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
                 ></textarea>
 
                 {move || {
-                    if let Some(menu) = entry_menu {
+                    if let Some(entry_menu_info) = entry_menu_info.clone() {
                         view! {
                             <RecipeEntryMenu
-                                menu_rw_signal=menu
+                                entry_menu_info=entry_menu_info
                             />
                         }.into_view()
                     } else { ().into_view() }
@@ -853,41 +872,107 @@ pub fn SettingsMenu() -> impl IntoView {
 }
 
 
-#[derive(Clone, PartialEq)]
-pub enum RecipeEntryMenuMode {
-    Closed,
-    Sort,
-    Delete,
-}
+
 #[component]
-pub fn RecipeEntryMenu(
-    menu_rw_signal: RwSignal<RecipeEntryMenuMode>,
+pub fn RecipeEntryMenu<T: RecipeEntry>(
+    entry_menu_info: RecipeEntryMenuInfo<T>
 ) -> impl IntoView {
+
+    let RecipeEntryMenuInfo {
+        mode,
+        all_entries,
+        current_entry,
+        current_id
+    } = entry_menu_info;
 
     view! {
         <div
             class="recipe-entry-menu"
-            class:open=move || { menu_rw_signal.get() != RecipeEntryMenuMode::Closed }
-            class:delete=move || { menu_rw_signal.get() == RecipeEntryMenuMode::Delete }
-            class:sort=move || { menu_rw_signal.get() == RecipeEntryMenuMode::Sort }
+            class:open=move || { mode.get() != RecipeEntryMenuMode::Closed }
+            class:delete=move || { mode.get() == RecipeEntryMenuMode::Delete }
+            class:sort=move || { mode.get() == RecipeEntryMenuMode::Sort }
         >
             <Show
-                when=move || { menu_rw_signal.get() == RecipeEntryMenuMode::Sort }
+                when=move || { mode.get() == RecipeEntryMenuMode::Sort }
             >
-                <button class="recipe-entry-menu-button move-up">
-                    "move up"
+                // Sort Up button
+                <button
+                    class="recipe-entry-menu-button move-up"
+                    on:click=move |ev| {
+                        ev.stop_propagation();
+                        all_entries.update(|entries| {
+                            if let Some(index) = entries.iter().position(|&x| x.0 == current_id) {
+                                if index > 0 {
+                                    entries.swap(index, index - 1);
+                                }
+                            }
+                        });
+                    }
+                >
+                    <SortUpDownVG is_up=true />
                 </button>
-                <button class="recipe-entry-menu-button move-down">
-                    "move down"
+
+                // Sort down button
+                <button
+                    class="recipe-entry-menu-button move-down"
+                    on:click=move |ev| {
+                        ev.stop_propagation();
+                        all_entries.update(|entries| {
+                            if let Some(index) = entries.iter().position(|&x| x.0 == current_id) {
+                                if index < entries.len() - 1 {
+                                    entries.swap(index, index + 1);
+                                }
+                            }
+                        });
+                    }
+                >
+                    <SortUpDownVG is_up=false />
                 </button>
             </Show>
+
             <Show
-                when=move || { menu_rw_signal.get() == RecipeEntryMenuMode::Delete }
+                when=move || { entry_menu_info.mode.get() == RecipeEntryMenuMode::Delete }
             >
-                <button class="recipe-entry-menu-button delete">
+                <button
+                    class="recipe-entry-menu-button delete"
+                    on:click=move |ev| {
+                        ev.stop_propagation();
+                        // we are going to assign new ids since we remove an entry
+                        let mut new_id_counter: u16 = 0;
+    
+                        // iterate in entries
+                        all_entries.update(|entries| {
+                            entries.retain_mut(|(entry_id, (signal, _))| {
+    
+                                // check if this is the entry to remove
+                                let keep_this_entry = entry_id != &current_id;
+    
+                                if keep_this_entry {
+                                    // set the new id
+                                    *entry_id = new_id_counter;
+                                    // increment counter
+                                    new_id_counter += 1;
+                                } else {
+                                    // NOTE: in this example, we are creating the signals
+                                    // in the scope of the parent. This means the memory used to
+                                    // store them will not be reclaimed until the parent component
+                                    // is unmounted. Here, we're removing the signal early (i.e, before
+                                    // the DynamicList is unmounted), so we manually dispose of the signal
+                                    // to avoid leaking memory.
+                                    //
+                                    // This is only necessary with nested signals like this one.
+                                    signal.dispose();
+                                }
+    
+                                keep_this_entry
+                            })
+                        });
+                    }
+                >
                     "remove"
                 </button>
             </Show>
+            
         </div>
     }
 }

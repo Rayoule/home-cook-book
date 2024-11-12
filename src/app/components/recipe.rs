@@ -318,7 +318,7 @@ impl RecipeEntryType {
 pub trait RecipeEntry: IntoView + std::fmt::Debug + Clone + Default + 'static {
     fn get_entry_type() -> RecipeEntryType;
     fn get_css_class_name() -> String;
-    fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>, menu_signal: Option<RwSignal<RecipeEntryMenuMode>>) -> View;
+    fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>, menu_info: Option<RecipeEntryMenuInfo<Self>>) -> View;
     fn update_field_from_string_input(&mut self, field_id: Option<usize>, input: String);
     fn get_string_from_field(&self, field_id: Option<usize>) -> String;
 }
@@ -350,14 +350,14 @@ impl RecipeEntry for RecipeIngredient {
         "ingredients".to_string()
     }
 
-    fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>, menu_signal: Option<RwSignal<RecipeEntryMenuMode>>) -> View {
+    fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>, menu_info: Option<RecipeEntryMenuInfo<Self>>) -> View {
 
         view! {
             <div
                 class="editable-ingredients-wrapper"
             >
                 <RecipeEntryMenu
-                    menu_rw_signal=     menu_signal.expect("Expected to find menu_signal for ingredient entry.")
+                    entry_menu_info=     menu_info.expect("Expected to find menu_signal for ingredient entry.")
                 />
 
                 <RecipeEntryInput
@@ -447,7 +447,7 @@ impl RecipeEntry for RecipeInstruction {
         "instructions".to_string()
     }
     
-    fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>, _menu_signal: Option<RwSignal<RecipeEntryMenuMode>>) -> View {
+    fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>, _menu_info: Option<RecipeEntryMenuInfo<Self>>) -> View {
         view! {
             <RecipeEntryInput
                 class=              "instructions".to_owned()
@@ -499,14 +499,14 @@ impl RecipeEntry for RecipeNote {
         "notes".to_string()
     }
     
-    fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>, menu_signal: Option<RwSignal<RecipeEntryMenuMode>>) -> View {
+    fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>, menu_info: Option<RecipeEntryMenuInfo<Self>>) -> View {
         view! {
             <RecipeEntryInput
                 class=              "notes note-content".to_owned()
                 placeholder=        "Note content".to_owned()
                 get_entry_signal=   entry
                 set_entry_signal=   set_entry
-                entry_menu=         menu_signal.expect("Expected to find menu_signal for note entry.")
+                entry_menu_info=    menu_info.expect("Expected to find menu_signal for note entry.")
             />
         }.into_view()
     }
@@ -570,7 +570,7 @@ impl RecipeEntry for RecipeTag {
         "tags".to_string()
     }
 
-    fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>, _menu_signal: Option<RwSignal<RecipeEntryMenuMode>>) -> View {
+    fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>, _menu_info: Option<RecipeEntryMenuInfo<Self>>) -> View {
         view! {
             <RecipeEntryInput
                 class=              "tags".to_owned()
