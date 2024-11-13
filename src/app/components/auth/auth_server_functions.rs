@@ -3,7 +3,7 @@ use crate::app::components::auth::auth_utils::*;
 
 #[cfg(feature = "ssr")]
 use {
-    leptos::logging::log,
+    leptos::logging::*,
     std::{env, fs::File, time::{Duration, SystemTime}},
     std::io::BufReader,
     super::auth_utils::LoginAccountCollection,
@@ -67,7 +67,13 @@ pub async fn check_account_credentials(submission: &LoginAccount) -> Result<bool
     let file_path = current_dir.join(ACCOUNTS_FILE_NAME);
 
     // Open the file
-    let file = File::open(&file_path)?;
+    let file = match File::open(&file_path) {
+        Ok(ok) => ok,
+        Err(e) => {
+            let custom_error = "Could not fetch the credential file which MUST be located at the project root. Please read README_setup.txt".to_string();
+            return Err(ServerFnError::ServerError(custom_error + " " + &e.to_string()));
+        }
+    };
     let reader = BufReader::new(file);
 
     // Deserialize the JSON into a `LoginStates` struct

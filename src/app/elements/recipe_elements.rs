@@ -582,7 +582,6 @@ pub fn EditableTags(
                             tags_to_suggest
                                 .into_iter()
                                 .map(|tag| {
-                                    log!("ZOLO -> {:?}", tag.clone());
                                     let tag_name = tag.clone();
                                     view! {
                                         <button

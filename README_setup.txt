@@ -1,5 +1,6 @@
-1- Create an Auth file named "hcb_auth.json" with admin accounts inside:
+1- Create an Auth file named "hcb_auth.json" with at least 1 admin accounts inside.
 
+Example with 2 admin accounts :
 {
     "accounts": [
         {
@@ -15,3 +16,5 @@
 
 
 Make a "cook-book.db" SQLite3 database that matches the migration file in /migrations
+
+Done !

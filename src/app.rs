@@ -53,7 +53,7 @@ pub struct DeleteInfoSignal(RwSignal<Option<DeletePopupInfo>>);
 #[component]
 pub fn App() -> impl IntoView {
 
-    log!("Start <App/> rendering.");
+    log!("Rendering <App/>");
 
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
