@@ -46,8 +46,6 @@ pub struct RecipesLightResource(Resource<(usize, usize), Result<Vec<RecipeLight>
 #[derive(Clone)]
 pub struct AllTagsSignal(RwSignal<Vec<String>>);
 #[derive(Clone)]
-pub struct AllIngredientsSignal(RwSignal<Vec<String>>);
-#[derive(Clone)]
 pub struct SelectedTagsRwSignal(RwSignal<Vec<String>>);
 #[derive(Clone)]
 pub struct DeleteInfoSignal(RwSignal<Option<DeletePopupInfo>>);
@@ -185,25 +183,6 @@ pub fn App() -> impl IntoView {
     );
     provide_context(RecipesLightResource(all_recipe_light));
 
-    // All Ingredients signal
-    let all_ingredients_signal = create_rw_signal::<Vec<String>>(vec![]);
-    create_effect(move |_| {
-        let recipes = all_recipe_light.get();
-        let mut ingr_list =
-            if let Some(Ok(recipes)) = recipes {
-                recipes
-                    .iter()
-                    .map(|recipe| recipe.ingredients.clone().unwrap_or_else(|| vec![]) )
-                    .flatten()
-                    .map(|t| t.content)
-                    .unique()
-                    .collect::<Vec<String>>()
-            } else { vec![] };
-        ingr_list.sort_by_key(|t| t.to_lowercase().clone());
-        all_ingredients_signal.set(ingr_list);
-    });
-    provide_context(AllIngredientsSignal(all_ingredients_signal));
-
     // All Tags signal
     let all_tags_signal = create_rw_signal::<Vec<String>>(vec![]);
     create_effect( move |_| {
@@ -292,7 +271,7 @@ pub fn CheckLogin()-> impl IntoView {
                 
                 if !is_print_page {
                     view! {
-                        <p class="Login-check-warning" >
+                        <p class="login-check-warning" >
                             "Wait for Login Check..."
                         </p>
                     }.into_view()

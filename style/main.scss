@@ -155,7 +155,7 @@ svg {
 
 	&.is-open {
 		display: flex;
-		flex-direction: column; /* Pour empiler les éléments en colonne */
+		flex-direction: column;
 		justify-content: center;
 		align-items: center;
 
@@ -199,8 +199,9 @@ svg {
 		}
 
 		&.delete {
-			stroke-width: 0.01rem;
-			transform: scale(1.2);
+			height: 2rem;
+			stroke-width: 0.05rem;
+			transform: scale(1.1);
 		}
 	}
 }
@@ -217,6 +218,10 @@ svg {
     right: 3vh;
 	z-index: 10;
 
+	display: flex;
+	justify-content: center;
+	align-items: center;
+
 	height: 3.5rem;
 	width: 3.5rem;
 	margin: 0;
@@ -230,12 +235,13 @@ svg {
 
 	box-shadow: var(--shadow);
 }
+svg {
+	&.new-recipe {
+		fill: var(--theme-color-bg);
 
-
-.page-name {
-	cursor: crosshair;
-	position: absolute;
-	right: 20px;
+		height: 2.5rem;
+		width: 2.5rem;
+	}
 }
 
 
@@ -325,14 +331,6 @@ svg {
 		box-shadow: var(--menu-shadow);
 	}
 }
-.settings-button-container {
-	height: 3rem;
-	width: 8rem;
-
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-}
 .settings-icon {
 	height: 3rem;
 	width: 3rem;
@@ -369,25 +367,13 @@ svg {
 	flex-direction: row;
 	align-items: center;
 
-	//margin: 0.5rem 0;
-
 	border: none;
-	//border-radius: 100px;
-
 	background-color: #00000000;
 
 	transition:
 		transform 0.1s ease-out,
 		background-color 0.1s ease-out
 	;
-
-	&.logout {
-		//
-	}
-
-	&.backup {
-		//
-	}
 }
 .download-backup-button {
 
@@ -475,12 +461,6 @@ svg {
 		overflow: visible;
 	}
 }
-.save-button-container {
-	position: absolute;
-	bottom: 100px;
-	right: 100px;
-}
-
 
 .all-recipes {
 	display: flex;
@@ -491,7 +471,6 @@ svg {
 .recipe-list-container {
 
 	display: grid;
-	//grid-auto-columns: 100%;
     gap: 16px;
     justify-items: center;
 	align-items: center;
@@ -545,7 +524,6 @@ svg {
 
 	box-sizing: border-box;
 
-	//height: 9rem;
 	min-height: 9rem;
 	max-height: 20rem;
 	height: 100%;
@@ -572,7 +550,6 @@ svg {
 		font-weight: bold;
 
 		background-color: var(--theme-color-bg);
-		//border: 5px solid;
 	}
 }
 ul.recipe-light {
@@ -584,7 +561,7 @@ ul.recipe-light {
 }
 ul.recipe-light li::before {
     content: "#";
-    margin-right: 1px; /* Adjust the spacing if needed */
+    margin-right: 1px;
 }
 .recipe-light {
 
@@ -594,8 +571,6 @@ ul.recipe-light li::before {
 
 	&.name {
 		overflow: visible;
-
-		//line-height: 1rem;
 
 		text-align: left;
 		font-size: large;
@@ -894,19 +869,47 @@ ul.recipe-light li::before {
 	li {
 		margin-bottom: 10px;
 	}
+
+	&.tags {
+		position: relative;
+
+		cursor: pointer;
+
+		box-sizing: border-box;
+
+		font-size: small;
+		font-weight: bold;
+
+		overflow: hidden;
+
+		height: var(--buttons-height);
+		max-width: calc(100vw - (3 * var(--border-margin)));
+
+		margin: 0;
+		padding: 0.5rem 1rem;
+
+		color: var(--theme-color-bg-alt);
+		background-color: var(--theme-color-3);
+
+		border: none;
+		border-radius: 2rem;
+
+		transition: transform 0.1s ease-out;
+
+		&::before {
+			content: "#";
+		}
+	}
 }
 
 .editable.container {
 	margin-bottom: 30px;
 }
 
-
-
 .ingredients li{
 	display: flex;
 	flex-direction: row;
 }
-
 
 
 #text-input {
@@ -978,6 +981,8 @@ ul.recipe-light li::before {
 		}
 	}
 
+	
+
 	&.ingredients {
 		display: inline-block;
 
@@ -1041,6 +1046,68 @@ ul.recipe-light li::before {
 	border-radius: 2rem;
 }
 
+.tag-add-form {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+
+	margin-top: 1rem;
+}
+.tag-add-hashtag {
+	font-size: large;
+	font-weight: bold;
+
+	z-index: 2;
+
+	width: 0;
+	padding: 0;
+	margin: 0;
+
+	color: #808080;
+
+	transform: translateX(0.5rem);
+
+}
+#text-input.tag-add {
+	text-align: left;
+	box-sizing: border-box;
+
+	height: var(--buttons-height);
+	width: 15rem;
+
+	padding: 0.5rem 1rem;
+	padding-left: 1.5rem;
+}
+.tag-add-button {
+	font-size: small;
+	font-weight: bold;
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+
+	margin-left: 0.5rem;
+
+	height: var(--buttons-height);
+	width: var(--buttons-width);
+
+	background-color: var(--theme-color-2);
+
+	border: none;
+	border-radius: 2rem;
+}
+svg {
+	&.add-button {
+		fill: var(--theme-color-bg);
+		stroke: var(--theme-color-bg);
+		stroke-width: 0.1rem;
+
+		height: 1.2rem;
+		width: 1.2rem;
+	}
+}
+
+
 .recipe-name-input-container {
 	position: absolute;
 
@@ -1065,19 +1132,18 @@ li#entry-li {
 	width: 100%;
 
 	&.tags {
+		position: relative;
+
 		display: flex;
 		flex-direction: row;
 		align-items: center;
 
-		height: var(--text-input-height);
 		width: fit-content;
-		max-width: var(--recipe-dynamic-max-width);
 
-		margin-right: 1rem;
+		margin-right: 0.5rem;
 		padding-right: 0.2rem;
 
-		background-color: white;
-		border-radius: 2rem;
+		background-color: #00000000;
 	}
 
 	&.ingredients {
@@ -1091,7 +1157,7 @@ li#entry-li {
 	&.notes{
 		position: relative;
 
-		margin-top: 2rem;
+		margin-top: 3rem;
 	}
 }
 
@@ -1113,62 +1179,84 @@ textarea#text-input {
 	width: 100%;
 }
 
-.editable-recipe-note-container {
-	display: flex;
-	flex-direction: column;
-
-	width: 100%;
+.tags-suggestions-container {
+	margin-top: 1.5rem;
 }
+.tags-suggestions-button {
 
+	background-color: #00000000;
+	border: none;
 
+	transition: transform 0.2s ease-out;
 
+	&.open {
+		transform: rotate(180deg);
+	}
+}
+.tags-suggestions {
+	display: inline-block;
+
+	overflow: hidden;
+
+	height: 0;
+	width: var(--recipe-dynamic-max-width);
+
+	margin-top: 1rem;
+
+	transition: height 0.2s ease-out;
+
+	&.open {
+		height: fit-content;
+	}
+}
+svg {
+	&.unroll-icon-svg {
+		height: var(--buttons-height);
+		width: var(--buttons-height);
+
+		fill: var(--theme-color-2);
+	}
+}
+.tag-suggested {
+	cursor: pointer;
+
+	font-size: small;
+	font-weight: bold;
+
+	overflow: hidden;
+
+	height: var(--buttons-height);
+	max-width: calc(100vw - (3 * var(--border-margin)));
+
+	margin-bottom: 0.5rem;
+	margin-right: 0.5rem;
+	padding: 0.1rem 1rem;
+
+	color: var(--theme-color-4-alt);
+	background-color: #00000000;
+
+    border: 3px solid var(--theme-color-2);
+	border-radius: 2rem;
+
+    transition: transform 0.1s ease-out;
+
+	&::before {
+		content: "#";
+		margin-right: 0.1rem;
+	}
+
+}
 
 
 // OTHER -------------------------------------------------
 
-
-// SUGGESTIONS LIST
-.suggestions-list {
-	cursor: pointer;
-	list-style:	none;
-
-	z-index: 1000;
-
-	position: absolute;
-	bottom: 1.8rem;
-	left: 0;
-
-	padding: 1rem 0.5rem;
-	
-	align-items: left;
-
-	overflow-x: hidden;
-	overflow-y: auto;
-
-	max-width: 5rem;
-	max-height: 15rem;
-
-	background-color: white;
-	border-radius: 15px;
-	box-shadow: var(--shadow);
-}
-.suggestions-list-entry {
-	cursor: pointer;
-
-	text-align: left;
-	margin: 1px 2px;
-
-	background-color: white;
-
-	&:hover {
-		//
-	}
-}
-
-
 .add-button {
 	font-size: large;
 	font-weight: bold;
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
 
 	height: var(--buttons-height);
   	width: var(--buttons-width);
@@ -1200,7 +1288,8 @@ textarea#text-input {
 	}
 
 	&.tags {
-		margin-left: 0;
+		padding: 0 0;
+		padding-left: 0.1rem;
 	}
 }
 svg {
@@ -1283,8 +1372,6 @@ svg {
 
 	margin: 0 1rem;
 
-	transform: translateY(-0.1rem);
-
 	color: var(--theme-color-bg);
 	background-color: #00000000;
 	border: none;
@@ -1304,11 +1391,6 @@ svg {
 
 		stroke: var(--theme-color-bg);
 		stroke-width: 0.1rem;
-
-
-		&.up {
-			//
-		}
 
 		&.down {
 			transform: Rotate(180deg);
@@ -1363,26 +1445,9 @@ svg {
 	}
 
 	&::after {
-		content: "#"; /* Insert a # symbol before the button's text */
-		margin-right: 5px; /* Optional: add some space between the # and the button text */
+		content: "#";
+		margin-right: 5px;
 	}
-}
-.close-tag-menu-button {
-	
-	font-size: larger;
-
-	height: 50px;
-	width: 50px;
-
-	z-index: 101;
-	position: relative;
-	top: 70px;
-	right: 35px;
-
-	color: black;
-
-	background-color: #00000000;
-	border: none;
 }
 .tags-container {
 	z-index: 100;
@@ -1408,12 +1473,6 @@ svg {
 		left var(--menu-open-speed) ease-out,
 		box-shadow var(--menu-open-speed) ease-out
 	;
-}
-ul.selected-tag-list {
-	display:block;
-	font-size: small;
-
-	width: 100px;
 }
 ul.tag-list {
 	font-size: small;
@@ -1445,9 +1504,6 @@ ul.tag-list {
 	height: var(--buttons-height);
 	max-width: calc(100vw - (3 * var(--border-margin)));
 
-	margin-bottom: 3px;
-	padding: 8px 10px;
-
 	background-color: #00000000;
 
     border: 1px solid rgb(0, 0, 0);
@@ -1465,7 +1521,7 @@ ul.tag-list {
 
 	&::before {
 		content: "#";
-		margin-right: 2px; /* Adjust the spacing if needed */
+		margin-right: 2px;
 	}
 }
 
@@ -1504,7 +1560,6 @@ ul.tag-list {
 
 	top: 1rem;
 	right: 1rem;
-	//z-index: 1000;
 
 	background-color: var(--theme-color-bg);
 
@@ -1595,11 +1650,6 @@ ul.tag-list {
 	font-weight: bold;
 }
 
-.action-pending-hidden {
-	opacity: 0;
-	pointer-events: none;
-}
-
 
 
 
@@ -1609,7 +1659,6 @@ ul.tag-list {
 	margin-bottom: 1rem;
 
 	color: var(--theme-color-bg);
-	//margin-top: 35px;
 }
 .login-input {
 
@@ -1649,7 +1698,7 @@ ul.tag-list {
 
 }
 
-.Login-check-warning {
+.login-check-warning {
 	font-size: larger;
 	font-weight: bold;
 

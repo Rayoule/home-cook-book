@@ -1,6 +1,6 @@
 use components::recipe_sheets::PrintRecipeSheet;
 use elements::{
-    icons_svg::{BackButtonSVG, LogoSVG},
+    icons_svg::{BackButtonSVG, LogoSVG, PlusIconSVG},
     recipe_elements::SettingsMenu,
 };
 use ev::MouseEvent;
@@ -542,7 +542,7 @@ pub fn AllRecipes() -> impl IntoView {
                                     navigate("/new-recipe", Default::default());
                                 }
                             >
-                                <span>"+"</span>
+                                <PlusIconSVG add_class="new-recipe".to_string() />
                             </button>
                         </Show>
 

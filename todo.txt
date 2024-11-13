@@ -19,6 +19,8 @@ Home Cook Book
     X Fix new Ingredients in Edit Mode
     X Random colors on RecipeCards ?
     X Edit Page:
+      - Tags en jaune
+      - enlever "Ok" pour "+"
       X fix save button
       X add RecipeMenu (with name within)
     X Merge ingredients units and qty

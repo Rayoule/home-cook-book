@@ -103,9 +103,6 @@ pub fn RecipeCard(
             class:into-menu=is_menu_open
             style=recipe_card_style
             on:click=on_click
-            /*on:mouseleave=move |_| {
-                is_menu_open.set(false);
-            }*/
         >
 
             <button
@@ -467,9 +464,8 @@ pub fn EditableRecipeSheet(
                 />
 
                 // Tags
-                <EditableEntryList
+                <EditableTags
                     rw_entries=         tags_signal
-                    entry_type=         RecipeEntryType::Tag
                     theme_color=        theme_color
                 />
             }}

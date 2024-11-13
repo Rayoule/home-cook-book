@@ -269,10 +269,14 @@ pub fn EditButtonSVG(color: String) -> impl IntoView {
 
 /// Close Tags Menu Button
 #[component]
-pub fn CrossButtonSVG(color: String) -> impl IntoView {
+pub fn CrossButtonSVG(
+    color: String,
+    #[prop(optional)]
+    add_class: String
+) -> impl IntoView {
     view! {
         <svg
-            class="close-tags-svg recipe-menu-icon delete"
+            class="recipe-menu-icon delete ".to_string() + &add_class
             viewBox="0 -0.5 25 25"
             stroke=&color
             fill=&color
@@ -330,6 +334,45 @@ pub fn BackupButtonSVG() -> impl IntoView {
                 d="M4,2 L18.4222294,2 L22,5.67676491 L22,20 C22,21.1045695 21.1045695,22 20,22 L4,22 C2.8954305,22 2,21.1045695 2,20
                 L2,4 C2,2.8954305 2.8954305,2 4,2 Z M17,4 L17,10 L7,10 L7,4 L4,4 L4,20 L6,20 L6,12 L18,12 L18,20 L20,20 L20,6.48925072
                 L17.5777706,4 L17,4 Z M9,4 L9,8 L15,8 L15,4 L9,4 Z M8,14 L8,20 L16,20 L16,14 L8,14 Z M12,5 L14,5 L14,7 L12,7 L12,5 Z"
+            />
+        </svg>
+    }
+}
+
+
+#[component]
+pub fn UnrollButtonSVG() -> impl IntoView {
+    view! {
+        <svg
+            class="unroll-icon-svg"
+            viewBox="0 0 16.00 16.00"
+        >
+            <g id="SVGRepo_bgCarrier" stroke-width="0"/>
+            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"/>
+            <g id="SVGRepo_iconCarrier">
+            <path
+                d="M8 1.25a2.101 2.101 0 00-1.785.996l.64.392-.642-.388-5.675 9.373-.006.01a2.065 2.065 0 00.751
+                2.832c.314.183.67.281 1.034.285h11.366a2.101 2.101 0 001.791-1.045 2.064 2.064 0 00-.006-2.072L9.788
+                2.25l-.003-.004A2.084 2.084 0 008 1.25z"
+            />
+            </g>
+        </svg>
+    }
+}
+
+
+#[component]
+pub fn PlusIconSVG(
+    #[prop(optional)]
+    add_class: String
+) -> impl IntoView {
+    view! {
+        <svg
+            class="plus-icon-svg ".to_string() + &add_class
+            viewBox="0 0 24.00 24.00"
+        >
+            <path
+                d="M19,11H13V5a1,1,0,0,0-2,0v6H5a1,1,0,0,0,0,2h6v6a1,1,0,0,0,2,0V13h6a1,1,0,0,0,0-2Z"
             />
         </svg>
     }

@@ -570,15 +570,21 @@ impl RecipeEntry for RecipeTag {
         "tags".to_string()
     }
 
-    fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>, _menu_info: Option<RecipeEntryMenuInfo<Self>>) -> View {
+    fn into_editable_view(entry: ReadSignal<Self>, _set_entry: WriteSignal<Self>, menu_info: Option<RecipeEntryMenuInfo<Self>>) -> View {
         view! {
-            <RecipeEntryInput
-                class=              "tags".to_owned()
-                placeholder=        "Tag".to_owned()
-                get_entry_signal=   entry
-                set_entry_signal=   set_entry
-                is_input=           true
-            />
+            <div class="editable-recipe tags">
+                { entry.get().name }
+
+                { move || {
+                    if let Some(entry_menu_info) = menu_info.clone() {
+                        view! {
+                            <RecipeEntryMenu
+                                entry_menu_info=entry_menu_info
+                            />
+                        }.into_view()
+                    } else { ().into_view() }
+                }}
+            </div>
         }
         .into_view()
     }
