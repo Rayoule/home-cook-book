@@ -1,15 +1,15 @@
-use elements::icons_svg::{BackButtonSVG, BackupButtonSVG, CrossButtonSVG, EditButtonSVG, LogoutButtonSVG, PlusIconSVG, PrintButtonSVG, RemoveSVG, SortSVG, SortUpDownVG, UnrollButtonSVG};
-use html::{Div, Input, Li};
+
+use html::Input;
 use leptos::{
     *, logging::*,
 };
 use components::auth::auth_server_functions::server_logout;
 use ev::MouseEvent;
 use gloo_timers::callback::Timeout;
-use leptos_use::on_click_outside;
-use crate::app::{
-    *,
-    elements::molecules::*
+use crate::app::*;
+use elements::icons_svg::{
+    BackButtonSVG, BackupButtonSVG, CrossButtonSVG, EditButtonSVG,
+    LogoutButtonSVG, PlusIconSVG, PrintButtonSVG, RemoveSVG, SortSVG, SortUpDownVG, UnrollButtonSVG
 };
 
 

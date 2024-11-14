@@ -1,4 +1,4 @@
-use leptos::{ev::MouseEvent, *};
+use leptos::*;
 
 use crate::app::elements::icons_svg::SearchSVG;
 

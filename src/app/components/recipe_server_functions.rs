@@ -28,10 +28,10 @@ pub async fn recipe_function(recipe_action_desc: RecipeActionDescriptor) -> Resu
     if FAKE_API_DELAY { std::thread::sleep(std::time::Duration::from_millis(1250)); }
 
     match &recipe_action_desc {
-        RecipeActionDescriptor::Add(r) =>       log!("Action received: ADD -> {:?}", r),
-        RecipeActionDescriptor::Save(r) =>      log!("Action received: SAVE -> {:?}", r),
-        RecipeActionDescriptor::Delete(i) =>    log!("Action received: DELETE -> {:?}", i),
-        RecipeActionDescriptor::Duplicate(i) => log!("Action received: DUPLICATE -> {:?}", i),
+        RecipeActionDescriptor::Add(r) =>       log!("Action received: ADD -> {:?}", r.name),
+        RecipeActionDescriptor::Save(r) =>      log!("Action received: SAVE -> {:?}", r.name),
+        RecipeActionDescriptor::Delete(i) =>    log!("Action received: DELETE -> id: {:?}", i),
+        RecipeActionDescriptor::Duplicate(i) => log!("Action received: DUPLICATE -> id: {:?}", i),
     }
 
     let mut conn = db().await?;

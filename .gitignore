@@ -12,3 +12,5 @@ test-results/
 end2end/playwright-report/
 playwright/.cache/
 hcb_auth.json
+cook-book-db
+cook-book.db

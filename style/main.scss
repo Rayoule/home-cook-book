@@ -1187,10 +1187,12 @@ textarea#text-input {
 	background-color: #00000000;
 	border: none;
 
+	transform: rotate(180deg);
+
 	transition: transform 0.2s ease-out;
 
 	&.open {
-		transform: rotate(180deg);
+		transform: rotate(0deg);
 	}
 }
 .tags-suggestions {
