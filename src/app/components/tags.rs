@@ -1,7 +1,6 @@
-use leptos::*;
-use leptos::ev::MouseEvent;
 use crate::app::IsTagsMenuOpen;
-
+use leptos::ev::MouseEvent;
+use leptos::*;
 
 #[component]
 pub fn TagList(
@@ -10,15 +9,13 @@ pub fn TagList(
     // Tags that are selected
     selected_tags_signal: RwSignal<Vec<String>>,
 ) -> impl IntoView {
-    
     // Make the signal list from "tags"
-    let tags_states_signals: RwSignal<Vec<(ReadSignal<(bool, String)>, WriteSignal<(bool, String)>)>> =  create_rw_signal({
+    let tags_states_signals: RwSignal<
+        Vec<(ReadSignal<(bool, String)>, WriteSignal<(bool, String)>)>,
+    > = create_rw_signal({
         let already_selected_tags = selected_tags_signal.get_untracked();
-        tags
-            .iter()
-            .map(|t| {
-                create_signal((already_selected_tags.contains(t), t.clone()))
-            })
+        tags.iter()
+            .map(|t| create_signal((already_selected_tags.contains(t), t.clone())))
             .collect()
     });
 
@@ -35,10 +32,9 @@ pub fn TagList(
             .collect_view()
     };
 
-    let is_tags_menu_open =
-        use_context::<IsTagsMenuOpen>()
-            .expect("Expected to find IsTagsMenuOpen in context.")
-            .0;
+    let is_tags_menu_open = use_context::<IsTagsMenuOpen>()
+        .expect("Expected to find IsTagsMenuOpen in context.")
+        .0;
 
     let on_clear_tags_click = move |ev: MouseEvent| {
         ev.stop_propagation();
@@ -57,11 +53,10 @@ pub fn TagList(
         //is_tags_menu_open.set(false);
     };
 
-    let on_unroll_click = move |ev:MouseEvent| {
+    let on_unroll_click = move |ev: MouseEvent| {
         ev.stop_propagation();
         is_tags_menu_open.set(true);
     };
-    
 
     view! {
 
@@ -113,8 +108,6 @@ pub fn TagList(
     }
 }
 
-
-
 fn view_from_tag_state(
     tag_state: ReadSignal<(bool, String)>,
     set_tag_state: WriteSignal<(bool, String)>,
@@ -147,6 +140,6 @@ fn view_from_tag_state(
                 { move || tag_state.get().1 }
             </button>
         </li>
-    }.into_view()
+    }
+    .into_view()
 }
-

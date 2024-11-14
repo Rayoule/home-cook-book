@@ -1,26 +1,29 @@
-
-use html::Input;
-use leptos::{
-    *, logging::*,
-};
+use crate::app::*;
 use components::auth::auth_server_functions::server_logout;
+use elements::icons_svg::{
+    BackButtonSVG, BackupButtonSVG, CrossButtonSVG, EditButtonSVG, LogoutButtonSVG, PlusIconSVG,
+    PrintButtonSVG, RemoveSVG, SortSVG, SortUpDownVG, UnrollButtonSVG,
+};
 use ev::MouseEvent;
 use gloo_timers::callback::Timeout;
-use crate::app::*;
-use elements::icons_svg::{
-    BackButtonSVG, BackupButtonSVG, CrossButtonSVG, EditButtonSVG,
-    LogoutButtonSVG, PlusIconSVG, PrintButtonSVG, RemoveSVG, SortSVG, SortUpDownVG, UnrollButtonSVG
-};
+use html::Input;
+use leptos::logging::error;
 
-
-type RecipeSignals =
-    RwSignal<(
-        RwSignal<String>,
-        RwSignal<Vec<(u16, (ReadSignal<RecipeTag>, WriteSignal<RecipeTag>))>>,
-        RwSignal<Vec<(u16, (ReadSignal<RecipeIngredient>, WriteSignal<RecipeIngredient>))>>,
-        (ReadSignal<RecipeInstruction>, WriteSignal<RecipeInstruction>),
-        RwSignal<Vec<(u16, (ReadSignal<RecipeNote>, WriteSignal<RecipeNote>))>>
-    )>;
+type RecipeSignals = RwSignal<(
+    RwSignal<String>,
+    RwSignal<Vec<(u16, (ReadSignal<RecipeTag>, WriteSignal<RecipeTag>))>>,
+    RwSignal<
+        Vec<(
+            u16,
+            (ReadSignal<RecipeIngredient>, WriteSignal<RecipeIngredient>),
+        )>,
+    >,
+    (
+        ReadSignal<RecipeInstruction>,
+        WriteSignal<RecipeInstruction>,
+    ),
+    RwSignal<Vec<(u16, (ReadSignal<RecipeNote>, WriteSignal<RecipeNote>))>>,
+)>;
 
 #[component]
 pub fn RecipeMenu(
@@ -28,22 +31,17 @@ pub fn RecipeMenu(
     editable: bool,
     recipe_id: Option<u16>,
     recipe_static_name: String,
-    #[prop(optional)]
-    is_new_recipe: Option<bool>,
-    #[prop(optional)]
-    recipe_signals: Option<RecipeSignals>,
+    #[prop(optional)] is_new_recipe: Option<bool>,
+    #[prop(optional)] recipe_signals: Option<RecipeSignals>,
 ) -> impl IntoView {
-
     // Is logged in
-    let is_logged_in =
-        use_context::<IsLoggedIn>()
-            .expect("Expected to find IsLoggedIn in context.")
-            .0;
+    let is_logged_in = use_context::<IsLoggedIn>()
+        .expect("Expected to find IsLoggedIn in context.")
+        .0;
 
     let menu_open = create_rw_signal(false);
 
     if !editable {
-
         let recipe_id = recipe_id.expect("Expected recipe ID to be Some for non edit mode");
 
         view! {
@@ -156,11 +154,8 @@ pub fn RecipeMenu(
     
             </div>
         }.into_view()
-
     } else {
-
-        let recipe_action =
-        use_context::<RecipeServerAction>()
+        let recipe_action = use_context::<RecipeServerAction>()
             .expect("To find RecipeServerAction in context.")
             .0;
         let save_pending = recipe_action.pending();
@@ -168,7 +163,7 @@ pub fn RecipeMenu(
         let is_new_recipe = is_new_recipe.expect("Expected is_new_recipe to be provided.");
 
         let recipe_signals = recipe_signals.expect("Expected recipe_signals to be provided.");
-        let ( name_signal, _, _, _, _ ) = recipe_signals.get_untracked();
+        let (name_signal, _, _, _, _) = recipe_signals.get_untracked();
 
         let on_save_click = move |ev: MouseEvent| {
             ev.stop_propagation();
@@ -177,14 +172,14 @@ pub fn RecipeMenu(
             // Gather recipe
             use components::recipe_sheets::fetch_entries_from_signals;
             let updated_recipe: Recipe = Recipe {
-                id:             recipe_id,
-                name:           signals.0.clone().get_untracked(),
-                tags:           fetch_entries_from_signals(signals.1.get_untracked()),
-                ingredients:    fetch_entries_from_signals(signals.2.get_untracked()),
-                instructions:   signals.3.0.get_untracked(),
-                notes:          fetch_entries_from_signals(signals.4.get_untracked()),
+                id: recipe_id,
+                name: signals.0.clone().get_untracked(),
+                tags: fetch_entries_from_signals(signals.1.get_untracked()),
+                ingredients: fetch_entries_from_signals(signals.2.get_untracked()),
+                instructions: signals.3 .0.get_untracked(),
+                notes: fetch_entries_from_signals(signals.4.get_untracked()),
             };
-    
+
             // Check recipe
             match updated_recipe.valid_for_save() {
                 Ok(_) => {
@@ -199,10 +194,10 @@ pub fn RecipeMenu(
                             navigate(&path, Default::default());
                         }
                     }
-                },
+                }
                 Err(e) => {
                     error!("{}", e);
-                },
+                }
             }
         };
 
@@ -259,12 +254,11 @@ pub fn RecipeMenu(
                 }}
 
             </div>
-            
-        }.into_view()
+
+        }
+        .into_view()
     }
 }
-
-
 
 #[derive(Clone)]
 pub struct RecipeEntryMenuInfo<T: RecipeEntry> {
@@ -279,20 +273,21 @@ pub enum RecipeEntryMenuMode {
     Delete,
 }
 #[component]
-pub fn EditableEntryList<T: RecipeEntry>( 
+pub fn EditableEntryList<T: RecipeEntry>(
     entry_type: RecipeEntryType,
     rw_entries: RwSignal<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>>,
     theme_color: RwSignal<ThemeColor>,
 ) -> impl IntoView {
-
     let (entry_type_title, style_class) = entry_type.title_and_class();
 
     let add_entry = move |_| {
         let new_entry_signal = create_signal(T::default());
         rw_entries.update(move |entries| {
-            
             // Make sure to set new ID = pushed index
-            let new_id: u16 = entries.len().try_into().expect("to convert usize into u16.");
+            let new_id: u16 = entries
+                .len()
+                .try_into()
+                .expect("to convert usize into u16.");
 
             entries.push((new_id, new_entry_signal));
         });
@@ -392,15 +387,15 @@ pub fn EditableEntryList<T: RecipeEntry>(
     .into_view()
 }
 
-
-
 #[component]
-pub fn EditableInstructions( 
+pub fn EditableInstructions(
     entry_type: RecipeEntryType,
-    entry_signal: (ReadSignal<RecipeInstruction>, WriteSignal<RecipeInstruction>),
-    theme_color: RwSignal<ThemeColor>
+    entry_signal: (
+        ReadSignal<RecipeInstruction>,
+        WriteSignal<RecipeInstruction>,
+    ),
+    theme_color: RwSignal<ThemeColor>,
 ) -> impl IntoView {
-
     let (entry_type_title, style_class) = entry_type.title_and_class();
 
     view! {
@@ -423,32 +418,31 @@ pub fn EditableInstructions(
     .into_view()
 }
 
-
 #[component]
-pub fn EditableTags( 
+pub fn EditableTags(
     rw_entries: RwSignal<Vec<(u16, (ReadSignal<RecipeTag>, WriteSignal<RecipeTag>))>>,
-    theme_color: RwSignal<ThemeColor>
+    theme_color: RwSignal<ThemeColor>,
 ) -> impl IntoView {
-
     let (entry_type_title, style_class) = RecipeEntryType::Tag.title_and_class();
 
     let input_ref = NodeRef::<Input>::new();
 
-    let all_tags =
-        use_context::<AllTagsSignal>()
-            .expect("to find AllTagsMemo in context.")
-            .0;
-    
+    let all_tags = use_context::<AllTagsSignal>()
+        .expect("to find AllTagsMemo in context.")
+        .0;
+
     fn add_tag_to_recipe(
         new_tag: String,
-        rw_entries: RwSignal<Vec<(u16, (ReadSignal<RecipeTag>, WriteSignal<RecipeTag>))>>
+        rw_entries: RwSignal<Vec<(u16, (ReadSignal<RecipeTag>, WriteSignal<RecipeTag>))>>,
     ) -> bool {
         if new_tag.len() > 0 {
             let new_entry_signal = create_signal(RecipeTag { name: new_tag });
             rw_entries.update(move |entries| {
-                
                 // Make sure to set new ID = pushed index
-                let new_id: u16 = entries.len().try_into().expect("to convert usize into u16.");
+                let new_id: u16 = entries
+                    .len()
+                    .try_into()
+                    .expect("to convert usize into u16.");
 
                 entries.push((new_id, new_entry_signal));
             });
@@ -605,24 +599,17 @@ pub fn EditableTags(
     .into_view()
 }
 
-
-
-
 #[component]
-pub fn DeleteButton(
-    recipe_id: ReadSignal<u16>,
-) -> impl IntoView {
-
-    let delete_info_signal =
-        use_context::<DeleteInfoSignal>()
-            .expect("To find DeleteInfoReadSignal in context.")
-            .0;
+pub fn DeleteButton(recipe_id: ReadSignal<u16>) -> impl IntoView {
+    let delete_info_signal = use_context::<DeleteInfoSignal>()
+        .expect("To find DeleteInfoReadSignal in context.")
+        .0;
 
     let on_want_delete_click = move |_| {
         delete_info_signal.set(Some(DeletePopupInfo(recipe_id.get())));
     };
 
-    view!{
+    view! {
         <span
             class= "sub-menu-option"
             on:click=on_want_delete_click
@@ -631,21 +618,16 @@ pub fn DeleteButton(
 }
 
 #[component]
-pub fn DuplicateButton(
-    recipe_id: ReadSignal<u16>,
-
-) -> impl IntoView {
-
-    let recipe_action =
-        use_context::<RecipeServerAction>()
-            .expect("To find RecipeServerAction in context.")
-            .0;
+pub fn DuplicateButton(recipe_id: ReadSignal<u16>) -> impl IntoView {
+    let recipe_action = use_context::<RecipeServerAction>()
+        .expect("To find RecipeServerAction in context.")
+        .0;
 
     let on_duplicate_click = move |_| {
         recipe_action.dispatch(RecipeActionDescriptor::Duplicate(recipe_id.get()));
     };
 
-    view!{
+    view! {
         <span
             class= "sub-menu-option"
             on:click=on_duplicate_click
@@ -654,13 +636,9 @@ pub fn DuplicateButton(
 }
 
 #[component]
-pub fn PrintButton(
-    recipe_id: ReadSignal<u16>,
-) -> impl IntoView {
-
+pub fn PrintButton(recipe_id: ReadSignal<u16>) -> impl IntoView {
     let on_duplicate_click = move |_| {
-        let print_path =
-            "/recipe/".to_owned() + &recipe_id.get().to_string() + "/print";
+        let print_path = "/recipe/".to_owned() + &recipe_id.get().to_string() + "/print";
         let window = web_sys::window().expect("window should be available");
         window
             .open_with_url_and_target(&print_path, "_blank")
@@ -670,7 +648,7 @@ pub fn PrintButton(
             });
     };
 
-    view!{
+    view! {
         <span
             class= "sub-menu-option"
             on:click=on_duplicate_click
@@ -678,23 +656,18 @@ pub fn PrintButton(
     }
 }
 
-
-
 #[component]
 pub fn RecipeEntryInput<T: RecipeEntry>(
     placeholder: String,
     get_entry_signal: ReadSignal<T>,
     set_entry_signal: WriteSignal<T>,
     class: String,
-    #[prop(optional)]
-    entry_menu_info: Option<RecipeEntryMenuInfo<T>>,
+    #[prop(optional)] entry_menu_info: Option<RecipeEntryMenuInfo<T>>,
     /// If the entry has multiple fields
     #[prop(optional)]
     field_id: Option<usize>,
-    #[prop(optional)]
-    is_input: Option<bool>,
+    #[prop(optional)] is_input: Option<bool>,
 ) -> impl IntoView {
-
     let is_input = is_input.unwrap_or_default();
 
     // setup for the SuggestionList
@@ -702,7 +675,6 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
     let (get_input, set_input) = create_signal("".to_string());
 
     if is_input {
-
         view! {
             <div
                 id=         "text-input"
@@ -748,17 +720,16 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
         }
         .into_view()
     } else {
-
         // Textarea
         #[allow(unused)]
         let textarea = create_node_ref::<html::Textarea>();
 
         // setup for textarea autosize
-        #[cfg(feature= "hydrate")]
+        #[cfg(feature = "hydrate")]
         let leptos_use::UseTextareaAutosizeReturn {
             content: _,
             set_content,
-            trigger_resize: _
+            trigger_resize: _,
         } = leptos_use::use_textarea_autosize(textarea);
 
         view! {
@@ -802,37 +773,29 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
         }
         .into_view()
     }
-    
 }
-
 
 #[component]
 pub fn SettingsMenu() -> impl IntoView {
-
     // get settings menu context
-    let is_settings_menu_open =
-        use_context::<IsSettingsMenuOpen>()
-            .expect("Expected to find IsSettingsMenuOpen in context.")
-            .0;
+    let is_settings_menu_open = use_context::<IsSettingsMenuOpen>()
+        .expect("Expected to find IsSettingsMenuOpen in context.")
+        .0;
 
     // Is logged in
-    let is_logged_in =
-        use_context::<IsLoggedIn>()
-            .expect("Expected to find IsLoggedIn in context.")
-            .0;
-    
+    let is_logged_in = use_context::<IsLoggedIn>()
+        .expect("Expected to find IsLoggedIn in context.")
+        .0;
+
     // Logout action
-    let logout_action = create_action(move |_: &()| {
-        async move {
-            match server_logout().await {
-                Ok(_) => {
-                    is_logged_in.set(false);
-                },
-                Err(e) => error!("Error: {:?}", e.to_string()),
+    let logout_action = create_action(move |_: &()| async move {
+        match server_logout().await {
+            Ok(_) => {
+                is_logged_in.set(false);
             }
+            Err(e) => error!("Error: {:?}", e.to_string()),
         }
     });
-
 
     view! {
         <button
@@ -922,17 +885,12 @@ pub fn SettingsMenu() -> impl IntoView {
     }
 }
 
-
-
 #[component]
-pub fn RecipeEntryMenu<T: RecipeEntry>(
-    entry_menu_info: RecipeEntryMenuInfo<T>
-) -> impl IntoView {
-
+pub fn RecipeEntryMenu<T: RecipeEntry>(entry_menu_info: RecipeEntryMenuInfo<T>) -> impl IntoView {
     let RecipeEntryMenuInfo {
         mode,
         all_entries,
-        current_id
+        current_id,
     } = entry_menu_info;
 
     view! {
@@ -989,14 +947,14 @@ pub fn RecipeEntryMenu<T: RecipeEntry>(
                         ev.stop_propagation();
                         // we are going to assign new ids since we remove an entry
                         let mut new_id_counter: u16 = 0;
-    
+
                         // iterate in entries
                         all_entries.update(|entries| {
                             entries.retain_mut(|(entry_id, (signal, _))| {
-    
+
                                 // check if this is the entry to remove
                                 let keep_this_entry = entry_id != &current_id;
-    
+
                                 if keep_this_entry {
                                     // set the new id
                                     *entry_id = new_id_counter;
@@ -1013,7 +971,7 @@ pub fn RecipeEntryMenu<T: RecipeEntry>(
                                     // This is only necessary with nested signals like this one.
                                     signal.dispose();
                                 }
-    
+
                                 keep_this_entry
                             })
                         });
@@ -1022,9 +980,7 @@ pub fn RecipeEntryMenu<T: RecipeEntry>(
                     <CrossButtonSVG color="var(--theme-color-bg)".to_string() add_class="tag-delete".to_string() />
                 </button>
             </Show>
-            
+
         </div>
     }
 }
-
-

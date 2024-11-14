@@ -1,15 +1,14 @@
 #[cfg(feature = "ssr")]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-
     // SETUP
     use actix_files::Files;
     use actix_web::*;
+    use home_cook_book::app::components::auth::auth_utils::SharedLoginStates;
+    use home_cook_book::app::components::recipe_server_functions::ssr::*;
+    use home_cook_book::app::*;
     use leptos::*;
     use leptos_actix::{generate_route_list, LeptosRoutes};
-    use home_cook_book::app::*;
-    use home_cook_book::app::components::recipe_server_functions::ssr::*;
-    use home_cook_book::app::components::auth::auth_utils::SharedLoginStates;
 
     let mut conn = db().await.expect("couldn't connect to DB");
     sqlx::migrate!()
@@ -74,8 +73,8 @@ pub fn main() {
     // a client-side main function is required for using `trunk serve`
     // prefer using `cargo leptos serve` instead
     // to run: `trunk serve --open --features csr`
-    use leptos::*;
     use home_cook_book::app::*;
+    use leptos::*;
     use wasm_bindgen::prelude::wasm_bindgen;
 
     console_error_panic_hook::set_once();

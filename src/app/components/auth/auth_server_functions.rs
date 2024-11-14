@@ -1,23 +1,25 @@
-use leptos::*;
 use crate::app::components::auth::auth_utils::*;
+use leptos::*;
 
 #[cfg(feature = "ssr")]
 use {
-    leptos::logging::*,
-    std::{env, fs::File, time::{Duration, SystemTime}},
-    std::io::BufReader,
     super::auth_utils::LoginAccountCollection,
+    crate::app::components::auth::auth_utils::SharedLoginStates,
     //crate::app::components::auth::auth_utils::*,
     actix_web::web::Data,
+    leptos::logging::*,
+    std::io::BufReader,
     std::sync::MutexGuard,
-    crate::app::components::auth::auth_utils::SharedLoginStates
+    std::{
+        env,
+        fs::File,
+        time::{Duration, SystemTime},
+    },
 };
-
 
 #[server]
 /// This function is called when a user sent a login request
 pub async fn server_try_login(account: LoginAccount) -> Result<bool, ServerFnError> {
-    
     // check if username is not empty
     if account.username.is_empty() {
         Err(ServerFnError::ServerError("Username is empty".to_string()))
@@ -35,14 +37,15 @@ pub async fn server_try_login(account: LoginAccount) -> Result<bool, ServerFnErr
                     let result: bool = log_in_user(&account).await?;
                     Ok(result)
                 } else {
-                    return Err(ServerFnError::ServerError("Invalid username and/or password.".to_string()));
+                    return Err(ServerFnError::ServerError(
+                        "Invalid username and/or password.".to_string(),
+                    ));
                 }
-            },
+            }
             Err(e) => Err(ServerFnError::ServerError(e.to_string())),
         }
     }
 }
-
 
 #[server]
 /// This function will run on almost every request to check the login
@@ -57,7 +60,6 @@ pub async fn server_logout() -> Result<(), ServerFnError> {
     log_out_user().await
 }
 
-
 #[cfg(feature = "ssr")]
 pub async fn check_account_credentials(submission: &LoginAccount) -> Result<bool, ServerFnError> {
     // Get the current working directory
@@ -71,7 +73,9 @@ pub async fn check_account_credentials(submission: &LoginAccount) -> Result<bool
         Ok(ok) => ok,
         Err(e) => {
             let custom_error = "Could not fetch the credential file which MUST be located at the project root. Please read README_setup.txt".to_string();
-            return Err(ServerFnError::ServerError(custom_error + " " + &e.to_string()));
+            return Err(ServerFnError::ServerError(
+                custom_error + " " + &e.to_string(),
+            ));
         }
     };
     let reader = BufReader::new(file);
@@ -83,13 +87,11 @@ pub async fn check_account_credentials(submission: &LoginAccount) -> Result<bool
     Ok(accounts.contains_account(submission))
 }
 
-
-
 #[cfg(feature = "ssr")]
 pub async fn check_login() -> Result<bool, ServerFnError> {
-
     // Fetch state
-    let shared_login_states: Data<SharedLoginStates> = leptos_actix::extract::<Data<SharedLoginStates>>().await?;
+    let shared_login_states: Data<SharedLoginStates> =
+        leptos_actix::extract::<Data<SharedLoginStates>>().await?;
     // Get the ownership of the Arc<> inside SharedLoginStates.states
     let shared_login_states = shared_login_states.get_ref().states.clone();
     // Get the MutexGuard to mutate state
@@ -101,7 +103,6 @@ pub async fn check_login() -> Result<bool, ServerFnError> {
     // Get Time
     let current_time = SystemTime::now();
 
-
     // Clear passed out logins
     shared_login_states_lock.retain_mut(|logged_user: &mut UserLoginState| {
         let login_duration = Duration::from_secs(LOG_PERSISTANCE_DURATION_SECONDS);
@@ -112,38 +113,37 @@ pub async fn check_login() -> Result<bool, ServerFnError> {
             true
         }
     });
-    
 
     // Compare infos from state and from user
     let mut is_logged_in = false;
     use std::ops::DerefMut;
-    shared_login_states_lock.deref_mut().retain_mut(|logged_user: &mut UserLoginState| {
-        // If IP is logged in
-        if logged_user.current_ip == cur_ip {
-            is_logged_in = true;
-            logged_user.log_date = current_time;
-            true
-        } else {
-            // IP not matching -> not that user
-            // We return true so that the entry is not removed
-            true
-        }
-    });
+    shared_login_states_lock
+        .deref_mut()
+        .retain_mut(|logged_user: &mut UserLoginState| {
+            // If IP is logged in
+            if logged_user.current_ip == cur_ip {
+                is_logged_in = true;
+                logged_user.log_date = current_time;
+                true
+            } else {
+                // IP not matching -> not that user
+                // We return true so that the entry is not removed
+                true
+            }
+        });
 
     Ok(is_logged_in)
 }
 
-
-
 #[cfg(feature = "ssr")]
 pub async fn log_in_user(submission: &LoginAccount) -> Result<bool, ServerFnError> {
-
     log!("Attempt to log in user {:?}", submission.username);
 
     // Fetch state
-    use actix_web::web::Data;
     use crate::app::components::auth::auth_utils::SharedLoginStates;
-    let shared_login_states: Data<SharedLoginStates> = leptos_actix::extract::<Data<SharedLoginStates>>().await?;
+    use actix_web::web::Data;
+    let shared_login_states: Data<SharedLoginStates> =
+        leptos_actix::extract::<Data<SharedLoginStates>>().await?;
     // Get the ownership of the Arc<> inside SharedLoginStates.states
     let shared_login_states = shared_login_states.get_ref().states.clone();
     // Get the MutexGuard to mutate state
@@ -154,31 +154,29 @@ pub async fn log_in_user(submission: &LoginAccount) -> Result<bool, ServerFnErro
 
     let mut login_states = shared_login_states_lock.clone();
 
-    let new_login_state =
-        UserLoginState {
-            username:   submission.username.clone(),
-            current_ip: cur_ip.to_string(),
-            log_date:   SystemTime::now()
-        };
-        
+    let new_login_state = UserLoginState {
+        username: submission.username.clone(),
+        current_ip: cur_ip.to_string(),
+        log_date: SystemTime::now(),
+    };
+
     login_states.push(new_login_state);
 
     *shared_login_states_lock = login_states;
 
     log!("User {:?} is now logged in.", submission.username);
-    
-    Ok(true)
 
+    Ok(true)
 }
 
 #[cfg(feature = "ssr")]
 pub async fn log_out_user() -> Result<(), ServerFnError> {
-
     log!("Attempt to log out user");
 
     // Fetch state
     use crate::app::components::auth::auth_utils::SharedLoginStates;
-    let shared_login_states: Data<SharedLoginStates> = leptos_actix::extract::<Data<SharedLoginStates>>().await?;
+    let shared_login_states: Data<SharedLoginStates> =
+        leptos_actix::extract::<Data<SharedLoginStates>>().await?;
     // Get the ownership of the Arc<> inside SharedLoginStates.states
     let shared_login_states = shared_login_states.get_ref().states.clone();
     // Get the MutexGuard to mutate state
@@ -195,30 +193,29 @@ pub async fn log_out_user() -> Result<(), ServerFnError> {
     *shared_login_states_lock = login_states;
 
     log!("User is now logged out.");
-    
+
     Ok(())
-
 }
-
-
 
 #[cfg(feature = "ssr")]
 pub async fn clear_passed_out_logins(
-    mut shared_login_states_lock: MutexGuard<'_, Vec<UserLoginState>>
+    mut shared_login_states_lock: MutexGuard<'_, Vec<UserLoginState>>,
 ) -> Result<(), ServerFnError> {
     // Get Time
     let current_time = SystemTime::now();
 
     use std::ops::DerefMut;
-    shared_login_states_lock.deref_mut().retain_mut(|logged_user: &mut UserLoginState| {
-        let login_duration = Duration::from_secs(LOG_PERSISTANCE_DURATION_SECONDS);
-        // If log is passed out, then remove login
-        if logged_user.log_date + login_duration < current_time {
-            false
-        } else {
-            true
-        }
-    });
+    shared_login_states_lock
+        .deref_mut()
+        .retain_mut(|logged_user: &mut UserLoginState| {
+            let login_duration = Duration::from_secs(LOG_PERSISTANCE_DURATION_SECONDS);
+            // If log is passed out, then remove login
+            if logged_user.log_date + login_duration < current_time {
+                false
+            } else {
+                true
+            }
+        });
 
     Ok(())
 }

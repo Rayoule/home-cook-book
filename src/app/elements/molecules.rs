@@ -2,22 +2,18 @@ use leptos::*;
 
 use crate::app::elements::icons_svg::SearchSVG;
 
-
 // Will display on top of each page in the header
 #[component]
 pub fn RecipeSearchBar(
     search_input: RwSignal<Vec<String>>,
     request_search_clear: RwSignal<bool>,
 ) -> impl IntoView {
-
     let input_element: NodeRef<html::Input> = create_node_ref();
 
     create_effect(move |_| {
         if request_search_clear.get() {
             // Clear search
-            input_element()
-                .expect("Input to be mounted")
-                .set_value("");
+            input_element().expect("Input to be mounted").set_value("");
             search_input.set(vec![]);
             request_search_clear.set(false);
         }
@@ -32,15 +28,13 @@ pub fn RecipeSearchBar(
             .value()
             .to_lowercase();
 
-
         use regex::Regex;
         let re = Regex::new(r"\b\w+\b").unwrap();
-        let search_words: Vec<String> =
-            re
-                .find_iter(&value)
-                .map(|mat| mat.as_str())
-                .map(|word| word.to_string())
-                .collect();
+        let search_words: Vec<String> = re
+            .find_iter(&value)
+            .map(|mat| mat.as_str())
+            .map(|word| word.to_string())
+            .collect();
 
         search_input.set(search_words)
     };
@@ -71,7 +65,6 @@ pub fn RecipeSearchBar(
         </form>
     }
 }
-
 
 #[component]
 pub fn LoadingElem(text: String) -> impl IntoView {

@@ -1,29 +1,23 @@
-use leptos::*;
-use leptos_meta::*;
-use leptos_router::*;
-use leptos::logging::*;
-use itertools::Itertools;
 use crate::app::{
     components::{
+        auth::{
+            auth_server_functions::{server_login_check, server_try_login},
+            auth_utils::LoginAccount,
+        },
         pages::*,
         recipe::*,
-        recipe_server_functions::{
-            apply_json_save,
-            get_all_recipes_light,
-            recipe_function
-        },
-        auth::{
-            auth_utils::LoginAccount, auth_server_functions::{
-                server_try_login, server_login_check
-            },
-        },
+        recipe_server_functions::{apply_json_save, get_all_recipes_light, recipe_function},
     },
     elements::popups::*,
 };
+use itertools::Itertools;
+use leptos::logging::*;
+use leptos::*;
+use leptos_meta::*;
+use leptos_router::*;
 
 pub mod components;
 pub mod elements;
-
 
 #[derive(Clone)]
 pub struct PageNameSetter(WriteSignal<String>);
@@ -52,7 +46,6 @@ pub struct DeleteInfoSignal(RwSignal<Option<DeletePopupInfo>>);
 
 #[component]
 pub fn App() -> impl IntoView {
-
     log!("Rendering <App/>");
 
     // Provides context that manages stylesheets, titles, meta tags, etc.
@@ -62,15 +55,10 @@ pub fn App() -> impl IntoView {
     let (_, set_page_name) = create_signal("".to_owned());
     provide_context(PageNameSetter(set_page_name));
 
-
     // Recipe Action
-    let recipe_action = 
-        create_action(|desc: &RecipeActionDescriptor| {
-            recipe_function(desc.clone())
-        });
+    let recipe_action =
+        create_action(|desc: &RecipeActionDescriptor| recipe_function(desc.clone()));
     provide_context(RecipeServerAction(recipe_action));
-
-
 
     // Settings Menu
     let is_settings_menu_open = create_rw_signal(false);
@@ -78,7 +66,6 @@ pub fn App() -> impl IntoView {
     // Tags Menu
     let is_tags_menu_open = create_rw_signal(false);
     provide_context(IsTagsMenuOpen(is_tags_menu_open));
-
 
     // LOGIN
     // Add Is Logged In in context
@@ -95,7 +82,7 @@ pub fn App() -> impl IntoView {
     });
 
     // Try login action
-    let try_login_action = create_action( move |input: &LoginAccount| {
+    let try_login_action = create_action(move |input: &LoginAccount| {
         let input = input.clone();
         async move {
             match server_try_login(input.clone()).await {
@@ -108,19 +95,18 @@ pub fn App() -> impl IntoView {
                         // If login failed
                         false
                     }
-                },
+                }
                 Err(e) => {
                     error!("Error trying login: {:?}", e.to_string());
                     false
-                },
+                }
             }
         }
     });
     provide_context(TryLoginAction(try_login_action));
 
-    
     // reload action
-    let reload_action = create_action( |_: &()| {
+    let reload_action = create_action(|_: &()| {
         //login_check_resource.refetch();
         async { () }
     });
@@ -129,33 +115,32 @@ pub fn App() -> impl IntoView {
 
     // Login Check Resource
     let login_check_resource = create_resource(
-        move || (
-            try_login_action.version().get(),
-            recipe_action.version().get(),
-            reload_action.version().get()
-        ),
-        move |_| {
-            async move {
-                match server_login_check().await {
-                    Ok(succeeded) => {
-                        if succeeded {
-                            is_logged_in_signal.set(true);
-                            true
-                        } else {
-                            is_logged_in_signal.set(false);
-                            false
-                        }
-                    },
-                    Err(e) => {
-                        error!("Error checking login: {:?}", e.to_string());
+        move || {
+            (
+                try_login_action.version().get(),
+                recipe_action.version().get(),
+                reload_action.version().get(),
+            )
+        },
+        move |_| async move {
+            match server_login_check().await {
+                Ok(succeeded) => {
+                    if succeeded {
+                        is_logged_in_signal.set(true);
+                        true
+                    } else {
+                        is_logged_in_signal.set(false);
                         false
-                    },
+                    }
+                }
+                Err(e) => {
+                    error!("Error checking login: {:?}", e.to_string());
+                    false
                 }
             }
-        }
+        },
     );
     provide_context(LoginCheckResource(login_check_resource));
-
 
     // Apply save from JSON
     let upload_save_action = create_action(|save: &String| {
@@ -165,38 +150,40 @@ pub fn App() -> impl IntoView {
                 Err(e) => {
                     error!("ERROR: {:?}", e.to_string());
                     false
-                },
+                }
                 _ => true,
             }
         }
     });
     provide_context(ApplySaveFromJson(upload_save_action));
-    
 
     // All RecipeLight resource
     let all_recipe_light = create_local_resource(
-        move || (
-            recipe_action.version().get(),
-            upload_save_action.version().get()
-        ),
-        move |_| { get_all_recipes_light() },
+        move || {
+            (
+                recipe_action.version().get(),
+                upload_save_action.version().get(),
+            )
+        },
+        move |_| get_all_recipes_light(),
     );
     provide_context(RecipesLightResource(all_recipe_light));
 
     // All Tags signal
     let all_tags_signal = create_rw_signal::<Vec<String>>(vec![]);
-    create_effect( move |_| {
+    create_effect(move |_| {
         let recipes = all_recipe_light.get();
-        let mut tag_list =
-            if let Some(Ok(recipes)) = recipes {
-                recipes
-                    .iter()
-                    .map(|recipe| recipe.tags.clone().unwrap_or_else(|| vec![]) )
-                    .flatten()
-                    .map(|t| t.name)
-                    .unique()
-                    .collect::<Vec<String>>()
-            } else { vec![] };
+        let mut tag_list = if let Some(Ok(recipes)) = recipes {
+            recipes
+                .iter()
+                .map(|recipe| recipe.tags.clone().unwrap_or_else(|| Vec::new()))
+                .flatten()
+                .map(|t| t.name)
+                .unique()
+                .collect::<Vec<String>>()
+        } else {
+            vec![]
+        };
         tag_list.sort_by_key(|t| t.to_lowercase().clone());
         all_tags_signal.set(tag_list);
     });
@@ -218,7 +205,7 @@ pub fn App() -> impl IntoView {
         // sets the document title
         <Title text="Home Cook Book"/>
 
-        
+
         // content for this welcome page
         <Router>
 
@@ -249,16 +236,13 @@ pub fn set_page_name(name: &str) {
         .set(name.to_owned());
 }
 
-
 #[component(transparent)]
-pub fn CheckLogin()-> impl IntoView {
+pub fn CheckLogin() -> impl IntoView {
+    let check_login_resource = use_context::<LoginCheckResource>()
+        .expect("Expected to find LoginCheckAction in context")
+        .0;
 
-    let check_login_resource =
-        use_context::<LoginCheckResource>()
-            .expect("Expected to find LoginCheckAction in context")
-            .0;
-
-    view!{
+    view! {
         <Suspense
             fallback=move || {
                 let is_print_page =
@@ -268,7 +252,7 @@ pub fn CheckLogin()-> impl IntoView {
                         .split('/')
                         .last()
                         .is_some_and(|last_word| last_word == "print");
-                
+
                 if !is_print_page {
                     view! {
                         <p class="login-check-warning" >
@@ -286,10 +270,9 @@ pub fn CheckLogin()-> impl IntoView {
 }
 
 pub fn check_login_wall() {
-    let is_logged_in =
-        use_context::<IsLoggedIn>()
-            .expect("Expected to find IsLoggedIn in context")
-            .0;
+    let is_logged_in = use_context::<IsLoggedIn>()
+        .expect("Expected to find IsLoggedIn in context")
+        .0;
     create_effect(move |_| {
         if !is_logged_in.get() {
             let navigate = leptos_router::use_navigate();

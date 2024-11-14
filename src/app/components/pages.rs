@@ -4,34 +4,34 @@ use elements::{
     recipe_elements::SettingsMenu,
 };
 use ev::MouseEvent;
+use leptos::logging::*;
 use leptos::*;
 use leptos_router::*;
-use leptos::logging::*;
 use std::sync::Arc;
 
 use crate::app::{
-    *,
     components::{
-        recipe_server_functions::*, recipe_sheets::{
-            EditableRecipeSheet, RecipeCard, RecipeSheet
-        }, tags::*, download_upload::{DownloadAll, UploadAll},
+        download_upload::{DownloadAll, UploadAll},
+        recipe_server_functions::*,
+        recipe_sheets::{EditableRecipeSheet, RecipeCard, RecipeSheet},
+        tags::*,
     },
     elements::molecules::*,
+    *,
 };
-
 
 #[component]
 pub fn LoginMenu() -> impl IntoView {
-
     set_page_name("Login");
 
     // get settings menu context
-    let is_settings_menu_open =
-        use_context::<IsSettingsMenuOpen>()
-            .expect("Expected to find IsSettingsMenuOpen in context.")
-            .0;
+    let is_settings_menu_open = use_context::<IsSettingsMenuOpen>()
+        .expect("Expected to find IsSettingsMenuOpen in context.")
+        .0;
 
-    let try_login_action = use_context::<TryLoginAction>().expect("Expected to find TryLoginAction in context.").0;
+    let try_login_action = use_context::<TryLoginAction>()
+        .expect("Expected to find TryLoginAction in context.")
+        .0;
     let try_login_action_value = try_login_action.value();
     create_effect(move |_| {
         // If login is succesful, then close settings menu
@@ -53,13 +53,17 @@ pub fn LoginMenu() -> impl IntoView {
         event.prevent_default(); // Prevent the default form submission
 
         let login_account = LoginAccount {
-            username: name_input().expect("name <input> should be mounted").value(),
-            password: password_input().expect("password <input> should be mounted").value()
+            username: name_input()
+                .expect("name <input> should be mounted")
+                .value(),
+            password: password_input()
+                .expect("password <input> should be mounted")
+                .value(),
         };
 
         try_login_action.dispatch(login_account);
     };
-    
+
     view! {
         <div>
             <h3 class="login-title" >{"Login"}</h3>
@@ -86,21 +90,17 @@ pub fn LoginMenu() -> impl IntoView {
     }
 }
 
-
-
 #[component]
 pub fn NewRecipePage() -> impl IntoView {
-
     set_page_name("New Recipe");
 
     // Ensure the user is logged in
     check_login_wall();
 
     // Setup action
-    let recipe_action =
-        use_context::<RecipeServerAction>()
-            .expect("To find RecipeServerAction in context.")
-            .0;
+    let recipe_action = use_context::<RecipeServerAction>()
+        .expect("To find RecipeServerAction in context.")
+        .0;
     let action_submitted = recipe_action.input();
     let action_done_id = recipe_action.value();
 
@@ -129,7 +129,7 @@ pub fn NewRecipePage() -> impl IntoView {
                     } else {
                         error!("Error fetching recipe by name, no ID fetched.")
                     }
-                },
+                }
                 Err(_) => error!("Error fetching recipe by name with name: {:?}", name),
             }
         }
@@ -149,8 +149,11 @@ pub fn NewRecipePage() -> impl IntoView {
                     } else {
                         fetch_id_and_redirect.dispatch(name);
                     }
-                },
-                Err(e) => error!("ERROR: Error in getting recipe submission ID: {:?}", e.to_string()),
+                }
+                Err(e) => error!(
+                    "ERROR: Error in getting recipe submission ID: {:?}",
+                    e.to_string()
+                ),
             }
         }
     });
@@ -170,10 +173,6 @@ pub fn NewRecipePage() -> impl IntoView {
         </Show>
     }
 }
-
-
-
-
 
 #[derive(Params, PartialEq, Clone, Default)]
 struct RecipeIdParam {
@@ -204,7 +203,7 @@ pub enum RecipePageMode {
 }
 impl std::str::FromStr for RecipePageMode {
     type Err = ParamsError;
-    
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "display" => Ok(RecipePageMode::Display),
@@ -217,7 +216,6 @@ impl std::str::FromStr for RecipePageMode {
 
 #[component]
 pub fn RecipePage() -> impl IntoView {
-
     // Get params functions
     let get_recipe_id_param = move |tracked: bool| {
         let params = if tracked {
@@ -233,57 +231,49 @@ pub fn RecipePage() -> impl IntoView {
         } else {
             use_params::<RecipeModeParam>().get_untracked()
         };
-        params.unwrap_or_default().mode.expect("To get RecipeModeParam")
+        params
+            .unwrap_or_default()
+            .mode
+            .expect("To get RecipeModeParam")
     };
 
     // Page Name setup
     set_page_name("Recipes");
     // Update Page Name
     create_effect(move |_| {
-        set_page_name(
-            match get_recipe_mode(true) {
-                RecipePageMode::Display => "Display Recipe",
-                RecipePageMode::Editable => "Edit Recipe",
-                RecipePageMode::Print => "Print Recipe",
-            }
-        );
+        set_page_name(match get_recipe_mode(true) {
+            RecipePageMode::Display => "Display Recipe",
+            RecipePageMode::Editable => "Edit Recipe",
+            RecipePageMode::Print => "Print Recipe",
+        });
     });
 
     // Ensure the user is logged in when edit mode
     match get_recipe_mode(false) {
         RecipePageMode::Editable => {
             check_login_wall();
-        },
+        }
         _ => (),
     }
 
     // Get recipe
-    let recipe_action =
-        use_context::<RecipeServerAction>()
-            .expect("To find RecipeServerAction in context.")
-            .0;
+    let recipe_action = use_context::<RecipeServerAction>()
+        .expect("To find RecipeServerAction in context.")
+        .0;
 
     // Recipe resource
     let recipe_resource = create_resource(
-        move || (
-            recipe_action
-                .version()
-                .get(),
-            get_recipe_id_param(true)
-        ),
-        move |(_, recipe_id)| {
-            async move {
-                match get_recipe_by_id(recipe_id).await {
-                    Ok(recipe) => Some(recipe),
-                    Err(e) => {
-                        error!("Error fetching recipe by id: {:?}", e.to_string());
-                        None
-                    }
+        move || (recipe_action.version().get(), get_recipe_id_param(true)),
+        move |(_, recipe_id)| async move {
+            match get_recipe_by_id(recipe_id).await {
+                Ok(recipe) => Some(recipe),
+                Err(e) => {
+                    error!("Error fetching recipe by id: {:?}", e.to_string());
+                    None
                 }
             }
         },
     );
-
 
     view! {
 
@@ -332,15 +322,13 @@ pub fn RecipePage() -> impl IntoView {
     }
 }
 
-
-
 // Colors
 #[derive(Clone, Copy)]
 pub enum ThemeColor {
     Color1,
     Color2,
     Color3,
-    Color4
+    Color4,
 }
 impl ThemeColor {
     pub fn main_color(&self) -> String {
@@ -349,7 +337,8 @@ impl ThemeColor {
             ThemeColor::Color2 => "var(--theme-color-2)",
             ThemeColor::Color3 => "var(--theme-color-3)",
             ThemeColor::Color4 => "var(--theme-color-4)",
-        }.to_string()
+        }
+        .to_string()
     }
     pub fn alt_color(&self) -> String {
         match self {
@@ -357,38 +346,27 @@ impl ThemeColor {
             ThemeColor::Color2 => "var(--theme-color-2-alt)",
             ThemeColor::Color3 => "var(--theme-color-3-alt)",
             ThemeColor::Color4 => "var(--theme-color-4-alt)",
-        }.to_string()
+        }
+        .to_string()
     }
 
     pub fn as_bg_main_color(&self) -> String {
-        "background-color: ".to_string()
-        + &self.main_color()
-        + ";"
+        "background-color: ".to_string() + &self.main_color() + ";"
     }
     pub fn as_bg_alt_color(&self) -> String {
-        "background-color: ".to_string()
-        + &self.alt_color()
-        + ";"
+        "background-color: ".to_string() + &self.alt_color() + ";"
     }
     pub fn as_main_color(&self) -> String {
-        "color: ".to_string()
-        + &self.main_color()
-        + ";"
+        "color: ".to_string() + &self.main_color() + ";"
     }
     pub fn as_alt_color(&self) -> String {
-        "color: ".to_string()
-        + &self.alt_color()
-        + ";"
+        "color: ".to_string() + &self.alt_color() + ";"
     }
     pub fn as_border_main_color(&self) -> String {
-        "border-color: ".to_string()
-        + &self.main_color()
-        + ";"
+        "border-color: ".to_string() + &self.main_color() + ";"
     }
     pub fn as_border_alt_color(&self) -> String {
-        "border-color: ".to_string()
-        + &self.alt_color()
-        + ";"
+        "border-color: ".to_string() + &self.alt_color() + ";"
     }
     pub fn as_visible_color(&self) -> String {
         let col = match self {
@@ -398,9 +376,7 @@ impl ThemeColor {
             ThemeColor::Color4 => self.alt_color(),
         };
 
-        "color: ".to_string()
-        + &col
-        + ";"
+        "color: ".to_string() + &col + ";"
     }
 
     pub fn random() -> Self {
@@ -416,7 +392,6 @@ impl ThemeColor {
     }
 }
 
-
 // Popup Colors
 #[derive(Clone, Copy)]
 pub enum PopupColor {
@@ -430,21 +405,32 @@ impl PopupColor {
             PopupColor::Color1 => "background-color: var(--theme-color-4);",
             PopupColor::Color2 => "background-color: var(--theme-color-3);",
             PopupColor::Color3 => "background-color: var(--theme-color-bg);",
-        }.to_string()
+        }
+        .to_string()
     }
     pub fn button_right_style(&self) -> String {
         match self {
-            PopupColor::Color1 => "color: var(--theme-color-bg); background-color: var(--theme-color-popup-1);",
-            PopupColor::Color2 => "color: var(--theme-color-bg); background-color: var(--theme-color-menu);",
-            PopupColor::Color3 => "color: var(--theme-color-bg); background-color: var(--theme-color-popup-2);",
-        }.to_string()
+            PopupColor::Color1 => {
+                "color: var(--theme-color-bg); background-color: var(--theme-color-popup-1);"
+            }
+            PopupColor::Color2 => {
+                "color: var(--theme-color-bg); background-color: var(--theme-color-menu);"
+            }
+            PopupColor::Color3 => {
+                "color: var(--theme-color-bg); background-color: var(--theme-color-popup-2);"
+            }
+        }
+        .to_string()
     }
     pub fn button_left_style(&self) -> String {
         match self {
             PopupColor::Color1 => "color: black; background-color: var(--theme-color-bg);",
             PopupColor::Color2 => "color: black; background-color: var(--theme-color-bg);",
-            PopupColor::Color3 => "color: var(--theme-color-4-alt); background-color: var(--theme-color-4);",
-        }.to_string()
+            PopupColor::Color3 => {
+                "color: var(--theme-color-4-alt); background-color: var(--theme-color-4);"
+            }
+        }
+        .to_string()
     }
 
     pub fn random() -> Self {
@@ -459,40 +445,32 @@ impl PopupColor {
     }
 }
 
-
-
-
 /// Renders the home page of your application.
 #[component]
 pub fn AllRecipes() -> impl IntoView {
-
     set_page_name("Recipes");
 
     // Is logged in
-    let is_logged_in =
-        use_context::<IsLoggedIn>()
-            .expect("Expected to find IsLoggedIn in context.")
-            .0;
+    let is_logged_in = use_context::<IsLoggedIn>()
+        .expect("Expected to find IsLoggedIn in context.")
+        .0;
 
-    let selected_tags_signal =
-        use_context::<SelectedTagsRwSignal>()
-            .expect("To find SelectedTagsRwSignal in context.")
-            .0;
+    let selected_tags_signal = use_context::<SelectedTagsRwSignal>()
+        .expect("To find SelectedTagsRwSignal in context.")
+        .0;
 
     let search_input = create_rw_signal::<Vec<String>>(vec![]);
 
     let request_search_clear = create_rw_signal(false);
 
-    let all_recipes_light =
-        use_context::<RecipesLightResource>()
-            .expect("To find RecipesLightResource in context.")
-            .0;
+    let all_recipes_light = use_context::<RecipesLightResource>()
+        .expect("To find RecipesLightResource in context.")
+        .0;
 
-    let all_tags_memo =
-        use_context::<AllTagsSignal>()
-            .expect("To find AllTagsMemo in context.")
-            .0;
-    
+    let all_tags_memo = use_context::<AllTagsSignal>()
+        .expect("To find AllTagsMemo in context.")
+        .0;
+
     let on_cancel_search_click = move |ev: ev::MouseEvent| {
         ev.stop_propagation();
         request_search_clear.set(true);
@@ -519,7 +497,7 @@ pub fn AllRecipes() -> impl IntoView {
                                 selected_tags_signal=selected_tags_signal
                                 // Tags that are already checked (needed because the component might redraw if tags are added or removed)
                                 // This needs to be updated ONLY if tags are added or removed (through addind/removing recipes)
-                                //already_selected_tags=already_selected_tags 
+                                //already_selected_tags=already_selected_tags
                             />
                         }
                     }
@@ -618,13 +596,10 @@ pub fn AllRecipes() -> impl IntoView {
     }
 }
 
-
-
 /// Download all recipes button
 /// Renders the home page of your application.
 #[component]
 pub fn BackupPage() -> impl IntoView {
-
     // Ensure we are logged in
     check_login_wall();
 
@@ -657,8 +632,6 @@ pub fn BackupPage() -> impl IntoView {
     }
 }
 
-
-
 /// 404 - Not Found
 #[component]
 pub fn NotFound() -> impl IntoView {
@@ -680,4 +653,3 @@ pub fn NotFound() -> impl IntoView {
         <h1>"Not Found"</h1>
     }
 }
-

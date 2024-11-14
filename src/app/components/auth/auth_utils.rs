@@ -3,15 +3,13 @@ use std::time::SystemTime;
 
 #[cfg(feature = "ssr")]
 use {
-    leptos::ServerFnError,
     leptos::logging::*,
-    std::sync::{Mutex, Arc},
+    leptos::ServerFnError,
+    std::sync::{Arc, Mutex},
 };
-
 
 pub const ACCOUNTS_FILE_NAME: &'static str = "hcb_auth.json";
 pub const LOG_PERSISTANCE_DURATION_SECONDS: u64 = 7200; // 7200s = 2h;
-
 
 // Struct found in the JSON auth file along with the .exe
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Default)]
@@ -26,13 +24,11 @@ pub struct LoginAccountCollection {
 }
 impl LoginAccountCollection {
     pub fn contains_account(&self, submission: &LoginAccount) -> bool {
-        self.accounts.iter().any(|x| {
-            x.username == submission.username
-            && x.password == submission.password
-        })
+        self.accounts
+            .iter()
+            .any(|x| x.username == submission.username && x.password == submission.password)
     }
 }
-
 
 // User login state
 #[derive(Clone, Debug)]
@@ -45,17 +41,16 @@ pub struct UserLoginState {
 #[cfg(feature = "ssr")]
 #[derive(Default, Clone)]
 pub struct SharedLoginStates {
-    pub states: Arc<Mutex<Vec<UserLoginState>>>
+    pub states: Arc<Mutex<Vec<UserLoginState>>>,
 }
 #[cfg(feature = "ssr")]
 impl SharedLoginStates {
     pub fn init_states() -> Self {
         SharedLoginStates {
-            states: Arc::new(Mutex::new(vec![]))
+            states: Arc::new(Mutex::new(vec![])),
         }
     }
 }
-
 
 #[cfg(feature = "ssr")]
 pub async fn fetch_request_ip() -> Result<String, ServerFnError> {
@@ -67,9 +62,11 @@ pub async fn fetch_request_ip() -> Result<String, ServerFnError> {
                 let fetched_ip = current_ip.to_string();
                 Ok(fetched_ip)
             } else {
-                Err(ServerFnError::ServerError("IP not found in HttpRequest.".to_string()))
+                Err(ServerFnError::ServerError(
+                    "IP not found in HttpRequest.".to_string(),
+                ))
             }
-        },
+        }
         Err(e) => {
             error!("ERROR in IP Fetching: {:?}", e.to_string());
             Err(ServerFnError::ServerError(e.to_string()))

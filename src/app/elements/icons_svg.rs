@@ -1,13 +1,11 @@
 use leptos::*;
 
-
 /// Main Page Logo
 #[component]
 pub fn LogoSVG() -> impl IntoView {
-
     view! {
 
-        <svg class="logo-svg" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+        <svg class="logo-svg" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
             viewBox="0 0 512.865 512.865" xml:space="preserve">
 
             <defs>
@@ -81,10 +79,7 @@ pub fn LogoSVG() -> impl IntoView {
             </g>
         </svg>
     }
-
-
 }
-
 
 #[component]
 pub fn SearchSVG() -> impl IntoView {
@@ -104,7 +99,6 @@ pub fn SearchSVG() -> impl IntoView {
     }
 }
 
-
 #[component]
 pub fn SortUpSVG() -> impl IntoView {
     view! {
@@ -120,7 +114,6 @@ pub fn SortUpSVG() -> impl IntoView {
         </svg>
     }
 }
-
 
 #[component]
 pub fn SortDownSVG() -> impl IntoView {
@@ -139,14 +132,9 @@ pub fn SortDownSVG() -> impl IntoView {
     }
 }
 
-
 #[component]
-pub fn SortUpDownVG(
-    is_up: bool
-) -> impl IntoView {
-    let class =
-        "sort-up-down-icon-svg ".to_string()
-        + if is_up { "up" } else { "down" };
+pub fn SortUpDownVG(is_up: bool) -> impl IntoView {
+    let class = "sort-up-down-icon-svg ".to_string() + if is_up { "up" } else { "down" };
 
     view! {
         <svg
@@ -162,7 +150,6 @@ pub fn SortUpDownVG(
         </svg>
     }
 }
-
 
 #[component]
 pub fn SortSVG() -> impl IntoView {
@@ -195,18 +182,13 @@ pub fn RemoveSVG() -> impl IntoView {
     }
 }
 
-
 #[component]
-pub fn BackButtonSVG(
-    #[prop(optional)]
-    backup_page: bool
-) -> impl IntoView {
-    let backup_page_class =
-        if backup_page {
-            " backup-page".to_string()
-        } else {
-            "".to_string()
-        };
+pub fn BackButtonSVG(#[prop(optional)] backup_page: bool) -> impl IntoView {
+    let backup_page_class = if backup_page {
+        " backup-page".to_string()
+    } else {
+        "".to_string()
+    };
 
     view! {
         <svg
@@ -221,7 +203,6 @@ pub fn BackButtonSVG(
         </svg>
     }
 }
-
 
 #[component]
 pub fn PrintButtonSVG(color: String) -> impl IntoView {
@@ -238,7 +219,6 @@ pub fn PrintButtonSVG(color: String) -> impl IntoView {
         </svg>
     }
 }
-
 
 #[component]
 pub fn EditButtonSVG(color: String) -> impl IntoView {
@@ -266,14 +246,9 @@ pub fn EditButtonSVG(color: String) -> impl IntoView {
     }
 }
 
-
 /// Close Tags Menu Button
 #[component]
-pub fn CrossButtonSVG(
-    color: String,
-    #[prop(optional)]
-    add_class: String
-) -> impl IntoView {
+pub fn CrossButtonSVG(color: String, #[prop(optional)] add_class: String) -> impl IntoView {
     view! {
         <svg
             class="recipe-menu-icon delete ".to_string() + &add_class
@@ -302,7 +277,6 @@ pub fn CrossButtonSVG(
     }
 }
 
-
 #[component]
 pub fn LogoutButtonSVG() -> impl IntoView {
     view! {
@@ -321,7 +295,6 @@ pub fn LogoutButtonSVG() -> impl IntoView {
     }
 }
 
-
 #[component]
 pub fn BackupButtonSVG() -> impl IntoView {
     view! {
@@ -338,7 +311,6 @@ pub fn BackupButtonSVG() -> impl IntoView {
         </svg>
     }
 }
-
 
 #[component]
 pub fn UnrollButtonSVG() -> impl IntoView {
@@ -360,12 +332,8 @@ pub fn UnrollButtonSVG() -> impl IntoView {
     }
 }
 
-
 #[component]
-pub fn PlusIconSVG(
-    #[prop(optional)]
-    add_class: String
-) -> impl IntoView {
+pub fn PlusIconSVG(#[prop(optional)] add_class: String) -> impl IntoView {
     view! {
         <svg
             class="plus-icon-svg ".to_string() + &add_class
@@ -377,4 +345,3 @@ pub fn PlusIconSVG(
         </svg>
     }
 }
-

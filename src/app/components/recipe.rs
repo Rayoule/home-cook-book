@@ -1,5 +1,5 @@
 use leptos::{logging::*, *};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::app::elements::recipe_elements::*;
 
@@ -9,7 +9,7 @@ pub struct Recipe {
     // The primary key as it is stored into the database
     pub id: Option<u16>,
     pub name: String,
-    pub tags:Option<Vec<RecipeTag>>,
+    pub tags: Option<Vec<RecipeTag>>,
     pub ingredients: Option<Vec<RecipeIngredient>>,
     pub instructions: RecipeInstruction,
     pub notes: Option<Vec<RecipeNote>>,
@@ -44,7 +44,9 @@ impl RecipeLight {
             out = true;
         // if there are, then check the tags in recipes and then compare them
         } else if let Some(tags) = &self.tags {
-            if tags_to_check.len() < 1 { return true }
+            if tags_to_check.len() < 1 {
+                return true;
+            }
             for i in 0..tags.len() {
                 if tags_to_check.contains(&tags[i].name) {
                     out = true;
@@ -82,12 +84,8 @@ impl RecipeLight {
         recipe_text = recipe_text.to_lowercase();
 
         // separate text into words
-        let recipe_words: Vec<&str> =
-            re
-                .find_iter(&recipe_text)
-                .map(|mat| mat.as_str())
-                .collect();
-        
+        let recipe_words: Vec<&str> = re.find_iter(&recipe_text).map(|mat| mat.as_str()).collect();
+
         // Find matching words
         search_words.iter().any(|item| {
             recipe_words.iter().any(|word| {
@@ -111,30 +109,30 @@ pub struct JsonRecipeCollection(pub Vec<JsonRecipe>);
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
 pub struct JsonRecipe {
-    pub name:           String,
-    pub tags:           JsonRecipeTags,
-    pub ingredients:    JsonRecipeIngredients,
-    pub instructions:   JsonRecipeInstructions,
-    pub notes:          JsonRecipeNotes,
+    pub name: String,
+    pub tags: JsonRecipeTags,
+    pub ingredients: JsonRecipeIngredients,
+    pub instructions: JsonRecipeInstructions,
+    pub notes: JsonRecipeNotes,
 }
 impl JsonRecipe {
     pub fn to_recipe(self, id: u16) -> Recipe {
         Recipe {
-            id:             Some(id),
-            name:           self.name,
-            tags:           self.tags.to_recipe_tags(),
-            ingredients:    self.ingredients.to_recipe_ingredients(),
-            instructions:   self.instructions.to_recipe_instructions(),
-            notes:          self.notes.to_recipe_notes(),
+            id: Some(id),
+            name: self.name,
+            tags: self.tags.to_recipe_tags(),
+            ingredients: self.ingredients.to_recipe_ingredients(),
+            instructions: self.instructions.to_recipe_instructions(),
+            notes: self.notes.to_recipe_notes(),
         }
     }
     pub fn from_recipe(recipe: Recipe) -> JsonRecipe {
         JsonRecipe {
-            name:           recipe.name,
-            tags:           JsonRecipeTags::from_recipe_tags(recipe.tags),
-            ingredients:    JsonRecipeIngredients::from_recipe_ingredients(recipe.ingredients),
-            instructions:   JsonRecipeInstructions::from_recipe_instructions(recipe.instructions),
-            notes:          JsonRecipeNotes::from_recipe_notes(recipe.notes),
+            name: recipe.name,
+            tags: JsonRecipeTags::from_recipe_tags(recipe.tags),
+            ingredients: JsonRecipeIngredients::from_recipe_ingredients(recipe.ingredients),
+            instructions: JsonRecipeInstructions::from_recipe_instructions(recipe.instructions),
+            notes: JsonRecipeNotes::from_recipe_notes(recipe.notes),
         }
     }
 }
@@ -145,29 +143,17 @@ pub struct JsonRecipeTags(Option<Vec</*(String, [u8; 3])*/ String>>);
 impl JsonRecipeTags {
     pub fn to_recipe_tags(self) -> Option<Vec<RecipeTag>> {
         if let Some(tags) = self.0 {
-            Some(
-                tags
-                    .into_iter()
-                    .map(|t| RecipeTag { name: t })
-                    .collect()
-            )
+            Some(tags.into_iter().map(|t| RecipeTag { name: t }).collect())
         } else {
             None
         }
     }
     pub fn from_recipe_tags(recipe_tags: Option<Vec<RecipeTag>>) -> Self {
-        JsonRecipeTags(
-            if let Some(recipe_tags) = recipe_tags {
-                Some(
-                    recipe_tags
-                        .into_iter()
-                        .map(|t| t.name)
-                        .collect()
-                )
-            } else {
-                None
-            }
-        )
+        JsonRecipeTags(if let Some(recipe_tags) = recipe_tags {
+            Some(recipe_tags.into_iter().map(|t| t.name).collect())
+        } else {
+            None
+        })
     }
 }
 
@@ -180,29 +166,24 @@ impl JsonRecipeIngredients {
             Some(
                 ingrs
                     .into_iter()
-                    .map(|(qty_unit, content)| RecipeIngredient {
-                        qty_unit,
-                        content,
-                    })
-                    .collect()
+                    .map(|(qty_unit, content)| RecipeIngredient { qty_unit, content })
+                    .collect(),
             )
         } else {
             None
         }
     }
     pub fn from_recipe_ingredients(recipe_ingrs: Option<Vec<RecipeIngredient>>) -> Self {
-        JsonRecipeIngredients(
-            if let Some(recipe_ingrs) = recipe_ingrs {
-                Some(
-                    recipe_ingrs
-                        .into_iter()
-                        .map(|i| (i.qty_unit, i.content))
-                        .collect()
-                )
-            } else {
-                None
-            }
-        )
+        JsonRecipeIngredients(if let Some(recipe_ingrs) = recipe_ingrs {
+            Some(
+                recipe_ingrs
+                    .into_iter()
+                    .map(|i| (i.qty_unit, i.content))
+                    .collect(),
+            )
+        } else {
+            None
+        })
     }
 }
 
@@ -228,49 +209,40 @@ impl JsonRecipeNotes {
                 notes
                     .into_iter()
                     .map(|content| RecipeNote { content })
-                    .collect()
+                    .collect(),
             )
         } else {
             None
         }
     }
     pub fn from_recipe_notes(recipe_notes: Option<Vec<RecipeNote>>) -> Self {
-        JsonRecipeNotes(
-            if let Some(recipe_notes) = recipe_notes {
-                Some(
-                    recipe_notes
-                        .into_iter()
-                        .map(|t| t.content)
-                        .collect()
-                )
-            } else {
-                None
-            }
-        )
+        JsonRecipeNotes(if let Some(recipe_notes) = recipe_notes {
+            Some(recipe_notes.into_iter().map(|t| t.content).collect())
+        } else {
+            None
+        })
     }
 }
-
-
 
 // Recipe format when it is stored in the DB
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
 pub struct DbRowRecipe {
-    pub id:                     u16,
-    pub recipe_name:            String,
-    pub recipe_tags:            String,
-    pub recipe_ingredients:     String,
-    pub recipe_instructions:    String,
-    pub recipe_notes:           String,
+    pub id: u16,
+    pub recipe_name: String,
+    pub recipe_tags: String,
+    pub recipe_ingredients: String,
+    pub recipe_instructions: String,
+    pub recipe_notes: String,
 }
 
 // All infos needed for AllRecipe page
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
 pub struct DbRowRecipeLight {
-    pub id:                 u16,
-    pub recipe_name:        String,
-    pub recipe_tags:        String,
+    pub id: u16,
+    pub recipe_name: String,
+    pub recipe_tags: String,
     pub recipe_ingredients: String,
 }
 
@@ -281,8 +253,6 @@ pub struct DbRowRecipeID {
     pub id: u16,
 }
 
-
-
 #[derive(PartialEq)]
 pub enum RecipeEntryType {
     Tag,
@@ -290,7 +260,6 @@ pub enum RecipeEntryType {
     Instructions,
     Notes,
 }
-
 
 /// Returns asssociated ( Title ( Class, Editable-Class ))
 impl RecipeEntryType {
@@ -307,22 +276,23 @@ impl RecipeEntryType {
                 RecipeEntryType::Ingredients => "ingredients".to_owned(),
                 RecipeEntryType::Instructions => "instructions".to_owned(),
                 RecipeEntryType::Notes => "notes".to_owned(),
-            }
+            },
         )
     }
 }
-
-
 
 /// RecipeEntry Trait --------
 pub trait RecipeEntry: IntoView + std::fmt::Debug + Clone + Default + 'static {
     fn get_entry_type() -> RecipeEntryType;
     fn get_css_class_name() -> String;
-    fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>, menu_info: Option<RecipeEntryMenuInfo<Self>>) -> View;
+    fn into_editable_view(
+        entry: ReadSignal<Self>,
+        set_entry: WriteSignal<Self>,
+        menu_info: Option<RecipeEntryMenuInfo<Self>>,
+    ) -> View;
     fn update_field_from_string_input(&mut self, field_id: Option<usize>, input: String);
     fn get_string_from_field(&self, field_id: Option<usize>) -> String;
 }
-
 
 /// INGREDIENTS and implementions -----
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -332,7 +302,6 @@ pub struct RecipeIngredient {
 }
 
 impl IntoView for RecipeIngredient {
-
     fn into_view(self) -> View {
         view! {
             <p>{self.qty_unit}</p>
@@ -343,15 +312,19 @@ impl IntoView for RecipeIngredient {
 }
 
 impl RecipeEntry for RecipeIngredient {
-
-    fn get_entry_type() -> RecipeEntryType { RecipeEntryType::Ingredients }
+    fn get_entry_type() -> RecipeEntryType {
+        RecipeEntryType::Ingredients
+    }
 
     fn get_css_class_name() -> String {
         "ingredients".to_string()
     }
 
-    fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>, menu_info: Option<RecipeEntryMenuInfo<Self>>) -> View {
-
+    fn into_editable_view(
+        entry: ReadSignal<Self>,
+        set_entry: WriteSignal<Self>,
+        menu_info: Option<RecipeEntryMenuInfo<Self>>,
+    ) -> View {
         view! {
             <div
                 class="editable-ingredients-wrapper"
@@ -381,48 +354,39 @@ impl RecipeEntry for RecipeIngredient {
         }
         .into_view()
     }
-    
+
     fn update_field_from_string_input(&mut self, field_id: Option<usize>, input: String) {
         match field_id {
-
             Some(0) => self.qty_unit = input,
 
             Some(1) => self.content = input,
 
             None => {
                 error!("ERROR: No ID provided.")
-            },
+            }
 
             _ => {
                 error!("ERROR: Invalid ID.")
-            },
-
+            }
         }
     }
-    
+
     fn get_string_from_field(&self, field_id: Option<usize>) -> String {
         match field_id {
-
             Some(0) => self.qty_unit.to_string().clone(),
 
             Some(1) => self.content.clone(),
 
             None => {
                 panic!("ERROR: No ID provided.")
-            },
+            }
 
             _ => {
                 panic!("ERROR: Invalid ID.")
-            },
-
+            }
         }
     }
 }
-
-
-
-
-
 
 /// INSTRUCTIONS and implementions -----
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -440,14 +404,19 @@ impl IntoView for RecipeInstruction {
 }
 
 impl RecipeEntry for RecipeInstruction {
-
-    fn get_entry_type() -> RecipeEntryType { RecipeEntryType::Instructions }
+    fn get_entry_type() -> RecipeEntryType {
+        RecipeEntryType::Instructions
+    }
 
     fn get_css_class_name() -> String {
         "instructions".to_string()
     }
-    
-    fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>, _menu_info: Option<RecipeEntryMenuInfo<Self>>) -> View {
+
+    fn into_editable_view(
+        entry: ReadSignal<Self>,
+        set_entry: WriteSignal<Self>,
+        _menu_info: Option<RecipeEntryMenuInfo<Self>>,
+    ) -> View {
         view! {
             <RecipeEntryInput
                 class=              "instructions".to_owned()
@@ -458,21 +427,15 @@ impl RecipeEntry for RecipeInstruction {
         }
         .into_view()
     }
-    
+
     fn update_field_from_string_input(&mut self, _field_id: Option<usize>, input: String) {
         self.content = input;
     }
-    
+
     fn get_string_from_field(&self, _field_id: Option<usize>) -> String {
         self.content.clone()
     }
 }
-
-
-
-
-
-
 
 /// NOTES and implementions -----
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -492,14 +455,19 @@ impl IntoView for RecipeNote {
 }
 
 impl RecipeEntry for RecipeNote {
-
-    fn get_entry_type() -> RecipeEntryType { RecipeEntryType::Notes }
+    fn get_entry_type() -> RecipeEntryType {
+        RecipeEntryType::Notes
+    }
 
     fn get_css_class_name() -> String {
         "notes".to_string()
     }
-    
-    fn into_editable_view(entry: ReadSignal<Self>, set_entry: WriteSignal<Self>, menu_info: Option<RecipeEntryMenuInfo<Self>>) -> View {
+
+    fn into_editable_view(
+        entry: ReadSignal<Self>,
+        set_entry: WriteSignal<Self>,
+        menu_info: Option<RecipeEntryMenuInfo<Self>>,
+    ) -> View {
         view! {
             <RecipeEntryInput
                 class=              "notes note-content".to_owned()
@@ -508,18 +476,18 @@ impl RecipeEntry for RecipeNote {
                 set_entry_signal=   set_entry
                 entry_menu_info=    menu_info.expect("Expected to find menu_signal for note entry.")
             />
-        }.into_view()
+        }
+        .into_view()
     }
-    
+
     fn update_field_from_string_input(&mut self, _field_id: Option<usize>, input: String) {
         self.content = input;
     }
-    
+
     fn get_string_from_field(&self, _field_id: Option<usize>) -> String {
         self.content.clone()
     }
 }
-
 
 #[derive(Clone)]
 pub enum RecipeContentType {
@@ -539,8 +507,6 @@ pub enum RecipeActionDescriptor {
     Duplicate(u16),
 }
 
-
-
 /// TAGs and implementions -----
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RecipeTag {
@@ -549,7 +515,6 @@ pub struct RecipeTag {
 }
 
 impl IntoView for RecipeTag {
-
     fn into_view(self) -> View {
         view! {
             <p
@@ -563,14 +528,19 @@ impl IntoView for RecipeTag {
 }
 
 impl RecipeEntry for RecipeTag {
-
-    fn get_entry_type() -> RecipeEntryType { RecipeEntryType::Tag }
+    fn get_entry_type() -> RecipeEntryType {
+        RecipeEntryType::Tag
+    }
 
     fn get_css_class_name() -> String {
         "tags".to_string()
     }
 
-    fn into_editable_view(entry: ReadSignal<Self>, _set_entry: WriteSignal<Self>, menu_info: Option<RecipeEntryMenuInfo<Self>>) -> View {
+    fn into_editable_view(
+        entry: ReadSignal<Self>,
+        _set_entry: WriteSignal<Self>,
+        menu_info: Option<RecipeEntryMenuInfo<Self>>,
+    ) -> View {
         view! {
             <div class="editable-recipe tags">
                 { entry.get().name }
@@ -588,11 +558,11 @@ impl RecipeEntry for RecipeTag {
         }
         .into_view()
     }
-    
+
     fn update_field_from_string_input(&mut self, _field_id: Option<usize>, input: String) {
         self.name = input;
     }
-    
+
     fn get_string_from_field(&self, _field_id: Option<usize>) -> String {
         self.name.clone()
     }

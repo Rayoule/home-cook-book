@@ -1,25 +1,20 @@
-use leptos::{*, ev::MouseEvent, logging::*};
+use leptos::{ev::MouseEvent, logging::*, *};
 
-use crate::app::{
-    DeleteInfoSignal, PopupColor, RecipeActionDescriptor, RecipeServerAction
-};
-
+use crate::app::{DeleteInfoSignal, PopupColor, RecipeActionDescriptor, RecipeServerAction};
 
 #[component]
-pub fn ServerActionPendingPopup()  -> impl IntoView {
+pub fn ServerActionPendingPopup() -> impl IntoView {
+    let action_pending = use_context::<RecipeServerAction>()
+        .expect("To find RecipeServerAction in context.")
+        .0
+        .pending();
 
-    let action_pending =
-        use_context::<RecipeServerAction>()
-            .expect("To find RecipeServerAction in context.")
-            .0
-            .pending();
-    
     let popup_color = create_rw_signal(PopupColor::random());
-    create_effect( move |_| {
+    create_effect(move |_| {
         let _ = action_pending.track();
         popup_color.set(PopupColor::random());
     });
-    
+
     view! {
         <Show
             when=move || action_pending.get()
@@ -41,22 +36,18 @@ pub fn ServerActionPendingPopup()  -> impl IntoView {
     }
 }
 
-
 #[derive(Clone, Debug)]
 pub struct DeletePopupInfo(pub u16);
 
 #[component]
 pub fn DeleteRecipePopup() -> impl IntoView {
+    let recipe_action = use_context::<RecipeServerAction>()
+        .expect("To find RecipeServerAction in context.")
+        .0;
 
-    let recipe_action =
-        use_context::<RecipeServerAction>()
-            .expect("To find RecipeServerAction in context.")
-            .0;
-
-    let delete_info_signal =
-        use_context::<DeleteInfoSignal>()
-            .expect("To find DeleteInfoSignal in context.")
-            .0;
+    let delete_info_signal = use_context::<DeleteInfoSignal>()
+        .expect("To find DeleteInfoSignal in context.")
+        .0;
 
     let on_sure_click = move |ev: MouseEvent| {
         ev.stop_propagation();
@@ -78,7 +69,7 @@ pub fn DeleteRecipePopup() -> impl IntoView {
     };
 
     let popup_color = create_rw_signal(PopupColor::random());
-    create_effect( move |_| {
+    create_effect(move |_| {
         let _ = delete_info_signal.track();
         popup_color.set(PopupColor::random());
     });
