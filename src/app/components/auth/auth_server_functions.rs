@@ -164,7 +164,7 @@ pub async fn log_in_user(submission: &LoginAccount) -> Result<bool, ServerFnErro
 
     *shared_login_states_lock = login_states;
 
-    log!("User {:?} is now logged in.", submission.username);
+    log!("User {:?} is now logged in with ip {:?}", submission.username, cur_ip.to_string());
 
     Ok(true)
 }
