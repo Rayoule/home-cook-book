@@ -58,7 +58,7 @@ pub async fn fetch_request_ip() -> Result<String, ServerFnError> {
 
     match leptos_actix::extract::<ConnectionInfo>().await {
         Ok(connection_info) => {
-            if let Some(current_ip) = connection_info.peer_addr() {
+            if let Some(current_ip) = connection_info.realip_remote_addr() {
                 let fetched_ip = current_ip.to_string();
                 Ok(fetched_ip)
             } else {
