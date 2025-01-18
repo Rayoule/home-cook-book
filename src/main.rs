@@ -4,11 +4,14 @@ async fn main() -> std::io::Result<()> {
     // SETUP
     use actix_files::Files;
     use actix_web::*;
+    use leptos::prelude::*;
+    use leptos::config::get_configuration;
+    use leptos_meta::MetaTags;
+    use leptos_actix::{generate_route_list, LeptosRoutes};
+    use home_cook_book::app::*;
     use home_cook_book::app::components::auth::auth_utils::SharedLoginStates;
     use home_cook_book::app::components::recipe_server_functions::ssr::*;
-    use home_cook_book::app::*;
-    use leptos::*;
-    use leptos_actix::{generate_route_list, LeptosRoutes};
+    
 
     let mut conn = db().await.expect("couldn't connect to DB");
     sqlx::migrate!()
@@ -17,31 +20,50 @@ async fn main() -> std::io::Result<()> {
         .expect("could not run SQLx migrations");
 
     // Setting this to None means we'll be using cargo-leptos and its env vars.
-    let conf = get_configuration(None).await.unwrap();
+    let conf = get_configuration(None).unwrap();
 
     // For the raspberry platform, run on 0.0.0.0:3000
     //let addr = conf.leptos_options.site_addr;
     let addr = "0.0.0.0:3000".to_string();
-
-    // Generate the list of routes in your Leptos App
-    let routes = generate_route_list(App);
-    println!("listening on http://{}", &addr);
 
     // Initializing login states
     let states = SharedLoginStates::init_states();
 
     HttpServer::new(move || {
         let leptos_options = &conf.leptos_options;
-        let site_root = &leptos_options.site_root;
+        let site_root = leptos_options.site_root.clone().to_string();
+        // Generate the list of routes in your Leptos App
+        let routes = generate_route_list(App);
+
+        //println!("listening on http://{}", &addr.clone());
 
         App::new()
             // serve JS/WASM/CSS from `pkg`
             .service(Files::new("/pkg", format!("{site_root}/pkg")))
             // serve other assets from the `assets` directory
-            .service(Files::new("/assets", site_root))
+            .service(Files::new("/assets", &site_root))
             // serve the favicon from /favicon.ico
             .service(favicon)
-            .leptos_routes(leptos_options.to_owned(), routes.to_owned(), App)
+            .leptos_routes(routes, {
+                let leptos_options = leptos_options.clone();
+                move || {
+                    view! {
+                        <!DOCTYPE html>
+                        <html lang="en">
+                            <head>
+                                <meta charset="utf-8"/>
+                                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                                <AutoReload options=leptos_options.clone() />
+                                <HydrationScripts options=leptos_options.clone()/>
+                                <MetaTags/>
+                            </head>
+                            <body>
+                                <App/>
+                            </body>
+                        </html>
+                    }
+                }
+            })
             .app_data(web::Data::new(leptos_options.to_owned()))
             // add login states
             .app_data(web::Data::new(states.clone()))
@@ -55,7 +77,7 @@ async fn main() -> std::io::Result<()> {
 #[cfg(feature = "ssr")]
 #[actix_web::get("favicon.ico")]
 async fn favicon(
-    leptos_options: actix_web::web::Data<leptos::LeptosOptions>,
+    leptos_options: actix_web::web::Data<leptos::prelude::LeptosOptions>,
 ) -> actix_web::Result<actix_files::NamedFile> {
     let leptos_options = leptos_options.into_inner();
     let site_root = &leptos_options.site_root;
@@ -78,7 +100,7 @@ pub fn main() {
     // prefer using `cargo leptos serve` instead
     // to run: `trunk serve --open --features csr`
     use home_cook_book::app::*;
-    use leptos::*;
+    use leptos::prelude::*;
     use wasm_bindgen::prelude::wasm_bindgen;
 
     console_error_panic_hook::set_once();

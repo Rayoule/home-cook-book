@@ -4,10 +4,12 @@ use elements::icons_svg::{
     BackButtonSVG, BackupButtonSVG, CrossButtonSVG, EditButtonSVG, LogoutButtonSVG, PlusIconSVG,
     PrintButtonSVG, RemoveSVG, SortSVG, SortUpDownVG, UnrollButtonSVG,
 };
-use ev::MouseEvent;
+use leptos::ev::MouseEvent;
 use gloo_timers::callback::Timeout;
-use html::Input;
+use leptos::html::Input;
 use leptos::logging::error;
+
+
 
 type RecipeSignals = RwSignal<(
     RwSignal<String>,
@@ -39,7 +41,7 @@ pub fn RecipeMenu(
         .expect("Expected to find IsLoggedIn in context.")
         .0;
 
-    let menu_open = create_rw_signal(false);
+    let menu_open = RwSignal::new(false);
 
     if !editable {
         let recipe_id = recipe_id.expect("Expected recipe ID to be Some for non edit mode");
@@ -58,7 +60,7 @@ pub fn RecipeMenu(
                     class="recipe-menu-button back"
                     on:click=move |ev| {
                         ev.stop_propagation();
-                        let navigate = leptos_router::use_navigate();
+                        let navigate = leptos_router::hooks::use_navigate();
                         navigate("/", Default::default());
                     }
                 >
@@ -100,7 +102,7 @@ pub fn RecipeMenu(
                                 ev.stop_propagation();
                                 let recipe_id = recipe_id;
                                 let edit_path = "/recipe/".to_owned() + &recipe_id.to_string() + "/editable";
-                                let navigate = leptos_router::use_navigate();
+                                let navigate = leptos_router::hooks::use_navigate();
                                 navigate(&edit_path, Default::default());
                             }
                         >
@@ -153,7 +155,7 @@ pub fn RecipeMenu(
                 </Show>
     
             </div>
-        }.into_view()
+        }.into_any()
     } else {
         let recipe_action = use_context::<RecipeServerAction>()
             .expect("To find RecipeServerAction in context.")
@@ -190,7 +192,7 @@ pub fn RecipeMenu(
                         recipe_action.dispatch(RecipeActionDescriptor::Save(updated_recipe));
                         if let Some(id) = id {
                             let path = "/recipe/".to_string() + &id.to_string() + "/display";
-                            let navigate = leptos_router::use_navigate();
+                            let navigate = leptos_router::hooks::use_navigate();
                             navigate(&path, Default::default());
                         }
                     }
@@ -217,7 +219,7 @@ pub fn RecipeMenu(
                         class="recipe-menu-button back"
                         on:click=move |ev| {
                             ev.stop_propagation();
-                            let navigate = leptos_router::use_navigate();
+                            let navigate = leptos_router::hooks::use_navigate();
                             navigate("/", Default::default());
                         }
                     >
@@ -250,13 +252,13 @@ pub fn RecipeMenu(
                                 }
                             />
                         </div>
-                    }.into_view()
+                    }.into_any()
                 }}
 
             </div>
 
         }
-        .into_view()
+        .into_any()
     }
 }
 
@@ -273,15 +275,16 @@ pub enum RecipeEntryMenuMode {
     Delete,
 }
 #[component]
-pub fn EditableEntryList<T: RecipeEntry>(
+pub fn EditableEntryList<T: RecipeEntry + std::marker::Sync + std::marker::Send>(
     entry_type: RecipeEntryType,
     rw_entries: RwSignal<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>>,
     theme_color: RwSignal<ThemeColor>,
 ) -> impl IntoView {
     let (entry_type_title, style_class) = entry_type.title_and_class();
+    let style_class_clone = style_class.clone();
 
     let add_entry = move |_| {
-        let new_entry_signal = create_signal(T::default());
+        let new_entry_signal = signal(T::default());
         rw_entries.update(move |entries| {
             // Make sure to set new ID = pushed index
             let new_id: u16 = entries
@@ -313,7 +316,7 @@ pub fn EditableEntryList<T: RecipeEntry>(
                         .into_iter()
                         .map(|(id, (entry, set_entry))| {
 
-                            let recipe_entry_menu_signal = create_rw_signal(RecipeEntryMenuMode::Closed);
+                            let recipe_entry_menu_signal = RwSignal::new(RecipeEntryMenuMode::Closed);
 
                             let entry_menu_info = RecipeEntryMenuInfo {
                                 mode: recipe_entry_menu_signal,
@@ -323,7 +326,7 @@ pub fn EditableEntryList<T: RecipeEntry>(
 
                             view! {
                                 <li
-                                    class={style_class.clone()}
+                                    class={style_class_clone.clone()}
                                     id="entry-li"
                                 >
 
@@ -384,7 +387,7 @@ pub fn EditableEntryList<T: RecipeEntry>(
             </button>
         </div>
     }
-    .into_view()
+    .into_any()
 }
 
 #[component]
@@ -415,7 +418,7 @@ pub fn EditableInstructions(
 
         </div>
     }
-    .into_view()
+    .into_any()
 }
 
 #[component]
@@ -424,6 +427,7 @@ pub fn EditableTags(
     theme_color: RwSignal<ThemeColor>,
 ) -> impl IntoView {
     let (entry_type_title, style_class) = RecipeEntryType::Tag.title_and_class();
+    let style_class_clone = style_class.clone();
 
     let input_ref = NodeRef::<Input>::new();
 
@@ -436,7 +440,7 @@ pub fn EditableTags(
         rw_entries: RwSignal<Vec<(u16, (ReadSignal<RecipeTag>, WriteSignal<RecipeTag>))>>,
     ) -> bool {
         if new_tag.len() > 0 {
-            let new_entry_signal = create_signal(RecipeTag { name: new_tag });
+            let new_entry_signal = signal(RecipeTag { name: new_tag });
             rw_entries.update(move |entries| {
                 // Make sure to set new ID = pushed index
                 let new_id: u16 = entries
@@ -452,7 +456,7 @@ pub fn EditableTags(
         }
     }
 
-    let suggestions_open = create_rw_signal(false);
+    let suggestions_open = RwSignal::new(false);
 
     view! {
 
@@ -474,7 +478,7 @@ pub fn EditableTags(
                         .into_iter()
                         .map(|(id, (entry, set_entry))| {
 
-                            let recipe_entry_menu_signal = create_rw_signal(RecipeEntryMenuMode::Closed);
+                            let recipe_entry_menu_signal = RwSignal::new(RecipeEntryMenuMode::Closed);
 
                             let entry_menu_info = RecipeEntryMenuInfo {
                                 mode: recipe_entry_menu_signal,
@@ -484,7 +488,7 @@ pub fn EditableTags(
 
                             view! {
                                 <li
-                                    class={style_class.clone()}
+                                    class=style_class_clone.clone()
                                     id="entry-li"
                                 >
 
@@ -521,7 +525,7 @@ pub fn EditableTags(
                     class="tag-add-form"
                     on:submit=move |ev| {
                         ev.prevent_default();
-                        let input_node = input_ref().expect("Expected Input to be mounted");
+                        let input_node = input_ref.get().expect("Expected Input to be mounted");
                         let value = input_node.value();
                         if add_tag_to_recipe(value, rw_entries) {
                             input_node.set_value("");
@@ -596,7 +600,7 @@ pub fn EditableTags(
             </div>
         </div>
     }
-    .into_view()
+    .into_any()
 }
 
 #[component]
@@ -671,8 +675,10 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
     let is_input = is_input.unwrap_or_default();
 
     // setup for the SuggestionList
-    let is_input_focused = create_rw_signal(false);
-    let (get_input, set_input) = create_signal("".to_string());
+    let is_input_focused = RwSignal::new(false);
+    let (get_input, set_input) = signal("".to_string());
+
+    let get_entry_signal = get_entry_signal.clone();
 
     if is_input {
         view! {
@@ -694,7 +700,7 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
             >
 
                 <input
-                    class=          class
+                    class=          class.clone()
                     type=           "text"
                     id=             "text-input"
                     placeholder=    placeholder
@@ -718,11 +724,11 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
                 />
             </div>
         }
-        .into_view()
+        .into_any()
     } else {
         // Textarea
         #[allow(unused)]
-        let textarea = create_node_ref::<html::Textarea>();
+        let textarea = NodeRef::<leptos::html::Textarea>::new();
 
         // setup for textarea autosize
         #[cfg(feature = "hydrate")]
@@ -738,9 +744,9 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
             >
 
                 <textarea
-                    class=          class
+                    class=          class.clone()
                     node_ref=       textarea
-                    type=           "text"
+                    //type=           "text"
                     id=             "text-input"
                     placeholder=    placeholder
                     prop:value=          move || { get_entry_signal.get_untracked().get_string_from_field(field_id) }
@@ -765,13 +771,13 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
                             <RecipeEntryMenu
                                 entry_menu_info=entry_menu_info
                             />
-                        }.into_view()
-                    } else { ().into_view() }
+                        }.into_any()
+                    } else { ().into_any() }
                 }}
 
             </div>
         }
-        .into_view()
+        .into_any()
     }
 }
 
@@ -788,7 +794,7 @@ pub fn SettingsMenu() -> impl IntoView {
         .0;
 
     // Logout action
-    let logout_action = create_action(move |_: &()| async move {
+    let logout_action = Action::new(move |_: &()| async move {
         match server_logout().await {
             Ok(_) => {
                 is_logged_in.set(false);
@@ -840,7 +846,7 @@ pub fn SettingsMenu() -> impl IntoView {
                 // Backup
                 <Show
                     when=move || {
-                        let path = use_location().pathname.get();
+                        let path = leptos_router::hooks::use_location().pathname.get();
                         let is_backup =
                             path
                                 .split('/')
@@ -854,7 +860,7 @@ pub fn SettingsMenu() -> impl IntoView {
                         on:click=move |_| {
                             is_settings_menu_open.set(false);
 
-                            let navigate = leptos_router::use_navigate();
+                            let navigate = leptos_router::hooks::use_navigate();
                             navigate("/backup", Default::default());
                         }
                     >

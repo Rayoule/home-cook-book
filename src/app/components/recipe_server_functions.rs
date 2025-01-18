@@ -1,12 +1,13 @@
 use crate::app::components::recipe::*;
-use leptos::*;
+use leptos::prelude::*;
+
 
 #[cfg(feature = "ssr")]
 use leptos::logging::*;
 #[cfg(feature = "ssr")]
 pub mod ssr {
     pub use actix_web::HttpRequest;
-    pub use leptos::ServerFnError;
+    pub use leptos::prelude::ServerFnError;
     pub use sqlx::{Connection, SqliteConnection};
 
     pub async fn db() -> Result<SqliteConnection, ServerFnError> {

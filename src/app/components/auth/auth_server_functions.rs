@@ -1,5 +1,5 @@
 use crate::app::components::auth::auth_utils::*;
-use leptos::*;
+use leptos::prelude::*;
 
 #[cfg(feature = "ssr")]
 use {

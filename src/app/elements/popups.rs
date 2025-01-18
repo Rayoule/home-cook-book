@@ -1,4 +1,4 @@
-use leptos::{ev::MouseEvent, logging::*, *};
+use leptos::{ev::MouseEvent, logging::*, prelude::*};
 
 use crate::app::{DeleteInfoSignal, PopupColor, RecipeActionDescriptor, RecipeServerAction};
 
@@ -9,8 +9,8 @@ pub fn ServerActionPendingPopup() -> impl IntoView {
         .0
         .pending();
 
-    let popup_color = create_rw_signal(PopupColor::random());
-    create_effect(move |_| {
+    let popup_color = RwSignal::new(PopupColor::random());
+    Effect::new(move |_| {
         let _ = action_pending.track();
         popup_color.set(PopupColor::random());
     });
@@ -56,7 +56,7 @@ pub fn DeleteRecipePopup() -> impl IntoView {
             let recipe_id = info.0;
             delete_info_signal.set(None);
             recipe_action.dispatch(RecipeActionDescriptor::Delete(recipe_id));
-            let navigate = leptos_router::use_navigate();
+            let navigate = leptos_router::hooks::use_navigate();
             navigate("/", Default::default());
         } else {
             error!("ERROR: DeletePopupInfo is None!");
@@ -68,8 +68,8 @@ pub fn DeleteRecipePopup() -> impl IntoView {
         delete_info_signal.set(None);
     };
 
-    let popup_color = create_rw_signal(PopupColor::random());
-    create_effect(move |_| {
+    let popup_color = RwSignal::new(PopupColor::random());
+    Effect::new(move |_| {
         let _ = delete_info_signal.track();
         popup_color.set(PopupColor::random());
     });

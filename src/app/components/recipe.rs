@@ -1,7 +1,11 @@
-use leptos::{logging::*, *};
+use leptos::{logging::*, prelude::*};
+use leptos::prelude::IntoRender;
 use serde::{Deserialize, Serialize};
 
 use crate::app::elements::recipe_elements::*;
+use leptos::prelude::ElementChild;
+use leptos::prelude::ClassAttribute;
+use leptos::prelude::AnyView;
 
 /// Main Recipe Format
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -282,14 +286,14 @@ impl RecipeEntryType {
 }
 
 /// RecipeEntry Trait --------
-pub trait RecipeEntry: IntoView + std::fmt::Debug + Clone + Default + 'static {
+pub trait RecipeEntry: std::fmt::Debug + Clone + Default + std::marker::Sync + std::marker::Send + 'static {
     fn get_entry_type() -> RecipeEntryType;
     fn get_css_class_name() -> String;
     fn into_editable_view(
         entry: ReadSignal<Self>,
         set_entry: WriteSignal<Self>,
         menu_info: Option<RecipeEntryMenuInfo<Self>>,
-    ) -> View;
+    ) -> AnyView;
     fn update_field_from_string_input(&mut self, field_id: Option<usize>, input: String);
     fn get_string_from_field(&self, field_id: Option<usize>) -> String;
 }
@@ -301,13 +305,14 @@ pub struct RecipeIngredient {
     pub content: String,
 }
 
-impl IntoView for RecipeIngredient {
-    fn into_view(self) -> View {
+impl IntoRender for RecipeIngredient {
+    type Output = AnyView;
+    fn into_render(self) -> AnyView {
         view! {
             <p>{self.qty_unit}</p>
             <p>{self.content}</p>
         }
-        .into_view()
+        .into_any()
     }
 }
 
@@ -324,7 +329,7 @@ impl RecipeEntry for RecipeIngredient {
         entry: ReadSignal<Self>,
         set_entry: WriteSignal<Self>,
         menu_info: Option<RecipeEntryMenuInfo<Self>>,
-    ) -> View {
+    ) -> AnyView {
         view! {
             <div
                 class="editable-ingredients-wrapper"
@@ -352,7 +357,7 @@ impl RecipeEntry for RecipeIngredient {
                 />
             </div>
         }
-        .into_view()
+        .into_any()
     }
 
     fn update_field_from_string_input(&mut self, field_id: Option<usize>, input: String) {
@@ -394,12 +399,13 @@ pub struct RecipeInstruction {
     pub content: String,
 }
 
-impl IntoView for RecipeInstruction {
-    fn into_view(self) -> View {
+impl IntoRender for RecipeInstruction {
+    type Output = AnyView;
+    fn into_render(self) -> AnyView {
         view! {
             <p>{self.content}</p>
         }
-        .into_view()
+        .into_any()
     }
 }
 
@@ -416,7 +422,7 @@ impl RecipeEntry for RecipeInstruction {
         entry: ReadSignal<Self>,
         set_entry: WriteSignal<Self>,
         _menu_info: Option<RecipeEntryMenuInfo<Self>>,
-    ) -> View {
+    ) -> AnyView {
         view! {
             <RecipeEntryInput
                 class=              "instructions".to_owned()
@@ -425,7 +431,7 @@ impl RecipeEntry for RecipeInstruction {
                 set_entry_signal=   set_entry
             />
         }
-        .into_view()
+        .into_any()
     }
 
     fn update_field_from_string_input(&mut self, _field_id: Option<usize>, input: String) {
@@ -443,14 +449,15 @@ pub struct RecipeNote {
     pub content: String,
 }
 
-impl IntoView for RecipeNote {
-    fn into_view(self) -> View {
+impl IntoRender for RecipeNote {
+    type Output = AnyView;
+    fn into_render(self) -> AnyView {
         view! {
             <div class= "recipe-note-container" >
                 <h1 class="recipe-note" >{self.content}</h1>
             </div>
         }
-        .into_view()
+        .into_any()
     }
 }
 
@@ -467,7 +474,7 @@ impl RecipeEntry for RecipeNote {
         entry: ReadSignal<Self>,
         set_entry: WriteSignal<Self>,
         menu_info: Option<RecipeEntryMenuInfo<Self>>,
-    ) -> View {
+    ) -> AnyView {
         view! {
             <RecipeEntryInput
                 class=              "notes note-content".to_owned()
@@ -477,7 +484,7 @@ impl RecipeEntry for RecipeNote {
                 entry_menu_info=    menu_info.expect("Expected to find menu_signal for note entry.")
             />
         }
-        .into_view()
+        .into_any()
     }
 
     fn update_field_from_string_input(&mut self, _field_id: Option<usize>, input: String) {
@@ -511,19 +518,19 @@ pub enum RecipeActionDescriptor {
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RecipeTag {
     pub name: String,
-    //pub color: [u8; 3],
 }
 
-impl IntoView for RecipeTag {
-    fn into_view(self) -> View {
+impl IntoRender for RecipeTag {
+    type Output = AnyView;
+    fn into_render(self) -> AnyView {
         view! {
             <p
-                color= {"red"}
+                //color= {"red"}
             >
                 { self.name }
             </p>
         }
-        .into_view()
+        .into_any()
     }
 }
 
@@ -540,7 +547,7 @@ impl RecipeEntry for RecipeTag {
         entry: ReadSignal<Self>,
         _set_entry: WriteSignal<Self>,
         menu_info: Option<RecipeEntryMenuInfo<Self>>,
-    ) -> View {
+    ) -> AnyView {
         view! {
             <div class="editable-recipe tags">
                 { entry.get().name }
@@ -551,12 +558,12 @@ impl RecipeEntry for RecipeTag {
                             <RecipeEntryMenu
                                 entry_menu_info=entry_menu_info
                             />
-                        }.into_view()
-                    } else { ().into_view() }
+                        }.into_any()
+                    } else { ().into_any() }
                 }}
             </div>
         }
-        .into_view()
+        .into_any()
     }
 
     fn update_field_from_string_input(&mut self, _field_id: Option<usize>, input: String) {

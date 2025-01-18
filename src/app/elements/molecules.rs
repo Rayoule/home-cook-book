@@ -1,4 +1,6 @@
-use leptos::*;
+use leptos::prelude::*;
+use leptos::html;
+use leptos::ev;
 
 use crate::app::elements::icons_svg::SearchSVG;
 
@@ -8,12 +10,12 @@ pub fn RecipeSearchBar(
     search_input: RwSignal<Vec<String>>,
     request_search_clear: RwSignal<bool>,
 ) -> impl IntoView {
-    let input_element: NodeRef<html::Input> = create_node_ref();
+    let input_element: NodeRef<html::Input> = NodeRef::new();
 
-    create_effect(move |_| {
+    Effect::new(move |_| {
         if request_search_clear.get() {
             // Clear search
-            input_element().expect("Input to be mounted").set_value("");
+            input_element.get().expect("Input to be mounted").set_value("");
             search_input.set(vec![]);
             request_search_clear.set(false);
         }
@@ -23,7 +25,8 @@ pub fn RecipeSearchBar(
         ev.prevent_default();
 
         // here, we'll extract the value from the input
-        let value = input_element()
+        let value = input_element
+            .get()
             .expect("<input> should be mounted")
             .value()
             .to_lowercase();

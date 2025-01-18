@@ -2,8 +2,10 @@ use crate::app::{
     components::recipe_server_functions::*, elements::molecules::LoadingElem, ApplySaveFromJson,
     PopupColor,
 };
+use leptos::html::Textarea;
 use leptos::logging::*;
-use leptos::*;
+use leptos::prelude::*;
+use leptos::ev;
 use web_sys::SubmitEvent;
 extern crate chrono;
 
@@ -11,7 +13,7 @@ extern crate chrono;
 /// Renders the home page of your application.
 #[component]
 pub fn DownloadAll(has_been_backed_up: RwSignal<bool>) -> impl IntoView {
-    let all_recipes = create_resource(
+    let all_recipes = Resource::new(
         || (),
         |_| async move {
             match get_all_recipes_as_json_string().await {
@@ -41,17 +43,18 @@ pub fn DownloadAll(has_been_backed_up: RwSignal<bool>) -> impl IntoView {
                     view! {
                         <a
                             href =      {encoded_data}
-                            download =  &save_name
+                            //download =  &save_name
+                            download=   save_name
                             on:click =  move |_| { has_been_backed_up.set(true) }
                             class=      "download-backup-button"
                         >
                             "Download All"
                         </a>
-                    }.into_view()
+                    }.into_any()
                 } else {
                     view!{
                         <p>"Fetched empty data :("</p>
-                    }.into_view()
+                    }.into_any()
                 }
             }}
         </Suspense>
@@ -62,7 +65,7 @@ pub fn DownloadAll(has_been_backed_up: RwSignal<bool>) -> impl IntoView {
 #[component]
 pub fn UploadAll(has_been_backed_up: RwSignal<bool>) -> impl IntoView {
     // Keep track if the save has be made
-    let save_done = create_rw_signal(false);
+    let save_done = RwSignal::new(false);
 
     // Apply save action
     let upload_save_action = use_context::<ApplySaveFromJson>()
@@ -70,7 +73,7 @@ pub fn UploadAll(has_been_backed_up: RwSignal<bool>) -> impl IntoView {
         .0;
     let upload_pending = upload_save_action.pending();
     let save_action_value = upload_save_action.value();
-    create_effect(move |_| {
+    Effect::new(move |_| {
         if let Some(true) = save_action_value.get() {
             save_done.set(true);
         }
@@ -78,7 +81,7 @@ pub fn UploadAll(has_been_backed_up: RwSignal<bool>) -> impl IntoView {
 
     // Textarea
     // setup for textarea autosize
-    let textarea = create_node_ref::<html::Textarea>();
+    let textarea = NodeRef::<leptos::html::Textarea>::new();
 
     #[cfg(feature = "hydrate")]
     let leptos_use::UseTextareaAutosizeReturn {
@@ -89,14 +92,15 @@ pub fn UploadAll(has_been_backed_up: RwSignal<bool>) -> impl IntoView {
 
     let on_submit = move |ev: SubmitEvent| {
         ev.prevent_default();
-        let value = textarea()
+        let value = textarea
+            .get()
             .expect("Expected testarea to be mounted.")
             .value();
         upload_save_action.dispatch(value);
     };
 
-    let popup_color = create_rw_signal(PopupColor::random());
-    create_effect(move |_| {
+    let popup_color = RwSignal::new(PopupColor::random());
+    Effect::new(move |_| {
         let _ = upload_save_action.version().get();
         popup_color.set(PopupColor::random());
     });
@@ -133,7 +137,7 @@ pub fn UploadAll(has_been_backed_up: RwSignal<bool>) -> impl IntoView {
                             class=          "save-input"
                             node_ref=       textarea
                             id=             "text-input"
-                            type=           "text"
+                            //type=           "text"
                             placeholder=    "Paste JSON save here"
                             on:input=move |ev| {
                                 // resize box to fit text

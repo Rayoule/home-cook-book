@@ -4,7 +4,7 @@ use std::time::SystemTime;
 #[cfg(feature = "ssr")]
 use {
     leptos::logging::*,
-    leptos::ServerFnError,
+    leptos::prelude::ServerFnError,
     std::sync::{Arc, Mutex},
 };
 

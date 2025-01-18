@@ -1,13 +1,16 @@
-use components::recipe_sheets::PrintRecipeSheet;
+use leptos::ev::MouseEvent;
+use leptos::logging::*;
+use leptos::prelude::*;
+use leptos_router::params::{Params, ParamsError};
+use leptos::html;
+use leptos::ev;
+use leptos_router::hooks::use_params;
+use std::sync::Arc;
+use crate::app::components::recipe_sheets::PrintRecipeSheet;
 use elements::{
     icons_svg::{BackButtonSVG, LogoSVG, PlusIconSVG},
     recipe_elements::SettingsMenu,
 };
-use ev::MouseEvent;
-use leptos::logging::*;
-use leptos::*;
-use leptos_router::*;
-use std::sync::Arc;
 
 use crate::app::{
     components::{
@@ -33,7 +36,7 @@ pub fn LoginMenu() -> impl IntoView {
         .expect("Expected to find TryLoginAction in context.")
         .0;
     let try_login_action_value = try_login_action.value();
-    create_effect(move |_| {
+    Effect::new(move |_| {
         // If login is succesful, then close settings menu
         if try_login_action_value.get().is_some_and(|result| result) {
             is_settings_menu_open.set(false);
@@ -41,22 +44,24 @@ pub fn LoginMenu() -> impl IntoView {
     });
 
     // setup submission signals (username, password)
-    let submission = create_signal((String::new(), String::new()));
+    let submission = signal((String::new(), String::new()));
 
     // name input noderef
-    let name_input: NodeRef<html::Input> = create_node_ref();
+    let name_input: NodeRef<html::Input> = NodeRef::new();
     // password input noderef
-    let password_input: NodeRef<html::Input> = create_node_ref();
+    let password_input: NodeRef<html::Input> = NodeRef::new();
 
     // Handler for form submission
     let submit_event = move |event: ev::SubmitEvent| {
         event.prevent_default(); // Prevent the default form submission
 
         let login_account = LoginAccount {
-            username: name_input()
+            username: name_input
+                .get()
                 .expect("name <input> should be mounted")
                 .value(),
-            password: password_input()
+            password: password_input
+                .get()
                 .expect("password <input> should be mounted")
                 .value(),
         };
@@ -105,8 +110,8 @@ pub fn NewRecipePage() -> impl IntoView {
     let action_done_id = recipe_action.value();
 
     // store the submitted recipe name
-    let submitted_name = create_rw_signal("".to_owned());
-    create_effect(move |_| {
+    let submitted_name = RwSignal::new("".to_owned());
+    Effect::new(move |_| {
         if let Some(action_desc) = action_submitted.get() {
             match action_desc {
                 RecipeActionDescriptor::Add(recipe) => submitted_name.set(recipe.name),
@@ -117,14 +122,14 @@ pub fn NewRecipePage() -> impl IntoView {
 
     // Action that takes the recipe name to fetch the recipe ID
     // and then redirect to the edit page for this recipe
-    let fetch_id_and_redirect = create_action(|name: &String| {
+    let fetch_id_and_redirect = Action::new(|name: &String| {
         let name = name.clone();
         async move {
             match get_recipe_id_by_name(name.clone()).await {
                 Ok(id) => {
                     if let Some(id) = id {
                         let path = "/recipe/".to_string() + &id.to_string() + "/display";
-                        let navigate = leptos_router::use_navigate();
+                        let navigate = leptos_router::hooks::use_navigate();
                         navigate(&path, Default::default());
                     } else {
                         error!("Error fetching recipe by name, no ID fetched.")
@@ -139,7 +144,7 @@ pub fn NewRecipePage() -> impl IntoView {
 
     // Once the recipe submission is done (when 'action_done_id' is Some)
     // grab the name and launch the 'fetch_id_and_redirect' action
-    create_effect(move |_| {
+    Effect::new(move |_| {
         if let Some(r) = action_done_id.get() {
             match r {
                 Ok(_) => {
@@ -240,7 +245,7 @@ pub fn RecipePage() -> impl IntoView {
     // Page Name setup
     set_page_name("Recipes");
     // Update Page Name
-    create_effect(move |_| {
+    Effect::new(move |_| {
         set_page_name(match get_recipe_mode(true) {
             RecipePageMode::Display => "Display Recipe",
             RecipePageMode::Editable => "Edit Recipe",
@@ -262,7 +267,7 @@ pub fn RecipePage() -> impl IntoView {
         .0;
 
     // Recipe resource
-    let recipe_resource = create_resource(
+    let recipe_resource = Resource::new(
         move || (recipe_action.version().get(), get_recipe_id_param(true)),
         move |(_, recipe_id)| async move {
             match get_recipe_by_id(recipe_id).await {
@@ -294,7 +299,7 @@ pub fn RecipePage() -> impl IntoView {
                                     recipe=         recipe
                                     is_new_recipe=  false
                                 />
-                            }
+                            }.into_any()
                         },
                         RecipePageMode::Display => {
                             // Display Recipe
@@ -302,7 +307,7 @@ pub fn RecipePage() -> impl IntoView {
                                 <RecipeSheet
                                     recipe= recipe
                                 />
-                            }
+                            }.into_any()
                         },
                         RecipePageMode::Print => {
                             // Display Recipe
@@ -310,11 +315,11 @@ pub fn RecipePage() -> impl IntoView {
                                 <PrintRecipeSheet
                                     recipe= recipe
                                 />
-                            }
+                            }.into_any()
                         }
                     }
                 } else {
-                    {"Recipe empty."}.into_view()
+                    {"Recipe empty."}.into_any()
                 }
             }}
         </Transition>
@@ -459,9 +464,9 @@ pub fn AllRecipes() -> impl IntoView {
         .expect("To find SelectedTagsRwSignal in context.")
         .0;
 
-    let search_input = create_rw_signal::<Vec<String>>(vec![]);
+    let search_input = RwSignal::<Vec<String>>::new(vec![]);
 
-    let request_search_clear = create_rw_signal(false);
+    let request_search_clear = RwSignal::new(false);
 
     let all_recipes_light = use_context::<RecipesLightResource>()
         .expect("To find RecipesLightResource in context.")
@@ -516,7 +521,7 @@ pub fn AllRecipes() -> impl IntoView {
                                 class="new-recipe-button"
                                 on:click=move |ev: MouseEvent| {
                                     ev.stop_propagation();
-                                    let navigate = leptos_router::use_navigate();
+                                    let navigate = leptos_router::hooks::use_navigate();
                                     navigate("/new-recipe", Default::default());
                                 }
                             >
@@ -536,14 +541,15 @@ pub fn AllRecipes() -> impl IntoView {
 
                         <div class="recipe-list-container">
                             {move || {
-                                all_recipes_light.get()
+                                all_recipes_light
+                                    .get()
                                     .map(move |recipes| match recipes {
                                         Err(e) => {
-                                            view! { <pre class="error">"Server Error: " {e.to_string()}</pre>}.into_view()
+                                            view! { <pre class="error">"Server Error: " {e.to_string()}</pre>}.into_any()
                                         }
                                         Ok(mut recipes) => {
                                             if recipes.is_empty() {
-                                                view! { <p>"No recipes were found."</p> }.into_view()
+                                                view! { <p>"No recipes were found."</p> }.into_any()
                                             } else {
                                                 let sel_tags = selected_tags_signal.get();
                                                 let search_input_value = search_input.get();
@@ -567,7 +573,7 @@ pub fn AllRecipes() -> impl IntoView {
                                                                 "Cancel"
                                                             </button>
                                                         </div>
-                                                    }.into_view()
+                                                    }.into_any()
                                                 } else {
                                                     // else collect recipe views
                                                     recipes
@@ -582,11 +588,12 @@ pub fn AllRecipes() -> impl IntoView {
                                                             }
                                                         })
                                                         .collect_view()
+                                                        .into_any()
                                                 }
                                             }
                                         }
                                     })
-                                    .unwrap_or_default()
+                                    .unwrap_or_else(|| ().into_any())
                             }}
                         </div>
                     </div>
@@ -603,7 +610,7 @@ pub fn BackupPage() -> impl IntoView {
     // Ensure we are logged in
     check_login_wall();
 
-    let has_been_backed_up: RwSignal<bool> = create_rw_signal(false);
+    let has_been_backed_up: RwSignal<bool> = RwSignal::new(false);
 
     view! {
 
@@ -613,7 +620,7 @@ pub fn BackupPage() -> impl IntoView {
             class="recipe-menu-button back backup-page"
             on:click=move |ev| {
                 ev.stop_propagation();
-                let navigate = leptos_router::use_navigate();
+                let navigate = leptos_router::hooks::use_navigate();
                 navigate("/", Default::default());
             }
         >

@@ -1,6 +1,6 @@
 use crate::app::IsTagsMenuOpen;
 use leptos::ev::MouseEvent;
-use leptos::*;
+use leptos::prelude::*;
 
 #[component]
 pub fn TagList(
@@ -12,10 +12,10 @@ pub fn TagList(
     // Make the signal list from "tags"
     let tags_states_signals: RwSignal<
         Vec<(ReadSignal<(bool, String)>, WriteSignal<(bool, String)>)>,
-    > = create_rw_signal({
+    > = RwSignal::new({
         let already_selected_tags = selected_tags_signal.get_untracked();
         tags.iter()
-            .map(|t| create_signal((already_selected_tags.contains(t), t.clone())))
+            .map(|t| signal((already_selected_tags.contains(t), t.clone())))
             .collect()
     });
 
@@ -112,7 +112,7 @@ fn view_from_tag_state(
     tag_state: ReadSignal<(bool, String)>,
     set_tag_state: WriteSignal<(bool, String)>,
     selected_tags_signal: RwSignal<Vec<String>>,
-) -> View {
+) -> AnyView {
     view! {
         <li class="tag-list-entry">
             <button
@@ -141,5 +141,5 @@ fn view_from_tag_state(
             </button>
         </li>
     }
-    .into_view()
+    .into_any()
 }

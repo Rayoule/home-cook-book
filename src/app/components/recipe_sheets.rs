@@ -3,10 +3,10 @@ use crate::app::{
     RecipeEntryType, RecipeIngredient, RecipeInstruction, RecipeLight, RecipeNote,
     RecipeServerAction, RecipeTag, ThemeColor,
 };
-use ev::MouseEvent;
-use html::Div;
-use leptos::{logging::*, *};
-use leptos_use::on_click_outside;
+use leptos::ev::MouseEvent;
+use leptos::{logging::*, prelude::*};
+//use leptos_use::on_click_outside;
+//use leptos::html::Div;
 
 #[component]
 pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> impl IntoView {
@@ -21,26 +21,26 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
         .0;
 
     // Setup context with the recipe light getter
-    let (recipe_id_getter, _) = create_signal(recipe_light.id.clone());
+    let (recipe_id_getter, _) = signal(recipe_light.id.clone());
 
     let (recipe_id, recipe_name, recipe_tags) =
         (recipe_light.id, recipe_light.name, recipe_light.tags);
 
     let on_click = move |_| {
         let path = "/recipe/".to_string() + &recipe_id.to_string() + "/display";
-        let navigate = leptos_router::use_navigate();
+        let navigate = leptos_router::hooks::use_navigate();
         navigate(&path, Default::default());
     };
 
-    let is_menu_open = create_rw_signal(false);
+    let is_menu_open = RwSignal::new(false);
     let on_menu_click = move |ev: MouseEvent| {
         ev.stop_propagation();
         is_menu_open.update(|b| *b = !*b);
     };
 
     // Click Outside to close menu
-    let card_ref: NodeRef<Div> = create_node_ref();
-    let _ = on_click_outside(card_ref, move |_| is_menu_open.set(false));
+    //let card_ref: NodeRef<Div> = NodeRef::new();
+    //on_click_outside(card_ref, move |_| is_menu_open.set(false));
 
     let menu_fallback = {
         move || {
@@ -70,7 +70,7 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
             }
         }
     };
-    let menu_fallback = store_value(menu_fallback);
+    let menu_fallback = StoredValue::new(menu_fallback);
 
     let recipe_card_style = move || {
         if is_menu_open.get() {
@@ -91,7 +91,7 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
 
     view! {
         <div
-            node_ref=card_ref
+            //node_ref=card_ref
             class="recipe-card"
             class:into-menu=is_menu_open
             style=recipe_card_style
@@ -107,11 +107,12 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
 
             <Show
                 when=is_menu_open
-                fallback=menu_fallback
+                fallback= move || menu_fallback.read_value()()
             >
 
                 <Show
                     when=is_logged_in
+                    //fallback= move || ().into_any()
                 >
                     <span
                         class= "sub-menu-option"
@@ -122,7 +123,7 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
                                 "/recipe/".to_owned()
                                 + &recipe_id_getter.get_untracked().to_string()
                                 + "/editable";
-                            let navigate = leptos_router::use_navigate();
+                            let navigate = leptos_router::hooks::use_navigate();
                             navigate(&path, Default::default());
                         }
                     >{"Edit"}</span>
@@ -204,7 +205,7 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
                 {recipe.instructions.content}
             </li>
         }
-        .into_view()
+        .into_any()
     };
 
     let note_list = {
@@ -225,7 +226,7 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
             .collect_view()
     };
 
-    let theme_color = create_rw_signal(ThemeColor::random());
+    let theme_color = RwSignal::new(ThemeColor::random());
 
     view! {
         <RecipeMenu
@@ -305,7 +306,7 @@ pub fn PrintRecipeSheet(recipe: Recipe) -> impl IntoView {
                 { recipe.instructions.content }
             </li>
         }
-        .into_view()
+        .into_any()
     };
 
     let note_list = {
@@ -324,7 +325,7 @@ pub fn PrintRecipeSheet(recipe: Recipe) -> impl IntoView {
     };
 
     // Triggers Print Dialog
-    create_effect(|_| {
+    Effect::new(|_| {
         let _ = web_sys::window()
             .expect("window should be available")
             .print();
@@ -398,17 +399,17 @@ pub fn EditableRecipeSheet(
     // Needed for move into closure view
     // for each category, make a Signal<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>>
     // 0.tags, 1.ingredients, 2.instructions, 3.notes
-    let recipe_signals: RecipeSignals = create_rw_signal((
-        create_rw_signal(recipe.name),
-        create_rw_signal(entries_into_signals(recipe.tags)),
-        create_rw_signal(entries_into_signals(recipe.ingredients)),
-        create_signal(recipe.instructions),
-        create_rw_signal(entries_into_signals(recipe.notes)),
+    let recipe_signals: RecipeSignals = RwSignal::new((
+        RwSignal::new(recipe.name),
+        RwSignal::new(entries_into_signals(recipe.tags)),
+        RwSignal::new(entries_into_signals(recipe.ingredients)),
+        signal(recipe.instructions),
+        RwSignal::new(entries_into_signals(recipe.notes)),
     ));
     let (_, tags_signal, ingredients_signal, instructions_signal, notes_signal) =
         recipe_signals.get_untracked();
 
-    let theme_color = create_rw_signal(ThemeColor::random());
+    let theme_color = RwSignal::new(ThemeColor::random());
 
     view! {
 
@@ -467,7 +468,7 @@ fn entries_into_signals<T: RecipeEntry>(
             .into_iter()
             .zip(0..length)
             .map(|(entry, id)| {
-                let new_signal = create_signal(entry);
+                let new_signal = signal(entry);
                 (id, new_signal)
             })
             .collect()
@@ -482,7 +483,7 @@ pub fn fetch_entries_from_signals<T: RecipeEntry>(
     if signals.len() > 0 {
         let entries = signals
             .iter()
-            .map(|(_, (get_signal, _))| get_signal.get_untracked())
+            .map(|(_, (get_signal, _))| get_signal.clone().get_untracked())
             .collect();
         Some(entries)
     } else {

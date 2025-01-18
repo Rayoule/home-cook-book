@@ -1,4 +1,4 @@
-use leptos::*;
+use leptos::prelude::*;
 
 /// Main Page Logo
 #[component]
@@ -138,7 +138,7 @@ pub fn SortUpDownVG(is_up: bool) -> impl IntoView {
 
     view! {
         <svg
-            class=&class
+            class=class
             viewBox="0 0 24 24"
             fill="none"
         >
@@ -209,7 +209,7 @@ pub fn PrintButtonSVG(color: String) -> impl IntoView {
     view! {
         <svg
             class="print-icon-svg recipe-menu-icon print"
-            fill=&color
+            fill=color
             viewBox="0 0 612.00 612.00"
             //stroke="#000000"
         >
@@ -226,7 +226,7 @@ pub fn EditButtonSVG(color: String) -> impl IntoView {
         <svg
             class="edit-icon-svg recipe-menu-icon edit"
             viewBox="0 0 24 24"
-            fill=&color
+            fill=color
         >
             <path
                 fill-rule="evenodd"
@@ -253,8 +253,8 @@ pub fn CrossButtonSVG(color: String, #[prop(optional)] add_class: String) -> imp
         <svg
             class="recipe-menu-icon delete ".to_string() + &add_class
             viewBox="0 -0.5 25 25"
-            stroke=&color
-            fill=&color
+            stroke=color.clone()
+            fill=color
         >
             <path
                 d="M6.96967 16.4697C6.67678 16.7626 6.67678 17.2374 6.96967 17.5303C7.26256 17.8232 7.73744
