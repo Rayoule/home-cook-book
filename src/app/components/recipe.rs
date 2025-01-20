@@ -330,6 +330,7 @@ impl RecipeEntry for RecipeIngredient {
         set_entry: WriteSignal<Self>,
         menu_info: Option<RecipeEntryMenuInfo<Self>>,
     ) -> AnyView {
+
         view! {
             <div
                 class="editable-ingredients-wrapper"

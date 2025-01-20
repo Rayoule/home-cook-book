@@ -1,18 +1,20 @@
+use crate::app::LoginCheckResource;
 use crate::app::{
-    elements::recipe_elements::*, IsLoggedIn, Recipe, RecipeActionDescriptor, RecipeEntry,
+    elements::recipe_elements::*, Recipe, RecipeActionDescriptor, RecipeEntry,
     RecipeEntryType, RecipeIngredient, RecipeInstruction, RecipeLight, RecipeNote,
     RecipeServerAction, RecipeTag, ThemeColor,
 };
 use leptos::ev::MouseEvent;
+use leptos::html::Div;
 use leptos::{logging::*, prelude::*};
-//use leptos_use::on_click_outside;
-//use leptos::html::Div;
+use leptos_use::on_click_outside;
 
 #[component]
 pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> impl IntoView {
+    
     // Is logged in ?
-    let is_logged_in = use_context::<IsLoggedIn>()
-        .expect("Expected to find IsLoggedIn in context")
+    let check_login_resource = use_context::<LoginCheckResource>()
+        .expect("Expected to find LoginCheckAction in context")
         .0;
 
     // Recipe Action
@@ -38,9 +40,11 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
         is_menu_open.update(|b| *b = !*b);
     };
 
-    // Click Outside to close menu
-    //let card_ref: NodeRef<Div> = NodeRef::new();
-    //on_click_outside(card_ref, move |_| is_menu_open.set(false));
+    // Setup for on_click_outside
+    let card_ref: NodeRef<Div> = NodeRef::new();
+    Effect::new(move || {
+        let _ = on_click_outside(card_ref, move |_| is_menu_open.set(false));
+    });
 
     let menu_fallback = {
         move || {
@@ -90,8 +94,9 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
     };
 
     view! {
+
         <div
-            //node_ref=card_ref
+            node_ref=card_ref
             class="recipe-card"
             class:into-menu=is_menu_open
             style=recipe_card_style
@@ -110,36 +115,43 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
                 fallback= move || menu_fallback.read_value()()
             >
 
-                <Show
-                    when=is_logged_in
-                    //fallback= move || ().into_any()
+                <Transition
+                    fallback=move || { view! {
+                        <p class="popin-warning" >
+                            "Wait for Login Check..."
+                        </p>
+                    }}
                 >
-                    <span
-                        class= "sub-menu-option"
-                        style=custom_color_style.as_visible_color()
-                        on:click=move |ev| {
-                            ev.stop_propagation();
-                            let path =
-                                "/recipe/".to_owned()
-                                + &recipe_id_getter.get_untracked().to_string()
-                                + "/editable";
-                            let navigate = leptos_router::hooks::use_navigate();
-                            navigate(&path, Default::default());
-                        }
-                    >{"Edit"}</span>
+                    <Show
+                        when=move || { check_login_resource.get() == Some(true) }
+                    >
+                        <span
+                            class= "sub-menu-option"
+                            style=custom_color_style.as_visible_color()
+                            on:click=move |ev| {
+                                ev.stop_propagation();
+                                let path =
+                                    "/recipe/".to_owned()
+                                    + &recipe_id_getter.get_untracked().to_string()
+                                    + "/editable";
+                                let navigate = leptos_router::hooks::use_navigate();
+                                navigate(&path, Default::default());
+                            }
+                        >{"Edit"}</span>
 
 
-                    <span
-                        class= "sub-menu-option"
-                        style=custom_color_style.as_visible_color()
-                        on:click=move |ev| {
-                            ev.stop_propagation();
-                            recipe_action.dispatch(RecipeActionDescriptor::Duplicate(recipe_id_getter.get()));
-                        }
-                    >{"Duplicate"}</span>
+                        <span
+                            class= "sub-menu-option"
+                            style=custom_color_style.as_visible_color()
+                            on:click=move |ev| {
+                                ev.stop_propagation();
+                                recipe_action.dispatch(RecipeActionDescriptor::Duplicate(recipe_id_getter.get()));
+                            }
+                        >{"Duplicate"}</span>
 
 
-                </Show>
+                    </Show>
+                </Transition>
 
                 <span
                     class= "sub-menu-option"

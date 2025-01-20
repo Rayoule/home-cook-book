@@ -6,7 +6,7 @@ use elements::icons_svg::{
 };
 use leptos::ev::MouseEvent;
 use gloo_timers::callback::Timeout;
-use leptos::html::Input;
+use leptos::html::{Div, Input, Li};
 use leptos::logging::error;
 
 
@@ -36,9 +36,10 @@ pub fn RecipeMenu(
     #[prop(optional)] is_new_recipe: Option<bool>,
     #[prop(optional)] recipe_signals: Option<RecipeSignals>,
 ) -> impl IntoView {
+
     // Is logged in
-    let is_logged_in = use_context::<IsLoggedIn>()
-        .expect("Expected to find IsLoggedIn in context.")
+    let check_login_resource = use_context::<LoginCheckResource>()
+        .expect("Expected to find LoginCheckAction in context")
         .0;
 
     let menu_open = RwSignal::new(false);
@@ -47,114 +48,122 @@ pub fn RecipeMenu(
         let recipe_id = recipe_id.expect("Expected recipe ID to be Some for non edit mode");
 
         view! {
-    
-            <div
-                class="recipe-menu"
-                class:is-open=menu_open
-                class:not-logged-in=move || { !is_logged_in.get() }
-                style=move || { color.get().as_bg_main_color() }
+            
+            <Transition
+                fallback=move || { view! {
+                    <p class="popin-warning" >
+                        "Wait for Login Check..."
+                    </p>
+                }}
             >
+                <div
+                    class="recipe-menu"
+                    class:is-open=menu_open
+                    class:not-logged-in=move || { check_login_resource.get() == Some(false) }
+                    style=move || { color.get().as_bg_main_color() }
+                >
 
-                <button
-                    style=move || { color.get().as_alt_color() }
-                    class="recipe-menu-button back"
-                    on:click=move |ev| {
-                        ev.stop_propagation();
-                        let navigate = leptos_router::hooks::use_navigate();
-                        navigate("/", Default::default());
-                    }
-                >
-                    <BackButtonSVG/>
-                </button>
-
-                <button
-                    style=move || { color.get().as_alt_color() }
-                    class="recipe-menu-button menu"
-                    on:click=move |ev| {
-                        ev.stop_propagation();
-                        menu_open.update(|b| *b = !*b);
-                    }
-                >
-                </button>
-
-                <Show
-                    when=move || { !menu_open.get() }
-                >
-                    <h2
-                        style=move || { color.get().as_alt_color() }
-                        class="display-recipe-name"
-                        class:menu-open=menu_open
-                    >
-                        { recipe_static_name.clone() }
-                    </h2>
-                </Show>
-    
-                <Show
-                    when=menu_open
-                >
-                    <Show
-                        when=is_logged_in
-                    >
-                        <button
-                            style=move || { color.get().as_alt_color() }
-                            class="recipe-menu-option"
-                            on:click=move |ev: MouseEvent| {
-                                ev.stop_propagation();
-                                let recipe_id = recipe_id;
-                                let edit_path = "/recipe/".to_owned() + &recipe_id.to_string() + "/editable";
-                                let navigate = leptos_router::hooks::use_navigate();
-                                navigate(&edit_path, Default::default());
-                            }
-                        >
-                            <EditButtonSVG color=color.get().alt_color() />
-                            <p class="recipe-menu-text" >"Edit"</p>
-                        </button>
-                    </Show>
-    
                     <button
                         style=move || { color.get().as_alt_color() }
-                        class="recipe-menu-option"
+                        class="recipe-menu-button back"
                         on:click=move |ev| {
                             ev.stop_propagation();
-                            let recipe_id = recipe_id;
-                            let print_path = "/recipe/".to_owned() + &recipe_id.to_string() + "/print";
-                            let window = web_sys::window().expect("window should be available");
-                            window
-                                .open_with_url_and_target(&print_path, "_blank")
-                                .unwrap_or_else(|_| {
-                                    error!("No Window found.");
-                                    None
-                                });
+                            let navigate = leptos_router::hooks::use_navigate();
+                            navigate("/", Default::default());
                         }
                     >
-                        <PrintButtonSVG color=color.get().alt_color() />
-                        <p class="recipe-menu-text" >"Print"</p>
+                        <BackButtonSVG/>
                     </button>
-    
-                    <Show
-                        when=is_logged_in
+
+                    <button
+                        style=move || { color.get().as_alt_color() }
+                        class="recipe-menu-button menu"
+                        on:click=move |ev| {
+                            ev.stop_propagation();
+                            menu_open.update(|b| *b = !*b);
+                        }
                     >
+                    </button>
+
+                    <Show
+                        when=move || { !menu_open.get() }
+                    >
+                        <h2
+                            style=move || { color.get().as_alt_color() }
+                            class="display-recipe-name"
+                            class:menu-open=menu_open
+                        >
+                            { recipe_static_name.clone() }
+                        </h2>
+                    </Show>
+        
+                    <Show
+                        when=menu_open
+                    >
+                        <Show
+                            when=move || { check_login_resource.get() == Some(true) }
+                        >
+                            <button
+                                style=move || { color.get().as_alt_color() }
+                                class="recipe-menu-option"
+                                on:click=move |ev: MouseEvent| {
+                                    ev.stop_propagation();
+                                    let recipe_id = recipe_id;
+                                    let edit_path = "/recipe/".to_owned() + &recipe_id.to_string() + "/editable";
+                                    let navigate = leptos_router::hooks::use_navigate();
+                                    navigate(&edit_path, Default::default());
+                                }
+                            >
+                                <EditButtonSVG color=color.get().alt_color() />
+                                <p class="recipe-menu-text" >"Edit"</p>
+                            </button>
+                        </Show>
+        
                         <button
                             style=move || { color.get().as_alt_color() }
                             class="recipe-menu-option"
-                            on:click=move |ev: MouseEvent| {
+                            on:click=move |ev| {
                                 ev.stop_propagation();
                                 let recipe_id = recipe_id;
-                                let delete_info_signal =
-                                    use_context::<DeleteInfoSignal>()
-                                        .expect("To find DeleteInfoSignal in context.")
-                                        .0;
-                                delete_info_signal.set( Some( DeletePopupInfo(recipe_id)) );
+                                let print_path = "/recipe/".to_owned() + &recipe_id.to_string() + "/print";
+                                let window = web_sys::window().expect("window should be available");
+                                window
+                                    .open_with_url_and_target(&print_path, "_blank")
+                                    .unwrap_or_else(|_| {
+                                        error!("No Window found.");
+                                        None
+                                    });
                             }
                         >
-                            <CrossButtonSVG color=color.get().alt_color() />
-                            <p class="recipe-menu-text" >"Delete"</p>
+                            <PrintButtonSVG color=color.get().alt_color() />
+                            <p class="recipe-menu-text" >"Print"</p>
                         </button>
+        
+                        <Show
+                            when=move || { check_login_resource.get() == Some(true) }
+                        >
+                            <button
+                                style=move || { color.get().as_alt_color() }
+                                class="recipe-menu-option"
+                                on:click=move |ev: MouseEvent| {
+                                    ev.stop_propagation();
+                                    let recipe_id = recipe_id;
+                                    let delete_info_signal =
+                                        use_context::<DeleteInfoSignal>()
+                                            .expect("To find DeleteInfoSignal in context.")
+                                            .0;
+                                    delete_info_signal.set( Some( DeletePopupInfo(recipe_id)) );
+                                }
+                            >
+                                <CrossButtonSVG color=color.get().alt_color() />
+                                <p class="recipe-menu-text" >"Delete"</p>
+                            </button>
+                        </Show>
+        
                     </Show>
-    
-                </Show>
-    
-            </div>
+        
+                </div>
+            </Transition>
         }.into_any()
     } else {
         let recipe_action = use_context::<RecipeServerAction>()
@@ -205,57 +214,67 @@ pub fn RecipeMenu(
 
         view! {
 
-            <div
-                class="recipe-menu"
-                class:is-open=menu_open
-                class:not-logged-in=move || { !is_logged_in.get() }
-                style=move || { color.get().as_bg_main_color() }
+            <Transition
+                fallback=move || { view! {
+                    <p class="popin-warning" >
+                        "Wait for Login Check..."
+                    </p>
+                }}
             >
 
-                <Show
-                    when=move || { !save_pending.get() }
+                <div
+                    class="recipe-menu"
+                    class:is-open=menu_open
+                    class:not-logged-in=move || { check_login_resource.get() == Some(false) }
+                    style=move || { color.get().as_bg_main_color() }
                 >
-                    <button
-                        class="recipe-menu-button back"
-                        on:click=move |ev| {
-                            ev.stop_propagation();
-                            let navigate = leptos_router::hooks::use_navigate();
-                            navigate("/", Default::default());
-                        }
+
+                    <Show
+                        when=move || { !save_pending.get() }
                     >
-                        <BackButtonSVG/>
-                    </button>
+                        <button
+                            class="recipe-menu-button back"
+                            on:click=move |ev| {
+                                ev.stop_propagation();
+                                let navigate = leptos_router::hooks::use_navigate();
+                                navigate("/", Default::default());
+                            }
+                        >
+                            <BackButtonSVG/>
+                        </button>
 
-                    <button
-                        class="recipe-menu-button save"
-                        on:click=on_save_click
-                    >
-                        "save"
-                    </button>
-                </Show>
+                        <button
+                            class="recipe-menu-button save"
+                            on:click=on_save_click
+                        >
+                            "save"
+                        </button>
+                    </Show>
 
-                { move || {
-                    view! {
-                        <div class="recipe-name-input-container" >
-                            <input
-                                class="text-input recipe-name"
-                                class:menu-open=menu_open
-                                type="text"
-                                id="text-input"
-                                placeholder="Recipe Name..."
-                                maxlength="45"
-                                // get_untracked() because this is only initial value
-                                value=name_signal.get_untracked()
-                                // update name_signal on input
-                                on:input=move |ev| {
-                                    name_signal.set(event_target_value(&ev))
-                                }
-                            />
-                        </div>
-                    }.into_any()
-                }}
+                    { move || {
+                        view! {
+                            <div class="recipe-name-input-container" >
+                                <input
+                                    class="text-input recipe-name"
+                                    class:menu-open=menu_open
+                                    type="text"
+                                    id="text-input"
+                                    placeholder="Recipe Name..."
+                                    maxlength="45"
+                                    // get_untracked() because this is only initial value
+                                    value=name_signal.get_untracked()
+                                    // update name_signal on input
+                                    on:input=move |ev| {
+                                        name_signal.set(event_target_value(&ev))
+                                    }
+                                />
+                            </div>
+                        }.into_any()
+                    }}
 
-            </div>
+                </div>
+
+            </Transition>
 
         }
         .into_any()
@@ -324,10 +343,18 @@ pub fn EditableEntryList<T: RecipeEntry + std::marker::Sync + std::marker::Send>
                                 current_id: id
                             };
 
+                            // Setup for on_click_outside
+                            use leptos_use::on_click_outside;
+                            let card_ref: NodeRef<Li> = NodeRef::new();
+                            Effect::new( move |_| {
+                                let _ = on_click_outside(card_ref, move |_| recipe_entry_menu_signal.set(RecipeEntryMenuMode::Closed));
+                            });
+
                             view! {
                                 <li
                                     class={style_class_clone.clone()}
                                     id="entry-li"
+                                    node_ref=card_ref
                                 >
 
                                     <div
@@ -338,6 +365,7 @@ pub fn EditableEntryList<T: RecipeEntry + std::marker::Sync + std::marker::Send>
                                             class="sort-up sorting-button"
                                             on:click=move |ev| {
                                                 ev.stop_propagation();
+                                                log!("CLICK");
                                                 recipe_entry_menu_signal.update(|mode| {
                                                     *mode = match *mode {
                                                         RecipeEntryMenuMode::Closed => RecipeEntryMenuMode::Sort,
@@ -486,32 +514,34 @@ pub fn EditableTags(
                                 current_id: id
                             };
 
+                            // Setup for on_click_outside
+                            use leptos_use::on_click_outside;
+                            let card_ref: NodeRef<Li> = NodeRef::new();
+                            Effect::new( move |_| {
+                                let _ = on_click_outside(card_ref, move |_| recipe_entry_menu_signal.set(RecipeEntryMenuMode::Closed));
+                            });
+
                             view! {
                                 <li
                                     class=style_class_clone.clone()
                                     id="entry-li"
+                                    node_ref=card_ref
+                                    on:click=move |ev| {
+                                        ev.stop_propagation();
+                                        recipe_entry_menu_signal.update(|mode| {
+                                            *mode = match mode {
+                                                RecipeEntryMenuMode::Closed => RecipeEntryMenuMode::Delete,
+                                                RecipeEntryMenuMode::Sort   => RecipeEntryMenuMode::Delete,
+                                                RecipeEntryMenuMode::Delete => RecipeEntryMenuMode::Closed,
+                                            };
+                                        });
+                                    }
                                 >
 
                                     // Entry
                                     {move || {
                                         RecipeTag::into_editable_view(entry, set_entry, Some(entry_menu_info.clone()))
                                     }}
-
-                                    <button
-                                        class="remove-button ".to_string() + &RecipeTag::get_css_class_name()
-                                        on:click=move |ev| {
-                                            ev.stop_propagation();
-                                            recipe_entry_menu_signal.update(|mode| {
-                                                *mode = match mode {
-                                                    RecipeEntryMenuMode::Closed => RecipeEntryMenuMode::Delete,
-                                                    RecipeEntryMenuMode::Sort   => RecipeEntryMenuMode::Delete,
-                                                    RecipeEntryMenuMode::Delete => RecipeEntryMenuMode::Closed,
-                                                };
-                                            });
-                                        }
-                                    >
-                                        <RemoveSVG/>
-                                    </button>
 
                                 </li>
                             }
@@ -789,19 +819,14 @@ pub fn SettingsMenu() -> impl IntoView {
         .0;
 
     // Is logged in
-    let is_logged_in = use_context::<IsLoggedIn>()
-        .expect("Expected to find IsLoggedIn in context.")
+    let check_login_resource = use_context::<LoginCheckResource>()
+        .expect("Expected to find LoginCheckAction in context")
         .0;
 
-    // Logout action
-    let logout_action = Action::new(move |_: &()| async move {
-        match server_logout().await {
-            Ok(_) => {
-                is_logged_in.set(false);
-            }
-            Err(e) => error!("Error: {:?}", e.to_string()),
-        }
-    });
+    // Get logout action
+    let logout_action = use_context::<LogoutAction>()
+        .expect("Expected to find LogoutAction in context")
+        .0;
 
     view! {
         <button
@@ -829,63 +854,74 @@ pub fn SettingsMenu() -> impl IntoView {
             }
         >
 
-            <Show
-                when=is_logged_in
-                fallback=move || view! {
-                    <div
-                        class="login-container"
-                        on:click=move |ev| {
-                            ev.stop_propagation();
-                        }
-                    >
-                        <LoginMenu/>
-                    </div>
-                } // Login
+            <Transition
+                fallback=move || { view! {
+                    <p class="popin-warning" >
+                        "Wait for Login Check..."
+                    </p>
+                }}
             >
 
-                // Backup
                 <Show
-                    when=move || {
-                        let path = leptos_router::hooks::use_location().pathname.get();
-                        let is_backup =
-                            path
-                                .split('/')
-                                .last()
-                                .is_some_and(|last_word| last_word == "backup");
-                        !is_backup
+                    when=move || check_login_resource.get() == Some(true)
+                    fallback=move || view! {
+                        <div
+                            class="login-container"
+                            on:click=move |ev| {
+                                ev.stop_propagation();
+                            }
+                        >
+                            <LoginMenu/>
+                        </div>
                     }
                 >
-                    <button
-                        class="settings-button backup"
-                        on:click=move |_| {
-                            is_settings_menu_open.set(false);
 
-                            let navigate = leptos_router::hooks::use_navigate();
-                            navigate("/backup", Default::default());
+                    // Backup
+                    <Show
+                        when=move || {
+                            /*let path = leptos_router::hooks::use_location().pathname.get();
+                            let is_backup =
+                                path
+                                    .split('/')
+                                    .last()
+                                    .is_some_and(|last_word| last_word == "backup");
+                            !is_backup*/
+                            true
                         }
                     >
-                        <BackupButtonSVG/>
-                        <p class="settings-button-text backup" >
-                            "Backup"
+                        <button
+                            class="settings-button backup"
+                            on:click=move |_| {
+                                is_settings_menu_open.set(false);
+
+                                let navigate = leptos_router::hooks::use_navigate();
+                                navigate("/backup", Default::default());
+                            }
+                        >
+                            <BackupButtonSVG/>
+                            <p class="settings-button-text backup" >
+                                "Backup"
+                            </p>
+                        </button>
+                    </Show>
+
+                    // Logout
+                    <button
+                        class="settings-button logout"
+                        on:click=move |_| {
+                            is_settings_menu_open.set(false);
+                            logout_action.dispatch(());
+                        }
+                    >
+                        <LogoutButtonSVG/>
+                        <p class="settings-button-text logout" >
+                            "Logout"
                         </p>
                     </button>
+                    
                 </Show>
 
-                // Logout
-                <button
-                    class="settings-button logout"
-                    on:click=move |_| {
-                        is_settings_menu_open.set(false);
-                        logout_action.dispatch(());
-                    }
-                >
-                    <LogoutButtonSVG/>
-                    <p class="settings-button-text logout" >
-                        "Logout"
-                    </p>
-                </button>
-
-            </Show>
+            </Transition>
 
         </div>
     }
@@ -893,14 +929,24 @@ pub fn SettingsMenu() -> impl IntoView {
 
 #[component]
 pub fn RecipeEntryMenu<T: RecipeEntry>(entry_menu_info: RecipeEntryMenuInfo<T>) -> impl IntoView {
+
     let RecipeEntryMenuInfo {
         mode,
         all_entries,
         current_id,
     } = entry_menu_info;
 
+    // Setup for on_click_outside
+    use leptos_use::on_click_outside;
+    let card_ref: NodeRef<Div> = NodeRef::new();
+    Effect::new( move |_| {
+        let _ = on_click_outside(card_ref, move |_| mode.set(RecipeEntryMenuMode::Closed));
+    });
+
     view! {
+
         <div
+            node_ref=card_ref
             class="recipe-entry-menu"
             class:open=move || { mode.get() != RecipeEntryMenuMode::Closed }
             class:delete=move || { mode.get() == RecipeEntryMenuMode::Delete }

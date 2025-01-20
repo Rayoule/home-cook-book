@@ -100,7 +100,7 @@ pub fn NewRecipePage() -> impl IntoView {
     set_page_name("New Recipe");
 
     // Ensure the user is logged in
-    check_login_wall();
+    //check_login_wall();
 
     // Setup action
     let recipe_action = use_context::<RecipeServerAction>()
@@ -164,6 +164,8 @@ pub fn NewRecipePage() -> impl IntoView {
     });
 
     view! {
+
+        <CheckLogin/>
 
         <div class="main-content">
             <EditableRecipeSheet
@@ -254,12 +256,12 @@ pub fn RecipePage() -> impl IntoView {
     });
 
     // Ensure the user is logged in when edit mode
-    match get_recipe_mode(false) {
+    /*match get_recipe_mode(false) {
         RecipePageMode::Editable => {
-            check_login_wall();
+            //check_login_wall();
         }
         _ => (),
-    }
+    }*/
 
     // Get recipe
     let recipe_action = use_context::<RecipeServerAction>()
@@ -282,10 +284,22 @@ pub fn RecipePage() -> impl IntoView {
 
     view! {
 
+        <Show
+            when=move || get_recipe_mode(true) == RecipePageMode::Editable
+        >
+            <CheckLogin/>
+        </Show>
+
         <DeleteRecipePopup/>
 
         <div class="main-content">
-        <Transition fallback=move || view! { "Waiting for resource..." } >
+        <Transition
+            fallback=move || view! {
+                <p class="popin-warning" >
+                    { "Waiting for resource..." }
+                </p>
+            }
+        >
             {move || {
                 let recipe = recipe_resource.get();
 
@@ -319,7 +333,11 @@ pub fn RecipePage() -> impl IntoView {
                         }
                     }
                 } else {
-                    {"Recipe empty."}.into_any()
+                    view! {
+                        <p class="popin-warning" >
+                            { "Recipe empty." }
+                        </p>
+                    }.into_any()
                 }
             }}
         </Transition>
@@ -456,8 +474,8 @@ pub fn AllRecipes() -> impl IntoView {
     set_page_name("Recipes");
 
     // Is logged in
-    let is_logged_in = use_context::<IsLoggedIn>()
-        .expect("Expected to find IsLoggedIn in context.")
+    let check_login_resource = use_context::<LoginCheckResource>()
+        .expect("Expected to find LoginCheckAction in context")
         .0;
 
     let selected_tags_signal = use_context::<SelectedTagsRwSignal>()
@@ -514,20 +532,28 @@ pub fn AllRecipes() -> impl IntoView {
 
                         <DeleteRecipePopup/>
 
-                        <Show
-                            when=is_logged_in
+                        <Transition
+                            fallback=move || { view! {
+                                <p class="popin-warning" >
+                                    "Wait for Login Check..."
+                                </p>
+                            }}
                         >
-                            <button
-                                class="new-recipe-button"
-                                on:click=move |ev: MouseEvent| {
-                                    ev.stop_propagation();
-                                    let navigate = leptos_router::hooks::use_navigate();
-                                    navigate("/new-recipe", Default::default());
-                                }
+                            <Show
+                                when=move || { check_login_resource.get() == Some(true) }
                             >
-                                <PlusIconSVG add_class="new-recipe".to_string() />
-                            </button>
-                        </Show>
+                                <button
+                                    class="new-recipe-button"
+                                    on:click=move |ev: MouseEvent| {
+                                        ev.stop_propagation();
+                                        let navigate = leptos_router::hooks::use_navigate();
+                                        navigate("/new-recipe", Default::default());
+                                    }
+                                >
+                                    <PlusIconSVG add_class="new-recipe".to_string() />
+                                </button>
+                            </Show>
+                        </Transition>
 
                         <div class="search-container">
                             <div>
@@ -608,11 +634,13 @@ pub fn AllRecipes() -> impl IntoView {
 #[component]
 pub fn BackupPage() -> impl IntoView {
     // Ensure we are logged in
-    check_login_wall();
+    //check_login_wall();
 
     let has_been_backed_up: RwSignal<bool> = RwSignal::new(false);
 
     view! {
+
+        <CheckLogin/>
 
         <SettingsMenu/>
 

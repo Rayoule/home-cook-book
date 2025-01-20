@@ -645,7 +645,7 @@ ul.recipe-light li::before {
 
 .display-recipe {
 
-	word-break: break-all;
+	word-break: break-word;
 
 	&.container {
 		margin-bottom: 2.5rem;
@@ -685,6 +685,7 @@ ul.recipe-light li::before {
 
 		&.notes {
 			max-width: 100%;
+			white-space: pre-wrap;
 		}
 	}
 
@@ -1012,8 +1013,12 @@ ul.recipe-light li::before {
 	}
 
 	&.instructions {
+		overflow-anchor: none; /* Prevents scroll anchoring */
+		overflow: auto;
+
 		text-align: left;
-		height: 3rem;
+
+		min-height: 3rem;
 		padding: 0.5rem 0.5rem;
 
 		border: none;
@@ -1021,6 +1026,9 @@ ul.recipe-light li::before {
 	}
 
 	&.notes {
+		overflow-anchor: none; /* Prevents scroll anchoring */
+		overflow: auto;
+		
 		text-align: left;
 		position: relative;
 
@@ -1507,14 +1515,16 @@ ul.tag-list {
 	max-width: calc(100vw - (3 * var(--border-margin)));
 
 	background-color: #00000000;
+	color: var(--theme-color-1-alt);
 
-    border: 1px solid rgb(0, 0, 0);
+    border: 2px solid var(--theme-color-1-alt);
 	border-radius: 2rem;
 
     transition: transform 0.1s ease-out;
 
 	&.tag-selected {
 		background-color: var(--theme-color-3);
+		color: var(--theme-color-3-alt);
 		border-color: #00000000;
 		box-shadow: var(--shadow);
 
@@ -1700,7 +1710,7 @@ ul.tag-list {
 
 }
 
-.login-check-warning {
+.popin-warning {
 	font-size: larger;
 	font-weight: bold;
 
