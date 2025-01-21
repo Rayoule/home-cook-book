@@ -2,10 +2,8 @@ use crate::app::{
     components::recipe_server_functions::*, elements::molecules::LoadingElem, ApplySaveFromJson,
     PopupColor,
 };
-use leptos::html::Textarea;
 use leptos::logging::*;
 use leptos::prelude::*;
-use leptos::ev;
 use web_sys::SubmitEvent;
 extern crate chrono;
 

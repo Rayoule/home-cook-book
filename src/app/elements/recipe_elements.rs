@@ -1,10 +1,9 @@
 use crate::app::*;
-use components::auth::auth_server_functions::server_logout;
 use elements::icons_svg::{
     BackButtonSVG, BackupButtonSVG, CrossButtonSVG, EditButtonSVG, LogoutButtonSVG, PlusIconSVG,
     PrintButtonSVG, RemoveSVG, SortSVG, SortUpDownVG, UnrollButtonSVG,
 };
-use leptos::ev::MouseEvent;
+use leptos::ev::{self, MouseEvent};
 use gloo_timers::callback::Timeout;
 use leptos::html::{Div, Input, Li};
 use leptos::logging::error;
@@ -287,12 +286,13 @@ pub struct RecipeEntryMenuInfo<T: RecipeEntry> {
     pub all_entries: RwSignal<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>>,
     pub current_id: u16,
 }
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum RecipeEntryMenuMode {
     Closed,
     Sort,
     Delete,
 }
+
 #[component]
 pub fn EditableEntryList<T: RecipeEntry + std::marker::Sync + std::marker::Send>(
     entry_type: RecipeEntryType,
@@ -329,11 +329,102 @@ pub fn EditableEntryList<T: RecipeEntry + std::marker::Sync + std::marker::Send>
 
             <ul class=style_class.clone() >
 
+                <For
+                    each=move || rw_entries.get()
+                    key=|entry| entry.0
+                    children=move |(id, (entry, set_entry))| {
+
+                        log!("Rendering list of editables !");
+
+                        let recipe_entry_menu_signal = RwSignal::new(RecipeEntryMenuMode::Closed);
+
+                        let entry_menu_info = RecipeEntryMenuInfo {
+                            mode: recipe_entry_menu_signal,
+                            all_entries: rw_entries,
+                            current_id: id
+                        };
+
+                        // Setup for on_click_outside
+                        let card_ref: NodeRef<Li> = NodeRef::new();
+
+                        view! {
+
+                            {move || {
+                                if recipe_entry_menu_signal.get() != RecipeEntryMenuMode::Closed {
+                                    let _ = leptos_use::on_click_outside(
+                                        card_ref,
+                                        move |ev| {
+                                            recipe_entry_menu_signal.update(|menu_mode| {
+                                                if *menu_mode != RecipeEntryMenuMode::Closed {
+                                                    *menu_mode = RecipeEntryMenuMode::Closed;
+                                                }
+                                            });
+                                            ev.stop_propagation();
+                                        },
+                                    );
+                                }
+                            }}
+
+                            <li
+                                class= { style_class_clone.clone() }
+                                id="entry-li"
+                                node_ref=card_ref
+                            >
+
+                                <div
+                                    class="sorting-container ".to_string() + &T::get_css_class_name()
+                                >
+
+                                    <button
+                                        class="sort-up sorting-button"
+                                        on:click=move |ev| {
+                                            ev.stop_propagation();
+                                            recipe_entry_menu_signal.update(|mode| {
+                                                *mode = match *mode {
+                                                    RecipeEntryMenuMode::Sort => RecipeEntryMenuMode::Closed,
+                                                    _ => RecipeEntryMenuMode::Sort,
+                                                };
+                                            });
+                                        }
+                                    >
+                                        <SortSVG/>
+                                    </button>
+
+                                </div>
+
+                                // Entry
+                                {move || {
+                                    T::into_editable_view(entry, set_entry, Some(entry_menu_info.clone()))
+                                }}
+
+                                <button
+                                    class="remove-button ".to_string() + &T::get_css_class_name()
+                                    on:click=move |ev| {
+                                        ev.stop_propagation();
+                                        recipe_entry_menu_signal.update(|mode| {
+                                            *mode = match *mode {
+                                                RecipeEntryMenuMode::Delete => RecipeEntryMenuMode::Closed,
+                                                _ => RecipeEntryMenuMode::Delete,
+                                            };
+                                        });
+                                    }
+                                >
+                                    <RemoveSVG/>
+                                </button>
+
+                            </li>
+                        }
+                    }
+                />
+
+                /*
                 {move || {
                     rw_entries
                         .get()
                         .into_iter()
                         .map(|(id, (entry, set_entry))| {
+
+                            log!("Rendering list of editables !");
 
                             let recipe_entry_menu_signal = RwSignal::new(RecipeEntryMenuMode::Closed);
 
@@ -344,15 +435,28 @@ pub fn EditableEntryList<T: RecipeEntry + std::marker::Sync + std::marker::Send>
                             };
 
                             // Setup for on_click_outside
-                            use leptos_use::on_click_outside;
                             let card_ref: NodeRef<Li> = NodeRef::new();
-                            Effect::new( move |_| {
-                                let _ = on_click_outside(card_ref, move |_| recipe_entry_menu_signal.set(RecipeEntryMenuMode::Closed));
-                            });
 
                             view! {
+
+                                {move || {
+                                    if recipe_entry_menu_signal.get() != RecipeEntryMenuMode::Closed {
+                                        let _ = leptos_use::on_click_outside(
+                                            card_ref,
+                                            move |ev| {
+                                                recipe_entry_menu_signal.update(|menu_mode| {
+                                                    if *menu_mode != RecipeEntryMenuMode::Closed {
+                                                        *menu_mode = RecipeEntryMenuMode::Closed;
+                                                    }
+                                                });
+                                                ev.stop_propagation();
+                                            },
+                                        );
+                                    }
+                                }}
+
                                 <li
-                                    class={style_class_clone.clone()}
+                                    class= { style_class_clone.clone() }
                                     id="entry-li"
                                     node_ref=card_ref
                                 >
@@ -365,12 +469,10 @@ pub fn EditableEntryList<T: RecipeEntry + std::marker::Sync + std::marker::Send>
                                             class="sort-up sorting-button"
                                             on:click=move |ev| {
                                                 ev.stop_propagation();
-                                                log!("CLICK");
                                                 recipe_entry_menu_signal.update(|mode| {
                                                     *mode = match *mode {
-                                                        RecipeEntryMenuMode::Closed => RecipeEntryMenuMode::Sort,
-                                                        RecipeEntryMenuMode::Sort   => RecipeEntryMenuMode::Closed,
-                                                        RecipeEntryMenuMode::Delete => RecipeEntryMenuMode::Sort,
+                                                        RecipeEntryMenuMode::Sort => RecipeEntryMenuMode::Closed,
+                                                        _ => RecipeEntryMenuMode::Sort,
                                                     };
                                                 });
                                             }
@@ -390,10 +492,9 @@ pub fn EditableEntryList<T: RecipeEntry + std::marker::Sync + std::marker::Send>
                                         on:click=move |ev| {
                                             ev.stop_propagation();
                                             recipe_entry_menu_signal.update(|mode| {
-                                                *mode = match mode {
-                                                    RecipeEntryMenuMode::Closed => RecipeEntryMenuMode::Delete,
-                                                    RecipeEntryMenuMode::Sort   => RecipeEntryMenuMode::Delete,
+                                                *mode = match *mode {
                                                     RecipeEntryMenuMode::Delete => RecipeEntryMenuMode::Closed,
+                                                    _ => RecipeEntryMenuMode::Delete,
                                                 };
                                             });
                                         }
@@ -406,6 +507,7 @@ pub fn EditableEntryList<T: RecipeEntry + std::marker::Sync + std::marker::Send>
                         })
                         .collect_view()
                 }}
+                */
             </ul>
 
             <button class="add-button"
@@ -486,6 +588,8 @@ pub fn EditableTags(
 
     let suggestions_open = RwSignal::new(false);
 
+    let current_tag_field = RwSignal::new("".to_string());
+
     view! {
 
         <div class={style_class.clone() + " container editable list"}>
@@ -500,59 +604,65 @@ pub fn EditableTags(
 
             <ul class=style_class.clone() >
 
-                {move || {
-                    rw_entries
-                        .get()
-                        .into_iter()
-                        .map(|(id, (entry, set_entry))| {
+                <For
+                    each=move || rw_entries.get()
+                    key=|entry| entry.0
+                    children=move |(id, (entry, set_entry))| {
 
-                            let recipe_entry_menu_signal = RwSignal::new(RecipeEntryMenuMode::Closed);
+                        let recipe_entry_menu_signal = RwSignal::new(RecipeEntryMenuMode::Closed);
 
-                            let entry_menu_info = RecipeEntryMenuInfo {
-                                mode: recipe_entry_menu_signal,
-                                all_entries: rw_entries,
-                                current_id: id
-                            };
+                        let entry_menu_info = RecipeEntryMenuInfo {
+                            mode: recipe_entry_menu_signal,
+                            all_entries: rw_entries,
+                            current_id: id
+                        };
 
-                            // Setup for on_click_outside
-                            use leptos_use::on_click_outside;
-                            let card_ref: NodeRef<Li> = NodeRef::new();
-                            Effect::new( move |_| {
-                                let _ = on_click_outside(card_ref, move |_| recipe_entry_menu_signal.set(RecipeEntryMenuMode::Closed));
-                            });
+                        // Setup for on_click_outside
+                        let card_ref: NodeRef<Li> = NodeRef::new();
+                        if recipe_entry_menu_signal.get() != RecipeEntryMenuMode::Closed {
+                            let _ = leptos_use::on_click_outside(card_ref, move |_| recipe_entry_menu_signal.set(RecipeEntryMenuMode::Closed));
+                        }
 
-                            view! {
-                                <li
-                                    class=style_class_clone.clone()
-                                    id="entry-li"
-                                    node_ref=card_ref
-                                    on:click=move |ev| {
-                                        ev.stop_propagation();
-                                        recipe_entry_menu_signal.update(|mode| {
-                                            *mode = match mode {
-                                                RecipeEntryMenuMode::Closed => RecipeEntryMenuMode::Delete,
-                                                RecipeEntryMenuMode::Sort   => RecipeEntryMenuMode::Delete,
-                                                RecipeEntryMenuMode::Delete => RecipeEntryMenuMode::Closed,
-                                            };
-                                        });
-                                    }
-                                >
+                        view! {
+                            <li
+                                class=style_class_clone.clone()
+                                id="entry-li"
+                                node_ref=card_ref
+                                on:click=move |ev| {
+                                    ev.stop_propagation();
+                                    recipe_entry_menu_signal.update(|mode| {
+                                        *mode = match mode {
+                                            RecipeEntryMenuMode::Closed => RecipeEntryMenuMode::Delete,
+                                            RecipeEntryMenuMode::Sort   => RecipeEntryMenuMode::Delete,
+                                            RecipeEntryMenuMode::Delete => RecipeEntryMenuMode::Closed,
+                                        };
+                                    });
+                                }
+                            >
 
-                                    // Entry
-                                    {move || {
-                                        RecipeTag::into_editable_view(entry, set_entry, Some(entry_menu_info.clone()))
-                                    }}
+                                // Entry
+                                {move || {
+                                    RecipeTag::into_editable_view(entry, set_entry, Some(entry_menu_info.clone()))
+                                }}
 
-                                </li>
-                            }
-                        })
-                        .collect_view()
-                }}
+                            </li>
+                        }
+                    }
+                />
+
             </ul>
 
             <div class="tag-add-container" >
                 <form
                     class="tag-add-form"
+                    on:input=move |ev| {
+                        current_tag_field.set(
+                            event_target_value(&ev)
+                                .to_lowercase()
+                                .trim()
+                                .to_string()
+                        );
+                    }
                     on:submit=move |ev| {
                         ev.prevent_default();
                         let input_node = input_ref.get().expect("Expected Input to be mounted");
@@ -580,7 +690,7 @@ pub fn EditableTags(
                 class="tags-suggestions-container"
             >
 
-                <button
+                /*<button
                     class="tags-suggestions-button"
                     class:open=suggestions_open
                     on:click=move |ev| {
@@ -589,11 +699,11 @@ pub fn EditableTags(
                     }
                 >
                     <UnrollButtonSVG/>
-                </button>
+                </button>*/
 
-                <div
+                <ul
                     class="tags-suggestions"
-                    class:open=suggestions_open
+                    //class:open=suggestions_open
                 >
                     { move || {
                         let current_tags = rw_entries
@@ -603,9 +713,19 @@ pub fn EditableTags(
                                 get_tag.get().name
                             })
                             .collect::<Vec<String>>();
-
+                        
+                        // Filter tags to show in suggestion
+                        // get all tags
                         let mut tags_to_suggest = all_tags.get();
+                        // remove current tags from suggestions
                         tags_to_suggest.retain(|tag| { !current_tags.contains(tag) });
+                        // get current search bar input
+                        let current_tag_field = current_tag_field.get();
+                        // if there is an input, then filter suggestions
+                        if current_tag_field.len() != 0 {
+                            tags_to_suggest.retain(|tag| { tag.to_lowercase().contains(&current_tag_field) });
+                        }
+                        // make tag list
                         let tags_to_suggest =
                             tags_to_suggest
                                 .into_iter()
@@ -626,7 +746,7 @@ pub fn EditableTags(
                                 .collect_view();
                         tags_to_suggest
                     }}
-                </div>
+                </ul>
             </div>
         </div>
     }
@@ -795,16 +915,6 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
                     }
                 ></textarea>
 
-                {move || {
-                    if let Some(entry_menu_info) = entry_menu_info.clone() {
-                        view! {
-                            <RecipeEntryMenu
-                                entry_menu_info=entry_menu_info
-                            />
-                        }.into_any()
-                    } else { ().into_any() }
-                }}
-
             </div>
         }
         .into_any()
@@ -936,17 +1046,9 @@ pub fn RecipeEntryMenu<T: RecipeEntry>(entry_menu_info: RecipeEntryMenuInfo<T>) 
         current_id,
     } = entry_menu_info;
 
-    // Setup for on_click_outside
-    use leptos_use::on_click_outside;
-    let card_ref: NodeRef<Div> = NodeRef::new();
-    Effect::new( move |_| {
-        let _ = on_click_outside(card_ref, move |_| mode.set(RecipeEntryMenuMode::Closed));
-    });
-
     view! {
 
         <div
-            node_ref=card_ref
             class="recipe-entry-menu"
             class:open=move || { mode.get() != RecipeEntryMenuMode::Closed }
             class:delete=move || { mode.get() == RecipeEntryMenuMode::Delete }
@@ -955,39 +1057,62 @@ pub fn RecipeEntryMenu<T: RecipeEntry>(entry_menu_info: RecipeEntryMenuInfo<T>) 
             <Show
                 when=move || { mode.get() == RecipeEntryMenuMode::Sort }
             >
-                // Sort Up button
-                <button
-                    class="recipe-entry-menu-button move-up"
-                    on:click=move |ev| {
-                        ev.stop_propagation();
-                        all_entries.update(|entries| {
-                            if let Some(index) = entries.iter().position(|&x| x.0 == current_id) {
-                                if index > 0 {
-                                    entries.swap(index, index - 1);
-                                }
-                            }
-                        });
-                    }
-                >
-                    <SortUpDownVG is_up=true />
-                </button>
 
-                // Sort down button
-                <button
-                    class="recipe-entry-menu-button move-down"
-                    on:click=move |ev| {
-                        ev.stop_propagation();
-                        all_entries.update(|entries| {
-                            if let Some(index) = entries.iter().position(|&x| x.0 == current_id) {
-                                if index < entries.len() - 1 {
-                                    entries.swap(index, index + 1);
+                {move || {
+
+                    if let Some(index) = all_entries.read().iter().position(|&x| x.0 == current_id) {
+                        
+                        view! {
+
+                            { move || {
+                                if index > 0 {
+                                    view! {
+                                        // Sort up button
+                                        <button
+                                            class="recipe-entry-menu-button move-up"
+                                            on:click=move |ev| {
+                                                ev.stop_propagation();
+                                                all_entries.update(|entries| {
+                                                    entries.swap(index, index - 1);
+                                                });
+                                            }
+                                        >
+                                            <SortUpDownVG is_up=true />
+                                        </button>
+                                    }.into_any()
+                                } else {
+                                    ().into_any()
                                 }
-                            }
-                        });
+                            }}
+
+                            { move || {
+                                if index < all_entries.read().len() - 1 {
+                                    view! {
+                                        // Sort down button
+                                        <button
+                                            class="recipe-entry-menu-button move-down"
+                                            on:click=move |ev| {
+                                                ev.stop_propagation();
+                                                all_entries.update(|entries| {
+                                                    entries.swap(index, index + 1);
+                                                });
+                                            }
+                                        >
+                                            <SortUpDownVG is_up=false />
+                                        </button>
+                                    }.into_any()
+                                } else {
+                                    ().into_any()
+                                }
+                            }}
+                            
+                        }.into_any()
+
+                    } else {
+                        ().into_any()
                     }
-                >
-                    <SortUpDownVG is_up=false />
-                </button>
+                }}
+
             </Show>
 
             <Show

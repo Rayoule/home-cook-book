@@ -155,7 +155,7 @@ pub fn SortUpDownVG(is_up: bool) -> impl IntoView {
 pub fn SortSVG() -> impl IntoView {
     view! {
         <svg
-        class="sort-icon-svg"
+            class="sort-icon-svg"
             viewBox="0 0 16 16"
         >
             <path

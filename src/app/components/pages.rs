@@ -167,7 +167,9 @@ pub fn NewRecipePage() -> impl IntoView {
 
         <CheckLogin/>
 
-        <div class="main-content">
+        <div
+            class="main-content"
+        >
             <EditableRecipeSheet
                 is_new_recipe=  true
             />

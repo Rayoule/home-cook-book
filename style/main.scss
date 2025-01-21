@@ -1188,7 +1188,25 @@ textarea#text-input {
 }
 
 .tags-suggestions-container {
+
+	position: relative;
+
 	margin-top: 1.5rem;
+
+	height: 6rem;
+
+	overflow: hidden;
+
+	&::after {
+		content: "";
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		height: 1rem; /* Height of the fade */
+		background: linear-gradient(to top, var(--theme-color-bg), rgba(0, 0, 0, 0)); /* Fade to match the container's background */
+		pointer-events: none; /* Ensure the fade doesn't block interactions */
+	}
 }
 .tags-suggestions-button {
 
@@ -1204,20 +1222,14 @@ textarea#text-input {
 	}
 }
 .tags-suggestions {
+
 	display: inline-block;
+	position: absolute;
 
-	overflow: hidden;
+	overflow-y: auto;
 
-	height: 0;
+	height: 100%;
 	width: var(--recipe-dynamic-max-width);
-
-	margin-top: 1rem;
-
-	transition: height 0.2s ease-out;
-
-	&.open {
-		height: fit-content;
-	}
 }
 svg {
 	&.unroll-icon-svg {

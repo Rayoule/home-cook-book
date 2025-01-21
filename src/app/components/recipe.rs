@@ -477,12 +477,16 @@ impl RecipeEntry for RecipeNote {
         menu_info: Option<RecipeEntryMenuInfo<Self>>,
     ) -> AnyView {
         view! {
+            <RecipeEntryMenu
+                entry_menu_info=     menu_info.expect("Expected to find menu_signal for ingredient entry.")
+            />
+
             <RecipeEntryInput
                 class=              "notes note-content".to_owned()
                 placeholder=        "Note content".to_owned()
                 get_entry_signal=   entry
                 set_entry_signal=   set_entry
-                entry_menu_info=    menu_info.expect("Expected to find menu_signal for note entry.")
+                //entry_menu_info=    menu_info.expect("Expected to find menu_signal for note entry.")
             />
         }
         .into_any()

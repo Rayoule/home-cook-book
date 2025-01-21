@@ -86,7 +86,7 @@ pub fn DeleteRecipePopup() -> impl IntoView {
                     class="popup-window"
                     style=popup_color.get().window_background_color()
                 >
-                    <p class="popup-text"> { "Do you wish to DELETE this recipe ?" } </p>
+                    <p class="popup-text"> { "Delete recipe ?" } </p>
                     <div class="popup-option-container" >
                         <button
                             class="popup-option"

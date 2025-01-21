@@ -7,7 +7,6 @@ use crate::app::{
 use leptos::ev::MouseEvent;
 use leptos::html::Div;
 use leptos::{logging::*, prelude::*};
-use leptos_use::on_click_outside;
 
 #[component]
 pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> impl IntoView {
@@ -42,9 +41,6 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
 
     // Setup for on_click_outside
     let card_ref: NodeRef<Div> = NodeRef::new();
-    Effect::new(move || {
-        let _ = on_click_outside(card_ref, move |_| is_menu_open.set(false));
-    });
 
     let menu_fallback = {
         move || {
@@ -94,6 +90,14 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
     };
 
     view! {
+
+        {move || {
+            if is_menu_open.get() {
+                Effect::new(move || {
+                    let _ = leptos_use::on_click_outside(card_ref, move |_| is_menu_open.set(false));
+                });
+            }
+        }}
 
         <div
             node_ref=card_ref
