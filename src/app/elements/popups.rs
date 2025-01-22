@@ -108,3 +108,4 @@ pub fn DeleteRecipePopup() -> impl IntoView {
         </Show>
     }
 }
+

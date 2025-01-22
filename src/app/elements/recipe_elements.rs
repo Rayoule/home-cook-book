@@ -1,11 +1,11 @@
 use crate::app::*;
 use elements::icons_svg::{
     BackButtonSVG, BackupButtonSVG, CrossButtonSVG, EditButtonSVG, LogoutButtonSVG, PlusIconSVG,
-    PrintButtonSVG, RemoveSVG, SortSVG, SortUpDownVG, UnrollButtonSVG,
+    PrintButtonSVG, RemoveSVG, SortSVG, SortUpDownVG,
 };
-use leptos::ev::{self, MouseEvent};
+use leptos::ev::MouseEvent;
 use gloo_timers::callback::Timeout;
-use leptos::html::{Div, Input, Li};
+use leptos::html::{Input, Li};
 use leptos::logging::error;
 
 
@@ -170,6 +170,10 @@ pub fn RecipeMenu(
             .0;
         let save_pending = recipe_action.pending();
 
+        let is_page_dirty = use_context::<IsPageDirtySignal>()
+            .expect("Expected to find IsPageDirtySignal in context")
+            .0;
+
         let is_new_recipe = is_new_recipe.expect("Expected is_new_recipe to be provided.");
 
         let recipe_signals = recipe_signals.expect("Expected recipe_signals to be provided.");
@@ -194,16 +198,22 @@ pub fn RecipeMenu(
             match updated_recipe.valid_for_save() {
                 Ok(_) => {
                     if is_new_recipe {
+                        // Add new recipe
                         recipe_action.dispatch(RecipeActionDescriptor::Add(updated_recipe));
                     } else {
+                        // Update the id
                         let id = updated_recipe.id;
+                        // Save the recipe
                         recipe_action.dispatch(RecipeActionDescriptor::Save(updated_recipe));
+                        // Reroute to display
                         if let Some(id) = id {
                             let path = "/recipe/".to_string() + &id.to_string() + "/display";
                             let navigate = leptos_router::hooks::use_navigate();
                             navigate(&path, Default::default());
                         }
                     }
+
+                    is_page_dirty.set(false);
                 }
                 Err(e) => {
                     error!("{}", e);
@@ -231,23 +241,28 @@ pub fn RecipeMenu(
                     <Show
                         when=move || { !save_pending.get() }
                     >
-                        <button
-                            class="recipe-menu-button back"
-                            on:click=move |ev| {
-                                ev.stop_propagation();
-                                let navigate = leptos_router::hooks::use_navigate();
-                                navigate("/", Default::default());
+                        <Show
+                            when=is_page_dirty
+                            fallback=move || view! {
+                                <button
+                                    class="recipe-menu-button back"
+                                    on:click=move |ev| {
+                                        ev.stop_propagation();
+                                        let navigate = leptos_router::hooks::use_navigate();
+                                        navigate("/", Default::default());
+                                    }
+                                >
+                                    <BackButtonSVG/>
+                                </button>
                             }
                         >
-                            <BackButtonSVG/>
-                        </button>
-
-                        <button
-                            class="recipe-menu-button save"
-                            on:click=on_save_click
-                        >
-                            "save"
-                        </button>
+                            <button
+                                class="recipe-menu-button save"
+                                on:click=on_save_click
+                            >
+                                "save"
+                            </button>
+                        </Show>
                     </Show>
 
                     { move || {
@@ -302,17 +317,22 @@ pub fn EditableEntryList<T: RecipeEntry + std::marker::Sync + std::marker::Send>
     let (entry_type_title, style_class) = entry_type.title_and_class();
     let style_class_clone = style_class.clone();
 
+    // dirty signal
+    let is_page_dirty = use_context::<IsPageDirtySignal>()
+        .expect("Expected to find IsPageDirtySignal in context")
+        .0;
+
+    // Counter to assign new IDs
+    let mut id_counter: u16 = rw_entries.read().len().try_into().unwrap();
+
+    // Add Entry closure
     let add_entry = move |_| {
         let new_entry_signal = signal(T::default());
         rw_entries.update(move |entries| {
-            // Make sure to set new ID = pushed index
-            let new_id: u16 = entries
-                .len()
-                .try_into()
-                .expect("to convert usize into u16.");
-
-            entries.push((new_id, new_entry_signal));
+            entries.push((id_counter, new_entry_signal));
         });
+        id_counter += 1;
+        is_page_dirty.set(true);
     };
 
     view! {
@@ -333,8 +353,6 @@ pub fn EditableEntryList<T: RecipeEntry + std::marker::Sync + std::marker::Send>
                     each=move || rw_entries.get()
                     key=|entry| entry.0
                     children=move |(id, (entry, set_entry))| {
-
-                        log!("Rendering list of editables !");
 
                         let recipe_entry_menu_signal = RwSignal::new(RecipeEntryMenuMode::Closed);
 
@@ -416,98 +434,7 @@ pub fn EditableEntryList<T: RecipeEntry + std::marker::Sync + std::marker::Send>
                         }
                     }
                 />
-
-                /*
-                {move || {
-                    rw_entries
-                        .get()
-                        .into_iter()
-                        .map(|(id, (entry, set_entry))| {
-
-                            log!("Rendering list of editables !");
-
-                            let recipe_entry_menu_signal = RwSignal::new(RecipeEntryMenuMode::Closed);
-
-                            let entry_menu_info = RecipeEntryMenuInfo {
-                                mode: recipe_entry_menu_signal,
-                                all_entries: rw_entries,
-                                current_id: id
-                            };
-
-                            // Setup for on_click_outside
-                            let card_ref: NodeRef<Li> = NodeRef::new();
-
-                            view! {
-
-                                {move || {
-                                    if recipe_entry_menu_signal.get() != RecipeEntryMenuMode::Closed {
-                                        let _ = leptos_use::on_click_outside(
-                                            card_ref,
-                                            move |ev| {
-                                                recipe_entry_menu_signal.update(|menu_mode| {
-                                                    if *menu_mode != RecipeEntryMenuMode::Closed {
-                                                        *menu_mode = RecipeEntryMenuMode::Closed;
-                                                    }
-                                                });
-                                                ev.stop_propagation();
-                                            },
-                                        );
-                                    }
-                                }}
-
-                                <li
-                                    class= { style_class_clone.clone() }
-                                    id="entry-li"
-                                    node_ref=card_ref
-                                >
-
-                                    <div
-                                        class="sorting-container ".to_string() + &T::get_css_class_name()
-                                    >
-
-                                        <button
-                                            class="sort-up sorting-button"
-                                            on:click=move |ev| {
-                                                ev.stop_propagation();
-                                                recipe_entry_menu_signal.update(|mode| {
-                                                    *mode = match *mode {
-                                                        RecipeEntryMenuMode::Sort => RecipeEntryMenuMode::Closed,
-                                                        _ => RecipeEntryMenuMode::Sort,
-                                                    };
-                                                });
-                                            }
-                                        >
-                                            <SortSVG/>
-                                        </button>
-
-                                    </div>
-
-                                    // Entry
-                                    {move || {
-                                        T::into_editable_view(entry, set_entry, Some(entry_menu_info.clone()))
-                                    }}
-
-                                    <button
-                                        class="remove-button ".to_string() + &T::get_css_class_name()
-                                        on:click=move |ev| {
-                                            ev.stop_propagation();
-                                            recipe_entry_menu_signal.update(|mode| {
-                                                *mode = match *mode {
-                                                    RecipeEntryMenuMode::Delete => RecipeEntryMenuMode::Closed,
-                                                    _ => RecipeEntryMenuMode::Delete,
-                                                };
-                                            });
-                                        }
-                                    >
-                                        <RemoveSVG/>
-                                    </button>
-
-                                </li>
-                            }
-                        })
-                        .collect_view()
-                }}
-                */
+            
             </ul>
 
             <button class="add-button"
@@ -586,8 +513,6 @@ pub fn EditableTags(
         }
     }
 
-    let suggestions_open = RwSignal::new(false);
-
     let current_tag_field = RwSignal::new("".to_string());
 
     view! {
@@ -619,11 +544,15 @@ pub fn EditableTags(
 
                         // Setup for on_click_outside
                         let card_ref: NodeRef<Li> = NodeRef::new();
-                        if recipe_entry_menu_signal.get() != RecipeEntryMenuMode::Closed {
-                            let _ = leptos_use::on_click_outside(card_ref, move |_| recipe_entry_menu_signal.set(RecipeEntryMenuMode::Closed));
-                        }
 
                         view! {
+
+                            {move || {
+                                if recipe_entry_menu_signal.get() != RecipeEntryMenuMode::Closed {
+                                    let _ = leptos_use::on_click_outside(card_ref, move |_| recipe_entry_menu_signal.set(RecipeEntryMenuMode::Closed));
+                                }
+                            }}
+
                             <li
                                 class=style_class_clone.clone()
                                 id="entry-li"
@@ -690,20 +619,8 @@ pub fn EditableTags(
                 class="tags-suggestions-container"
             >
 
-                /*<button
-                    class="tags-suggestions-button"
-                    class:open=suggestions_open
-                    on:click=move |ev| {
-                        ev.stop_propagation();
-                        suggestions_open.update(|b| *b=!*b )
-                    }
-                >
-                    <UnrollButtonSVG/>
-                </button>*/
-
                 <ul
                     class="tags-suggestions"
-                    //class:open=suggestions_open
                 >
                     { move || {
                         let current_tags = rw_entries
@@ -816,7 +733,6 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
     get_entry_signal: ReadSignal<T>,
     set_entry_signal: WriteSignal<T>,
     class: String,
-    #[prop(optional)] entry_menu_info: Option<RecipeEntryMenuInfo<T>>,
     /// If the entry has multiple fields
     #[prop(optional)]
     field_id: Option<usize>,
@@ -938,6 +854,11 @@ pub fn SettingsMenu() -> impl IntoView {
         .expect("Expected to find LogoutAction in context")
         .0;
 
+    // Page Name
+    let page_name = use_context::<PageName>()
+        .expect("Expected to find PageName in context")
+        .0;
+
     view! {
         <button
             class = "settings-menu-button"
@@ -988,16 +909,7 @@ pub fn SettingsMenu() -> impl IntoView {
 
                     // Backup
                     <Show
-                        when=move || {
-                            /*let path = leptos_router::hooks::use_location().pathname.get();
-                            let is_backup =
-                                path
-                                    .split('/')
-                                    .last()
-                                    .is_some_and(|last_word| last_word == "backup");
-                            !is_backup*/
-                            true
-                        }
+                        when=move || page_name.get() != "Backup"
                     >
                         <button
                             class="settings-button backup"
@@ -1121,9 +1033,8 @@ pub fn RecipeEntryMenu<T: RecipeEntry>(entry_menu_info: RecipeEntryMenuInfo<T>) 
                 <button
                     class="recipe-entry-menu-button delete"
                     on:click=move |ev| {
+
                         ev.stop_propagation();
-                        // we are going to assign new ids since we remove an entry
-                        let mut new_id_counter: u16 = 0;
 
                         // iterate in entries
                         all_entries.update(|entries| {
@@ -1132,12 +1043,7 @@ pub fn RecipeEntryMenu<T: RecipeEntry>(entry_menu_info: RecipeEntryMenuInfo<T>) 
                                 // check if this is the entry to remove
                                 let keep_this_entry = entry_id != &current_id;
 
-                                if keep_this_entry {
-                                    // set the new id
-                                    *entry_id = new_id_counter;
-                                    // increment counter
-                                    new_id_counter += 1;
-                                } else {
+                                if !keep_this_entry {
                                     // NOTE: in this example, we are creating the signals
                                     // in the scope of the parent. This means the memory used to
                                     // store them will not be reclaimed until the parent component
@@ -1147,6 +1053,9 @@ pub fn RecipeEntryMenu<T: RecipeEntry>(entry_menu_info: RecipeEntryMenuInfo<T>) 
                                     //
                                     // This is only necessary with nested signals like this one.
                                     signal.dispose();
+
+                                    // Remove the Delete Mode
+                                    entry_menu_info.mode.set(RecipeEntryMenuMode::Closed);
                                 }
 
                                 keep_this_entry

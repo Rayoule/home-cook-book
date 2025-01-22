@@ -25,7 +25,6 @@ use crate::app::{
 
 #[component]
 pub fn LoginMenu() -> impl IntoView {
-    set_page_name("Login");
 
     // get settings menu context
     let is_settings_menu_open = use_context::<IsSettingsMenuOpen>()
@@ -99,8 +98,16 @@ pub fn LoginMenu() -> impl IntoView {
 pub fn NewRecipePage() -> impl IntoView {
     set_page_name("New Recipe");
 
-    // Ensure the user is logged in
-    //check_login_wall();
+    // Prevents Refresh on this page
+    let handle = window_event_listener(
+        leptos::ev::beforeunload,
+        move |event: web_sys::BeforeUnloadEvent| {
+            event.prevent_default();
+            event.set_return_value("Are you sure you want to leave?");
+            log::info!("Do something here");
+        },
+    );
+    on_cleanup(move || handle.remove());
 
     // Setup action
     let recipe_action = use_context::<RecipeServerAction>()
@@ -165,6 +172,10 @@ pub fn NewRecipePage() -> impl IntoView {
 
     view! {
 
+        {move || {
+            
+        }}
+
         <CheckLogin/>
 
         <div
@@ -223,6 +234,9 @@ impl std::str::FromStr for RecipePageMode {
     }
 }
 
+#[derive(Clone)]
+pub struct IsPageDirtySignal(pub RwSignal<bool>);
+
 #[component]
 pub fn RecipePage() -> impl IntoView {
     // Get params functions
@@ -246,8 +260,14 @@ pub fn RecipePage() -> impl IntoView {
             .expect("To get RecipeModeParam")
     };
 
+    // Is Page Dirty setup
+    // Is page Dirty Signal (to know if we need to save it before leaving)
+    let is_page_dirty = RwSignal::new(false);
+    provide_context(IsPageDirtySignal(is_page_dirty));
+
     // Page Name setup
     set_page_name("Recipes");
+
     // Update Page Name
     Effect::new(move |_| {
         set_page_name(match get_recipe_mode(true) {
@@ -256,14 +276,6 @@ pub fn RecipePage() -> impl IntoView {
             RecipePageMode::Print => "Print Recipe",
         });
     });
-
-    // Ensure the user is logged in when edit mode
-    /*match get_recipe_mode(false) {
-        RecipePageMode::Editable => {
-            //check_login_wall();
-        }
-        _ => (),
-    }*/
 
     // Get recipe
     let recipe_action = use_context::<RecipeServerAction>()
@@ -283,6 +295,20 @@ pub fn RecipePage() -> impl IntoView {
             }
         },
     );
+
+    
+    Effect::new(move |_| {
+        if get_recipe_mode(true) == RecipePageMode::Editable && is_page_dirty.get() {
+            let handle = window_event_listener(
+                leptos::ev::beforeunload,
+                move |event: web_sys::BeforeUnloadEvent| {
+                    event.prevent_default();
+                    event.set_return_value("Are you sure you want to leave?");
+                },
+            );
+            on_cleanup(move || handle.remove());
+        }
+    });
 
     view! {
 
@@ -636,7 +662,7 @@ pub fn AllRecipes() -> impl IntoView {
 #[component]
 pub fn BackupPage() -> impl IntoView {
     // Ensure we are logged in
-    //check_login_wall();
+    set_page_name("Backup");
 
     let has_been_backed_up: RwSignal<bool> = RwSignal::new(false);
 

@@ -1,4 +1,4 @@
-use crate::app::LoginCheckResource;
+use crate::app::{IsPageDirtySignal, LoginCheckResource};
 use crate::app::{
     elements::recipe_elements::*, Recipe, RecipeActionDescriptor, RecipeEntry,
     RecipeEntryType, RecipeIngredient, RecipeInstruction, RecipeLight, RecipeNote,
@@ -407,6 +407,7 @@ pub fn EditableRecipeSheet(
     #[prop(optional)] recipe: Option<Recipe>,
     #[prop(optional)] is_new_recipe: Option<bool>,
 ) -> impl IntoView {
+
     let is_new_recipe = is_new_recipe.unwrap_or_else(|| false);
 
     // Create the recipe if None
@@ -424,6 +425,40 @@ pub fn EditableRecipeSheet(
     ));
     let (_, tags_signal, ingredients_signal, instructions_signal, notes_signal) =
         recipe_signals.get_untracked();
+
+    // Is page Dirty Signal (to know if we need to save it before leaving)
+    let is_page_dirty = use_context::<IsPageDirtySignal>()
+    .expect("Expected to find IsPageDirtySignal in context")
+    .0;
+    // Subscribe to all recipe signals to set the page dirty if any changes, but only if the page is currently clean
+    Effect::new( move |_| {
+        if !is_page_dirty.get() {
+            Effect::watch(
+                move || {
+                    // Subscribe to all events
+                    //let (name, tags, ingrs, insts, notes) = *recipe_signals.read();
+                    let sigs = recipe_signals.read();
+                    //Subscribe to signals
+                    let (_, t, ig, _, no) = (
+                        sigs.0.read(),
+                        sigs.1.read(),
+                        sigs.2.read(),
+                        sigs.3.0.read(),
+                        sigs.4.read()
+                    );
+                    // Subscribe to every inner signal
+                    t.iter().for_each(|s| { s.1.0.read(); });
+                    ig.iter().for_each(|s| { s.1.0.read(); });
+                    no.iter().for_each(|s| { s.1.0.read(); });
+                },
+                // Make the page dirty whenever they change
+                move |_, _, _| {
+                    is_page_dirty.set(true);
+                },
+                false,
+            );
+        }
+    });
 
     let theme_color = RwSignal::new(ThemeColor::random());
 

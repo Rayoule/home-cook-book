@@ -257,7 +257,7 @@ pub struct DbRowRecipeID {
     pub id: u16,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum RecipeEntryType {
     Tag,
     Ingredients,

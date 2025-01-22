@@ -22,7 +22,7 @@ pub mod components;
 pub mod elements;
 
 #[derive(Clone)]
-pub struct PageNameSetter(WriteSignal<String>);
+pub struct PageName(RwSignal<String>);
 #[derive(Clone)]
 pub struct LoginCheckResource(Resource<bool>);
 #[derive(Clone)]
@@ -54,8 +54,8 @@ pub fn App() -> impl IntoView {
     provide_meta_context();
 
     // PageName signal
-    let (_, set_page_name) = signal("".to_owned());
-    provide_context(PageNameSetter(set_page_name));
+    let page_name_signal = RwSignal::new("".to_owned());
+    provide_context(PageName(page_name_signal));
 
     // Recipe Action
     let recipe_action =
@@ -220,8 +220,8 @@ pub fn App() -> impl IntoView {
 }
 
 pub fn set_page_name(name: &str) {
-    use_context::<PageNameSetter>()
-        .expect("to find PageNameSetter in context!")
+    use_context::<PageName>()
+        .expect("to find PageName in context!")
         .0
         .set(name.to_owned());
 }

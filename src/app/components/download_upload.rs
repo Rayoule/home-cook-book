@@ -141,6 +141,10 @@ pub fn UploadAll(has_been_backed_up: RwSignal<bool>) -> impl IntoView {
                                 // resize box to fit text
                                 #[cfg(feature= "hydrate")]
                                 set_content.set(event_target_value(&ev));
+
+                                // In non-hydrate mode, mute the unused variable warning
+                                #[cfg(not(feature = "hydrate"))]
+                                let _ = ev;
                             }
                         > {} </textarea>
                         <button class="upload-save-button" type="submit"> "Ok" </button>
