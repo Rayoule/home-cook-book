@@ -147,7 +147,6 @@ pub async fn get_all_recipes_light() -> Result<Vec<RecipeLight>, ServerFnError> 
     }
 
     let mut all_recipe_light: Vec<RecipeLight> = vec![];
-    //let mut rows = sqlx::query_as::<_, DbRowRecipe>("SELECT recipe_name, recipe_tags FROM recipes").fetch(&mut conn);
     let mut rows = sqlx::query_as::<_, DbRowRecipeLight>(
         "SELECT id, recipe_name, recipe_tags, recipe_ingredients FROM recipes",
     )

@@ -1,4 +1,5 @@
 use crate::app::*;
+use components::recipe_sheets::RecipeSignals;
 use elements::icons_svg::{
     BackButtonSVG, BackupButtonSVG, CrossButtonSVG, EditButtonSVG, LogoutButtonSVG, PlusIconSVG,
     PrintButtonSVG, RemoveSVG, SortSVG, SortUpDownVG,
@@ -10,21 +11,6 @@ use leptos::logging::error;
 
 
 
-type RecipeSignals = RwSignal<(
-    RwSignal<String>,
-    RwSignal<Vec<(u16, (ReadSignal<RecipeTag>, WriteSignal<RecipeTag>))>>,
-    RwSignal<
-        Vec<(
-            u16,
-            (ReadSignal<RecipeIngredient>, WriteSignal<RecipeIngredient>),
-        )>,
-    >,
-    (
-        ReadSignal<RecipeInstruction>,
-        WriteSignal<RecipeInstruction>,
-    ),
-    RwSignal<Vec<(u16, (ReadSignal<RecipeNote>, WriteSignal<RecipeNote>))>>,
-)>;
 
 #[component]
 pub fn RecipeMenu(
@@ -190,7 +176,7 @@ pub fn RecipeMenu(
                 name: signals.0.clone().get_untracked(),
                 tags: fetch_entries_from_signals(signals.1.get_untracked()),
                 ingredients: fetch_entries_from_signals(signals.2.get_untracked()),
-                instructions: signals.3 .0.get_untracked(),
+                instructions: signals.3.get_untracked(),
                 notes: fetch_entries_from_signals(signals.4.get_untracked()),
             };
 
@@ -298,7 +284,7 @@ pub fn RecipeMenu(
 #[derive(Clone)]
 pub struct RecipeEntryMenuInfo<T: RecipeEntry> {
     pub mode: RwSignal<RecipeEntryMenuMode>,
-    pub all_entries: RwSignal<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>>,
+    pub all_entries: RwSignal<Vec<(u16, ArcRwSignal<T>)>>,
     pub current_id: u16,
 }
 #[derive(Clone, PartialEq, Debug)]
@@ -309,11 +295,14 @@ pub enum RecipeEntryMenuMode {
 }
 
 #[component]
-pub fn EditableEntryList<T: RecipeEntry + std::marker::Sync + std::marker::Send>(
+pub fn EditableEntryList<T: RecipeEntry>(
     entry_type: RecipeEntryType,
-    rw_entries: RwSignal<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>>,
+    rw_entries: RwSignal<Vec<(u16, ArcRwSignal<T>)>>,
     theme_color: RwSignal<ThemeColor>,
-) -> impl IntoView {
+) -> impl IntoView
+where
+    T: RecipeEntry<S = ArcRwSignal<T>>,
+{
     let (entry_type_title, style_class) = entry_type.title_and_class();
     let style_class_clone = style_class.clone();
 
@@ -327,7 +316,7 @@ pub fn EditableEntryList<T: RecipeEntry + std::marker::Sync + std::marker::Send>
 
     // Add Entry closure
     let add_entry = move |_| {
-        let new_entry_signal = signal(T::default());
+        let new_entry_signal = ArcRwSignal::new(T::default());
         rw_entries.update(move |entries| {
             entries.push((id_counter, new_entry_signal));
         });
@@ -352,7 +341,7 @@ pub fn EditableEntryList<T: RecipeEntry + std::marker::Sync + std::marker::Send>
                 <For
                     each=move || rw_entries.get()
                     key=|entry| entry.0
-                    children=move |(id, (entry, set_entry))| {
+                    children=move |(id, rw_entry)| {
 
                         let recipe_entry_menu_signal = RwSignal::new(RecipeEntryMenuMode::Closed);
 
@@ -411,9 +400,7 @@ pub fn EditableEntryList<T: RecipeEntry + std::marker::Sync + std::marker::Send>
                                 </div>
 
                                 // Entry
-                                {move || {
-                                    T::into_editable_view(entry, set_entry, Some(entry_menu_info.clone()))
-                                }}
+                                { T::into_editable_view(rw_entry, Some(entry_menu_info.clone())) }
 
                                 <button
                                     class="remove-button ".to_string() + &T::get_css_class_name()
@@ -450,10 +437,7 @@ pub fn EditableEntryList<T: RecipeEntry + std::marker::Sync + std::marker::Send>
 #[component]
 pub fn EditableInstructions(
     entry_type: RecipeEntryType,
-    entry_signal: (
-        ReadSignal<RecipeInstruction>,
-        WriteSignal<RecipeInstruction>,
-    ),
+    entry_signal: RwSignal<RecipeInstruction>,
     theme_color: RwSignal<ThemeColor>,
 ) -> impl IntoView {
     let (entry_type_title, style_class) = entry_type.title_and_class();
@@ -470,7 +454,7 @@ pub fn EditableInstructions(
             </h3>
 
             <li class={style_class.clone()} id="entry-li">
-                { RecipeInstruction::into_editable_view(entry_signal.0, entry_signal.1, None) }
+                { RecipeInstruction::into_editable_view(entry_signal, None) }
             </li>
 
         </div>
@@ -480,7 +464,7 @@ pub fn EditableInstructions(
 
 #[component]
 pub fn EditableTags(
-    rw_entries: RwSignal<Vec<(u16, (ReadSignal<RecipeTag>, WriteSignal<RecipeTag>))>>,
+    rw_entries: RwSignal<Vec<(u16, ArcRwSignal<RecipeTag>)>>,
     theme_color: RwSignal<ThemeColor>,
 ) -> impl IntoView {
     let (entry_type_title, style_class) = RecipeEntryType::Tag.title_and_class();
@@ -488,30 +472,32 @@ pub fn EditableTags(
 
     let input_ref = NodeRef::<Input>::new();
 
+    // dirty signal
+    let is_page_dirty = use_context::<IsPageDirtySignal>()
+        .expect("Expected to find IsPageDirtySignal in context")
+        .0;
+
     let all_tags = use_context::<AllTagsSignal>()
         .expect("to find AllTagsMemo in context.")
         .0;
 
-    fn add_tag_to_recipe(
-        new_tag: String,
-        rw_entries: RwSignal<Vec<(u16, (ReadSignal<RecipeTag>, WriteSignal<RecipeTag>))>>,
-    ) -> bool {
-        if new_tag.len() > 0 {
-            let new_entry_signal = signal(RecipeTag { name: new_tag });
-            rw_entries.update(move |entries| {
-                // Make sure to set new ID = pushed index
-                let new_id: u16 = entries
-                    .len()
-                    .try_into()
-                    .expect("to convert usize into u16.");
+    // Counter to assign new IDs
+    let mut id_counter: u16 = rw_entries.read().len().try_into().unwrap();
 
-                entries.push((new_id, new_entry_signal));
+    // Add Entry closure
+    let mut add_entry = move |new_tag_name: String| {
+        if new_tag_name.len() > 0 {
+            let new_entry_signal = ArcRwSignal::new(RecipeTag { name: new_tag_name });
+            rw_entries.update(move |entries| {
+                entries.push((id_counter, new_entry_signal));
             });
+            id_counter += 1;
+            is_page_dirty.set(true);
             true
         } else {
             false
         }
-    }
+    };
 
     let current_tag_field = RwSignal::new("".to_string());
 
@@ -532,7 +518,7 @@ pub fn EditableTags(
                 <For
                     each=move || rw_entries.get()
                     key=|entry| entry.0
-                    children=move |(id, (entry, set_entry))| {
+                    children=move |(id, entry_signal)| {
 
                         let recipe_entry_menu_signal = RwSignal::new(RecipeEntryMenuMode::Closed);
 
@@ -570,9 +556,7 @@ pub fn EditableTags(
                             >
 
                                 // Entry
-                                {move || {
-                                    RecipeTag::into_editable_view(entry, set_entry, Some(entry_menu_info.clone()))
-                                }}
+                                { RecipeTag::into_editable_view(entry_signal, Some(entry_menu_info.clone())) }
 
                             </li>
                         }
@@ -596,7 +580,7 @@ pub fn EditableTags(
                         ev.prevent_default();
                         let input_node = input_ref.get().expect("Expected Input to be mounted");
                         let value = input_node.value();
-                        if add_tag_to_recipe(value, rw_entries) {
+                        if add_entry(value) {
                             input_node.set_value("");
                         }
                     }
@@ -626,8 +610,8 @@ pub fn EditableTags(
                         let current_tags = rw_entries
                             .get()
                             .iter()
-                            .map(|(_, (get_tag, _))| {
-                                get_tag.get().name
+                            .map(|(_, tag_signal)| {
+                                tag_signal.get().name
                             })
                             .collect::<Vec<String>>();
                         
@@ -653,10 +637,10 @@ pub fn EditableTags(
                                             class="tag-suggested"
                                             on:click=move |ev| {
                                                 ev.stop_propagation();
-                                                add_tag_to_recipe(tag.clone(), rw_entries);
+                                                add_entry(tag_name.clone());
                                             }
                                         >
-                                            { tag_name }
+                                            { tag }
                                         </button>
                                     }
                                 })
@@ -727,24 +711,33 @@ pub fn PrintButton(recipe_id: ReadSignal<u16>) -> impl IntoView {
     }
 }
 
+
 #[component]
-pub fn RecipeEntryInput<T: RecipeEntry>(
+pub fn RecipeEntryInput<T, S>(
     placeholder: String,
-    get_entry_signal: ReadSignal<T>,
-    set_entry_signal: WriteSignal<T>,
     class: String,
+    rw_entry: S,
     /// If the entry has multiple fields
     #[prop(optional)]
     field_id: Option<usize>,
     #[prop(optional)] is_input: Option<bool>,
-) -> impl IntoView {
+) -> impl IntoView 
+where
+    T: RecipeEntry,
+    S: Get<Value = T> + GetUntracked<Value = T> + Update<Value = T> + Clone + 'static
+{
+
     let is_input = is_input.unwrap_or_default();
 
     // setup for the SuggestionList
     let is_input_focused = RwSignal::new(false);
     let (get_input, set_input) = signal("".to_string());
 
-    let get_entry_signal = get_entry_signal.clone();
+
+    let rw_entry_clone_a = rw_entry.clone();
+    let rw_entry_clone_b = rw_entry.clone();
+    let rw_entry_clone_c = rw_entry.clone();
+    let rw_entry_clone_d = rw_entry.clone();
 
     if is_input {
         view! {
@@ -753,7 +746,7 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
                 class=      class.clone() + " wrapper"
                 on:focusin= move |_| {
                     set_input.set(
-                        get_entry_signal.get().get_string_from_field(field_id)
+                        rw_entry.get().get_string_from_field(field_id)
                     );
                     is_input_focused.set(true);
                 }
@@ -770,7 +763,7 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
                     type=           "text"
                     id=             "text-input"
                     placeholder=    placeholder
-                    value=          move || { get_entry_signal.get_untracked().get_string_from_field(field_id) }
+                    value=          rw_entry_clone_a.get_untracked().get_string_from_field(field_id)
                     style=          move || {
                         if T::get_entry_type() == RecipeEntryType::Tag {
                             let input_length = usize::min(get_input.get().len(), 20);
@@ -783,7 +776,7 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
                         // on input, update entry signal
                         let current_input = event_target_value(&ev);
                         set_input.set(current_input.clone());
-                        set_entry_signal.update(|recipe_entry| {
+                        rw_entry_clone_b.update(|recipe_entry| {
                             recipe_entry.update_field_from_string_input(field_id, current_input);
                         });
                     }
@@ -812,10 +805,9 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
                 <textarea
                     class=          class.clone()
                     node_ref=       textarea
-                    //type=           "text"
                     id=             "text-input"
                     placeholder=    placeholder
-                    prop:value=          move || { get_entry_signal.get_untracked().get_string_from_field(field_id) }
+                    prop:value=     rw_entry_clone_c.get_untracked().get_string_from_field(field_id)
         
                     // on input
                     on:input=move |ev| {
@@ -825,7 +817,7 @@ pub fn RecipeEntryInput<T: RecipeEntry>(
                         set_content.set(event_target_value(&ev));
 
                         // update entry signal
-                        set_entry_signal.update(|recipe_entry| {
+                        rw_entry_clone_d.update(|recipe_entry| {
                             recipe_entry.update_field_from_string_input(field_id, event_target_value(&ev))
                         });
                     }
@@ -913,7 +905,9 @@ pub fn SettingsMenu() -> impl IntoView {
                     >
                         <button
                             class="settings-button backup"
-                            on:click=move |_| {
+                            on:click=move |ev| {
+                                ev.stop_propagation();
+                                ev.prevent_default();
                                 is_settings_menu_open.set(false);
 
                                 let navigate = leptos_router::hooks::use_navigate();
@@ -972,7 +966,7 @@ pub fn RecipeEntryMenu<T: RecipeEntry>(entry_menu_info: RecipeEntryMenuInfo<T>) 
 
                 {move || {
 
-                    if let Some(index) = all_entries.read().iter().position(|&x| x.0 == current_id) {
+                    if let Some(index) = all_entries.read().iter().position(|x| x.0 == current_id) {
                         
                         view! {
 
@@ -1038,22 +1032,12 @@ pub fn RecipeEntryMenu<T: RecipeEntry>(entry_menu_info: RecipeEntryMenuInfo<T>) 
 
                         // iterate in entries
                         all_entries.update(|entries| {
-                            entries.retain_mut(|(entry_id, (signal, _))| {
+                            entries.retain_mut(|(entry_id, _)| {
 
                                 // check if this is the entry to remove
                                 let keep_this_entry = entry_id != &current_id;
 
                                 if !keep_this_entry {
-                                    // NOTE: in this example, we are creating the signals
-                                    // in the scope of the parent. This means the memory used to
-                                    // store them will not be reclaimed until the parent component
-                                    // is unmounted. Here, we're removing the signal early (i.e, before
-                                    // the DynamicList is unmounted), so we manually dispose of the signal
-                                    // to avoid leaking memory.
-                                    //
-                                    // This is only necessary with nested signals like this one.
-                                    signal.dispose();
-
                                     // Remove the Delete Mode
                                     entry_menu_info.mode.set(RecipeEntryMenuMode::Closed);
                                 }

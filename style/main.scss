@@ -633,7 +633,6 @@ ul.recipe-light li::before {
 }
 
 .display-recipe-container {
-	width: var(--recipe-dynamic-max-width);
 	text-align: left;
 
 	margin-top: 2.5rem;
@@ -731,7 +730,6 @@ ul.recipe-light li::before {
 	input {
 		&.tags {
 			color: pink;
-			//max-width: clamp(var(--recipe-max-width), calc(var(--border-margin) * 2));
 		}
 	}
 
@@ -854,6 +852,7 @@ ul.recipe-light li::before {
 .editable-recipe {
 	text-align: left;
 	max-width: var(--recipe-dynamic-max-width);
+	width: 100%;
 
 	margin: 0 var(--border-margin);
 	padding-top: 3rem;
@@ -1195,7 +1194,9 @@ textarea#text-input {
 
 	height: 6rem;
 
-	overflow: hidden;
+	overflow : auto;
+	overflow-y: hidden;
+	
 
 	&::after {
 		content: "";
@@ -1436,7 +1437,35 @@ svg {
 	padding: 0 var(--border-margin);
 }
 
+.unroll-tags-button-container {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+}
+.unroll-tags-button-notifier {
+	z-index: 10;
 
+	font-weight: bold;
+	position: absolute;
+	right: 0.3rem;
+	margin: 0 0;
+	color: var(--theme-color-1);
+	
+
+	height: 1.1rem;
+	width: 1.1rem;
+
+	background-color: var(--theme-color-1-alt);
+	border-radius: 2rem;
+	border: 0.2rem solid var(--theme-color-1-alt);
+
+	&.hide-notifier {
+		display: none;
+	}
+}
 .unroll-tags-button {
     cursor: pointer;
 
@@ -1468,8 +1497,17 @@ svg {
 
 	&::after {
 		content: "#";
-		margin-right: 5px;
+		position: relative;
+		top: 0;
+		left: -0.5rem;
 	}
+
+	&.hide-notifier {
+		&::after {
+			left: 0;
+		}
+	}
+
 }
 .tags-container {
 	z-index: 100;
@@ -1505,6 +1543,7 @@ ul.tag-list {
 
 	height: auto;
 	margin: 4rem var(--border-margin);
+	padding-top: 25vh;
 
 	transition:
 		max-height 0.15s ease-out
@@ -1607,7 +1646,7 @@ ul.tag-list {
 	height: 100vh;
 	width: 100vw;
 
-	background-color: #000000ea;
+	background-color: #0000002c;
 
 	&.popup-hidden {
 		display: none;

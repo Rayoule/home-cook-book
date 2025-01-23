@@ -143,7 +143,7 @@ impl JsonRecipe {
 
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
-pub struct JsonRecipeTags(Option<Vec</*(String, [u8; 3])*/ String>>);
+pub struct JsonRecipeTags(Option<Vec<String>>);
 impl JsonRecipeTags {
     pub fn to_recipe_tags(self) -> Option<Vec<RecipeTag>> {
         if let Some(tags) = self.0 {
@@ -287,11 +287,12 @@ impl RecipeEntryType {
 
 /// RecipeEntry Trait --------
 pub trait RecipeEntry: std::fmt::Debug + Clone + Default + std::marker::Sync + std::marker::Send + 'static {
+    type S: Get<Value = Self> + GetUntracked<Value = Self> + Update<Value = Self> + Clone + 'static;
+
     fn get_entry_type() -> RecipeEntryType;
     fn get_css_class_name() -> String;
     fn into_editable_view(
-        entry: ReadSignal<Self>,
-        set_entry: WriteSignal<Self>,
+        rw_entry: Self::S,
         menu_info: Option<RecipeEntryMenuInfo<Self>>,
     ) -> AnyView;
     fn update_field_from_string_input(&mut self, field_id: Option<usize>, input: String);
@@ -317,6 +318,8 @@ impl IntoRender for RecipeIngredient {
 }
 
 impl RecipeEntry for RecipeIngredient {
+    type S = ArcRwSignal<Self>;
+
     fn get_entry_type() -> RecipeEntryType {
         RecipeEntryType::Ingredients
     }
@@ -326,8 +329,7 @@ impl RecipeEntry for RecipeIngredient {
     }
 
     fn into_editable_view(
-        entry: ReadSignal<Self>,
-        set_entry: WriteSignal<Self>,
+        rw_entry: Self::S,
         menu_info: Option<RecipeEntryMenuInfo<Self>>,
     ) -> AnyView {
 
@@ -342,8 +344,7 @@ impl RecipeEntry for RecipeIngredient {
                 <RecipeEntryInput
                     class=              "ingredients quantity".to_owned()
                     placeholder=        "Qty".to_owned()
-                    get_entry_signal=   entry
-                    set_entry_signal=   set_entry
+                    rw_entry=           rw_entry.clone()
                     field_id=           {0}
                     is_input=           true
                 />
@@ -351,8 +352,7 @@ impl RecipeEntry for RecipeIngredient {
                 <RecipeEntryInput
                     class=              "ingredients ingredients-content".to_owned()
                     placeholder=        "Ingredient".to_owned()
-                    get_entry_signal=   entry
-                    set_entry_signal=   set_entry
+                    rw_entry=           rw_entry
                     field_id=           {1}
                     is_input=           true
                 />
@@ -411,6 +411,8 @@ impl IntoRender for RecipeInstruction {
 }
 
 impl RecipeEntry for RecipeInstruction {
+    type S = RwSignal<Self>;
+
     fn get_entry_type() -> RecipeEntryType {
         RecipeEntryType::Instructions
     }
@@ -420,16 +422,14 @@ impl RecipeEntry for RecipeInstruction {
     }
 
     fn into_editable_view(
-        entry: ReadSignal<Self>,
-        set_entry: WriteSignal<Self>,
+        rw_entry: Self::S,
         _menu_info: Option<RecipeEntryMenuInfo<Self>>,
     ) -> AnyView {
         view! {
             <RecipeEntryInput
                 class=              "instructions".to_owned()
                 placeholder=        "Instruction content".to_owned()
-                get_entry_signal=   entry
-                set_entry_signal=   set_entry
+                rw_entry=           rw_entry
             />
         }
         .into_any()
@@ -463,6 +463,8 @@ impl IntoRender for RecipeNote {
 }
 
 impl RecipeEntry for RecipeNote {
+    type S = ArcRwSignal<Self>;
+
     fn get_entry_type() -> RecipeEntryType {
         RecipeEntryType::Notes
     }
@@ -472,8 +474,7 @@ impl RecipeEntry for RecipeNote {
     }
 
     fn into_editable_view(
-        entry: ReadSignal<Self>,
-        set_entry: WriteSignal<Self>,
+        rw_entry: Self::S,
         menu_info: Option<RecipeEntryMenuInfo<Self>>,
     ) -> AnyView {
         view! {
@@ -484,9 +485,7 @@ impl RecipeEntry for RecipeNote {
             <RecipeEntryInput
                 class=              "notes note-content".to_owned()
                 placeholder=        "Note content".to_owned()
-                get_entry_signal=   entry
-                set_entry_signal=   set_entry
-                //entry_menu_info=    menu_info.expect("Expected to find menu_signal for note entry.")
+                rw_entry=           rw_entry
             />
         }
         .into_any()
@@ -529,17 +528,15 @@ impl IntoRender for RecipeTag {
     type Output = AnyView;
     fn into_render(self) -> AnyView {
         view! {
-            <p
-                //color= {"red"}
-            >
-                { self.name }
-            </p>
+            <p> { self.name } </p>
         }
         .into_any()
     }
 }
 
 impl RecipeEntry for RecipeTag {
+    type S = ArcRwSignal<Self>;
+
     fn get_entry_type() -> RecipeEntryType {
         RecipeEntryType::Tag
     }
@@ -549,13 +546,12 @@ impl RecipeEntry for RecipeTag {
     }
 
     fn into_editable_view(
-        entry: ReadSignal<Self>,
-        _set_entry: WriteSignal<Self>,
+        rw_entry: Self::S,
         menu_info: Option<RecipeEntryMenuInfo<Self>>,
     ) -> AnyView {
         view! {
             <div class="editable-recipe tags">
-                { entry.get().name }
+                { rw_entry.get().name }
 
                 { move || {
                     if let Some(entry_menu_info) = menu_info.clone() {

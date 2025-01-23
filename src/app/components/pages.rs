@@ -109,6 +109,10 @@ pub fn NewRecipePage() -> impl IntoView {
     );
     on_cleanup(move || handle.remove());
 
+    // Is page Dirty Signal (to know if we need to save it before leaving)
+    let is_page_dirty = RwSignal::new(false);
+    provide_context(IsPageDirtySignal(is_page_dirty));
+
     // Setup action
     let recipe_action = use_context::<RecipeServerAction>()
         .expect("To find RecipeServerAction in context.")
@@ -172,10 +176,6 @@ pub fn NewRecipePage() -> impl IntoView {
 
     view! {
 
-        {move || {
-            
-        }}
-
         <CheckLogin/>
 
         <div
@@ -234,6 +234,8 @@ impl std::str::FromStr for RecipePageMode {
     }
 }
 
+
+
 #[derive(Clone)]
 pub struct IsPageDirtySignal(pub RwSignal<bool>);
 
@@ -260,7 +262,6 @@ pub fn RecipePage() -> impl IntoView {
             .expect("To get RecipeModeParam")
     };
 
-    // Is Page Dirty setup
     // Is page Dirty Signal (to know if we need to save it before leaving)
     let is_page_dirty = RwSignal::new(false);
     provide_context(IsPageDirtySignal(is_page_dirty));
@@ -518,7 +519,7 @@ pub fn AllRecipes() -> impl IntoView {
         .expect("To find RecipesLightResource in context.")
         .0;
 
-    let all_tags_memo = use_context::<AllTagsSignal>()
+    let all_tags_signal = use_context::<AllTagsSignal>()
         .expect("To find AllTagsMemo in context.")
         .0;
 
@@ -537,122 +538,103 @@ pub fn AllRecipes() -> impl IntoView {
 
         // TagList
         <Transition fallback=move || view! { <LoadingElem text="Loading Recipes...".to_owned() /> } >
-            { move || {
-                let tags_component = {
-                    move || {
 
-                        view! {
-                            <TagList
-                                tags=all_tags_memo.get()
-                                // Tags that are selected
-                                selected_tags_signal=selected_tags_signal
-                                // Tags that are already checked (needed because the component might redraw if tags are added or removed)
-                                // This needs to be updated ONLY if tags are added or removed (through addind/removing recipes)
-                                //already_selected_tags=already_selected_tags
-                            />
-                        }
-                    }
-                };
+            <div class="all-recipes">
 
+                <DeleteRecipePopup/>
 
-                view! {
-                    <div class="all-recipes">
-
-                        <DeleteRecipePopup/>
-
-                        <Transition
-                            fallback=move || { view! {
-                                <p class="popin-warning" >
-                                    "Wait for Login Check..."
-                                </p>
-                            }}
+                <Transition
+                    fallback=move || { view! {
+                        <p class="popin-warning" >
+                            "Wait for Login Check..."
+                        </p>
+                    }}
+                >
+                    <Show
+                        when=move || { check_login_resource.get() == Some(true) }
+                    >
+                        <button
+                            class="new-recipe-button"
+                            on:click=move |ev: MouseEvent| {
+                                ev.stop_propagation();
+                                let navigate = leptos_router::hooks::use_navigate();
+                                navigate("/new-recipe", Default::default());
+                            }
                         >
-                            <Show
-                                when=move || { check_login_resource.get() == Some(true) }
-                            >
-                                <button
-                                    class="new-recipe-button"
-                                    on:click=move |ev: MouseEvent| {
-                                        ev.stop_propagation();
-                                        let navigate = leptos_router::hooks::use_navigate();
-                                        navigate("/new-recipe", Default::default());
-                                    }
-                                >
-                                    <PlusIconSVG add_class="new-recipe".to_string() />
-                                </button>
-                            </Show>
-                        </Transition>
+                            <PlusIconSVG add_class="new-recipe".to_string() />
+                        </button>
+                    </Show>
+                </Transition>
 
-                        <div class="search-container">
-                            <div>
-                                {tags_component}
-                            </div>
-                            <RecipeSearchBar
-                                search_input=search_input
-                                request_search_clear=request_search_clear
-                            />
-                        </div>
+                <div class="search-container">
+                    <TagList
+                        all_tags=all_tags_signal
+                        selected_tags_signal=selected_tags_signal
+                    />
+                    <RecipeSearchBar
+                        search_input=search_input
+                        request_search_clear=request_search_clear
+                    />
+                </div>
 
-                        <div class="recipe-list-container">
-                            {move || {
-                                all_recipes_light
-                                    .get()
-                                    .map(move |recipes| match recipes {
-                                        Err(e) => {
-                                            view! { <pre class="error">"Server Error: " {e.to_string()}</pre>}.into_any()
+                <div class="recipe-list-container">
+                    {move || {
+                        all_recipes_light
+                            .get()
+                            .map(move |recipes| match recipes {
+                                Err(e) => {
+                                    view! { <pre class="error">"Server Error: " {e.to_string()}</pre>}.into_any()
+                                }
+                                Ok(mut recipes) => {
+                                    if recipes.is_empty() {
+                                        view! { <p>"No recipes were found."</p> }.into_any()
+                                    } else {
+                                        let sel_tags = selected_tags_signal.get();
+                                        let search_input_value = search_input.get();
+                                        // filter tags
+                                        if sel_tags.len() > 0 {
+                                            recipes.retain(|recipe| recipe.has_tags(&sel_tags));
                                         }
-                                        Ok(mut recipes) => {
-                                            if recipes.is_empty() {
-                                                view! { <p>"No recipes were found."</p> }.into_any()
-                                            } else {
-                                                let sel_tags = selected_tags_signal.get();
-                                                let search_input_value = search_input.get();
-                                                // filter tags
-                                                if sel_tags.len() > 0 {
-                                                    recipes.retain(|recipe| recipe.has_tags(&sel_tags));
-                                                }
-                                                // filter search
-                                                if search_input_value.len() > 0 {
-                                                    recipes.retain(|recipe| recipe.is_in_search(&search_input_value));
-                                                }
-                                                // If no results:
-                                                if recipes.len() < 1 {
+                                        // filter search
+                                        if search_input_value.len() > 0 {
+                                            recipes.retain(|recipe| recipe.is_in_search(&search_input_value));
+                                        }
+                                        // If no results:
+                                        if recipes.len() < 1 {
+                                            view! {
+                                                <div>
+                                                    <p>"No results..."</p>
+                                                    <button
+                                                        //class="cancel-search-button"
+                                                        on:click=on_cancel_search_click
+                                                    >
+                                                        "Cancel"
+                                                    </button>
+                                                </div>
+                                            }.into_any()
+                                        } else {
+                                            // else collect recipe views
+                                            recipes
+                                                .into_iter()
+                                                .map(move |recipe| {
+                                                    let style_color = ThemeColor::random();
                                                     view! {
-                                                        <div>
-                                                            <p>"No results..."</p>
-                                                            <button
-                                                                //class="cancel-search-button"
-                                                                on:click=on_cancel_search_click
-                                                            >
-                                                                "Cancel"
-                                                            </button>
-                                                        </div>
-                                                    }.into_any()
-                                                } else {
-                                                    // else collect recipe views
-                                                    recipes
-                                                        .into_iter()
-                                                        .map(move |recipe| {
-                                                            let style_color = ThemeColor::random();
-                                                            view! {
-                                                                <RecipeCard
-                                                                    recipe_light=recipe
-                                                                    custom_color_style=style_color
-                                                                />
-                                                            }
-                                                        })
-                                                        .collect_view()
-                                                        .into_any()
-                                                }
-                                            }
+                                                        <RecipeCard
+                                                            recipe_light=recipe
+                                                            custom_color_style=style_color
+                                                        />
+                                                    }
+                                                })
+                                                .collect_view()
+                                                .into_any()
                                         }
-                                    })
-                                    .unwrap_or_else(|| ().into_any())
-                            }}
-                        </div>
-                    </div>
-                }
-            }}
+                                    }
+                                }
+                            })
+                            .unwrap_or_else(|| ().into_any())
+                    }}
+                </div>
+            </div>
         </Transition>
     }
 }

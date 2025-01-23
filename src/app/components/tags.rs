@@ -1,32 +1,34 @@
 use crate::app::IsTagsMenuOpen;
 use leptos::ev::MouseEvent;
 use leptos::prelude::*;
+use leptos::logging::log;
 
 #[component]
 pub fn TagList(
     // All tags available
-    tags: Vec<String>,
+    all_tags: RwSignal<Vec<String>>,
     // Tags that are selected
     selected_tags_signal: RwSignal<Vec<String>>,
 ) -> impl IntoView {
-    // Make the signal list from "tags"
-    let tags_states_signals: RwSignal<
-        Vec<(ReadSignal<(bool, String)>, WriteSignal<(bool, String)>)>,
-    > = RwSignal::new({
-        let already_selected_tags = selected_tags_signal.get_untracked();
-        tags.iter()
-            .map(|t| signal((already_selected_tags.contains(t), t.clone())))
-            .collect()
+
+    let tags_state = move || {
+        all_tags
+            .get()
+            .iter()
+            .map(|t| RwSignal::new((selected_tags_signal.read().contains(t), t.clone())))
+            .collect::<Vec<RwSignal<(bool, String)>>>()
+    };
+
+    Effect::new(move || {
+        log!("Tags: {:?}", selected_tags_signal.get());
     });
 
     let all_tag_elems = move || {
-        // get the signals
-        let tags_states_signals = tags_states_signals.get();
         // then generate the buttons
-        tags_states_signals
+        tags_state()
             .into_iter()
-            .map(|(tag_state, set_tag_state)| {
-                view_from_tag_state(tag_state, set_tag_state, selected_tags_signal)
+            .map(|tag_state_signal| {
+                view_from_tag_state(tag_state_signal, selected_tags_signal)
             })
             .rev()
             .collect_view()
@@ -41,16 +43,13 @@ pub fn TagList(
         // clear selected_tags_signal
         selected_tags_signal.set(vec![]);
         // update tag_button_state_signals
-        tags_states_signals
-            .get()
+        tags_state()
             .iter()
-            .for_each(|(_, set_tag_signal)| {
-                set_tag_signal.update(|(is_tag_selected, _)| {
+            .for_each(|tag_state_signal| {
+                tag_state_signal.update(|(is_tag_selected, _)| {
                     *is_tag_selected = false;
                 });
             });
-        // Then close the menu
-        //is_tags_menu_open.set(false);
     };
 
     let on_unroll_click = move |ev: MouseEvent| {
@@ -60,11 +59,20 @@ pub fn TagList(
 
     view! {
 
-        <button
-            class="unroll-tags-button"
-            on:click=on_unroll_click
-        >
-        </button>
+        <div class="unroll-tags-button-container">
+            <p
+                class="unroll-tags-button-notifier"
+                class:hide-notifier=move || selected_tags_signal.read().is_empty()
+            >
+                { move || selected_tags_signal.read().len() }
+            </p>
+            <button
+                class="unroll-tags-button"
+                class:hide-notifier=move || selected_tags_signal.read().is_empty()
+                on:click=on_unroll_click
+            >
+            </button>
+        </div>
 
         <div
             class="background-blocker tags-blocker"
@@ -109,19 +117,18 @@ pub fn TagList(
 }
 
 fn view_from_tag_state(
-    tag_state: ReadSignal<(bool, String)>,
-    set_tag_state: WriteSignal<(bool, String)>,
+    tag_state_signal: RwSignal<(bool, String)>,
     selected_tags_signal: RwSignal<Vec<String>>,
 ) -> AnyView {
     view! {
         <li class="tag-list-entry">
             <button
                 class="tag-button"
-                class:tag-selected = move || tag_state.get().0
+                class:tag-selected = move || tag_state_signal.get().0
                 on:click = move |ev: MouseEvent| {
                     ev.stop_propagation();
                     // update the signal
-                    set_tag_state.update(|(tag_selected, tag_name)| {
+                    tag_state_signal.update(|(tag_selected, tag_name)| {
                         let selecting_or_deselecting = !*tag_selected;
                         selected_tags_signal.update(|tags| {
                             if selecting_or_deselecting {
@@ -137,7 +144,7 @@ fn view_from_tag_state(
                     })
                 }
             >
-                { move || tag_state.get().1 }
+                { move || tag_state_signal.get().1 }
             </button>
         </li>
     }

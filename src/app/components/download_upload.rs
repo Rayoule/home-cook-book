@@ -135,7 +135,6 @@ pub fn UploadAll(has_been_backed_up: RwSignal<bool>) -> impl IntoView {
                             class=          "save-input"
                             node_ref=       textarea
                             id=             "text-input"
-                            //type=           "text"
                             placeholder=    "Paste JSON save here"
                             on:input=move |ev| {
                                 // resize box to fit text

@@ -70,30 +70,11 @@ pub fn App() -> impl IntoView {
     let is_tags_menu_open = RwSignal::new(false);
     provide_context(IsTagsMenuOpen(is_tags_menu_open));
 
-    // Redirect to "/" if logged in
-    /*let rw_wants_redirect = RwSignal::new(false);
-    Effect::new(move |_| {
-        if rw_wants_redirect.get() {
-            let navigate = leptos_router::hooks::use_navigate();
-            navigate("/", Default::default());
-        }
-    });*/
-
     // Try login action
     let try_login_action = Action::new(move |input: &LoginAccount| {
         let input = input.clone();
         async move {
             match server_try_login(input.clone()).await {
-                /*Ok(login) => {
-                    if login {
-                        // If login was successful
-                        rw_wants_redirect.set(true);
-                        true
-                    } else {
-                        // If login failed
-                        false
-                    }
-                }*/
                 Ok(login) => login,
                 Err(e) => {
                     error!("Error trying login: {:?}", e.to_string());
@@ -120,7 +101,6 @@ pub fn App() -> impl IntoView {
                 try_login_action.version().get(),
                 logout_action.version().get(),
                 recipe_action.version().get(),
-                //reload_action.version().get(),
             )
         },
         move |_| async move {
@@ -154,8 +134,8 @@ pub fn App() -> impl IntoView {
     let all_recipe_light: Resource<std::result::Result<Vec<RecipeLight>, ServerFnError>> = Resource::new(
         move || {
             (
-                recipe_action.version().get(),
-                upload_save_action.version().get(),
+                recipe_action.version().track(),
+                upload_save_action.version().track(),
             )
         },
         move |_| get_all_recipes_light(),
@@ -165,8 +145,8 @@ pub fn App() -> impl IntoView {
     // All Tags signal
     let all_tags_signal = RwSignal::<Vec<String>>::new(vec![]);
     Effect::new(move |_| {
-        let recipes = all_recipe_light.get();
-        let mut tag_list = if let Some(Ok(recipes)) = recipes {
+        log!("Rerun all tags !");
+        let mut tag_list = if let Some(Ok(recipes)) = all_recipe_light.get() {
             recipes
                 .iter()
                 .map(|recipe| recipe.tags.clone().unwrap_or_else(|| Vec::new()))

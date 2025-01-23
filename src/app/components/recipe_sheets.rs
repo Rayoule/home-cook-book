@@ -184,25 +184,15 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
 
 #[component]
 pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
-    let tag_list = {
-        recipe
-            .tags
-            .unwrap_or_else(|| vec![])
-            .into_iter()
-            .map(|tag| {
-                view! {
-                    <li class="display-recipe tags">
-                        { tag.name }
-                    </li>
-                }
-            })
-            .collect_view()
-    };
 
+    let mut are_ingrs_empty: bool = false;
     let ingredient_list = {
         recipe
             .ingredients
-            .unwrap_or_else(|| vec![])
+            .unwrap_or_else(|| {
+                are_ingrs_empty = true;
+                vec![]
+            })
             .into_iter()
             .map(|ingredient| {
                 view! {
@@ -215,19 +205,17 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
             .collect_view()
     };
 
-    let instructions = {
-        view! {
-            <li class="display-recipe instructions content">
-                {recipe.instructions.content}
-            </li>
-        }
-        .into_any()
-    };
 
+    let are_insts_empty = recipe.instructions.content.len() == 0;
+
+    let mut are_notes_empty: bool = false;
     let note_list = {
         recipe
             .notes
-            .unwrap_or_else(|| vec![])
+            .unwrap_or_else(|| {
+                are_notes_empty = true;
+                vec![]
+            })
             .into_iter()
             .map(|note| {
                 view! {
@@ -236,6 +224,25 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
                         class="display-recipe notes"
                     >
                         <span class="display-recipe notes">{note.content}</span>
+                    </li>
+                }
+            })
+            .collect_view()
+    };
+
+    let mut are_tags_empty = false;
+    let tag_list = {
+        recipe
+            .tags
+            .unwrap_or_else(|| {
+                are_tags_empty = true;
+                vec![]
+            })
+            .into_iter()
+            .map(|tag| {
+                view! {
+                    <li class="display-recipe tags">
+                        { tag.name }
                     </li>
                 }
             })
@@ -254,45 +261,64 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
 
         <div class="display-recipe-container">
 
-            <div class="display-recipe ingredients container">
-                <h3
-                    style=move || { theme_color.get().as_visible_color() }
-                    class="display-recipe ingredients title"
-                >"Ingredients"</h3>
-                <ul class="display-recipe ingredients">
-                    {ingredient_list}
-                </ul>
-            </div>
+            <Show
+                when=move || { !are_ingrs_empty }
+            >
+                <div class="display-recipe ingredients container">
+                    <h3
+                        style=move || { theme_color.get().as_visible_color() }
+                        class="display-recipe ingredients title"
+                    >"Ingredients"</h3>
+                    <ul class="display-recipe ingredients">
+                        { ingredient_list.clone() }
+                    </ul>
+                </div>
+            </Show>
+            
 
-            <div class="display-recipe instructions container" >
-                <h3
-                    style=move || { theme_color.get().as_visible_color() }
-                    class="display-recipe instructions title"
-                >"Instructions"</h3>
-                <ul class="display-recipe instructions">
-                    {instructions}
-                </ul>
-            </div>
+            <Show
+                when=move || { !are_insts_empty }
+            >
+                <div class="display-recipe instructions container" >
+                    <h3
+                        style=move || { theme_color.get().as_visible_color() }
+                        class="display-recipe instructions title"
+                    >"Instructions"</h3>
+                    <ul class="display-recipe instructions">
+                        <li class="display-recipe instructions content">
+                            { recipe.instructions.content.clone() }
+                        </li>
+                    </ul>
+                </div>
+            </Show>
 
-            <div class="display-recipe notes container">
-                <h3
-                    style=move || { theme_color.get().as_visible_color() }
-                    class="display-recipe notes title"
-                >"Notes"</h3>
-                <ul class="display-recipe notes">
-                    {note_list}
-                </ul>
-            </div>
+            <Show
+                when=move || { !are_notes_empty }
+            >
+                <div class="display-recipe notes container">
+                    <h3
+                        style=move || { theme_color.get().as_visible_color() }
+                        class="display-recipe notes title"
+                    >"Notes"</h3>
+                    <ul class="display-recipe notes">
+                        {note_list.clone()}
+                    </ul>
+                </div>
+            </Show>
 
-            <div class="display-recipe tags container">
-                <h3
-                    style=move || { theme_color.get().as_visible_color() }
-                    class="display-recipe tags title"
-                >"Tags"</h3>
-                <ul class="display-recipe tags">
-                    {tag_list}
-                </ul>
-            </div>
+            <Show
+                when=move || { !are_tags_empty }
+            >
+                <div class="display-recipe tags container">
+                    <h3
+                        style=move || { theme_color.get().as_visible_color() }
+                        class="display-recipe tags title"
+                    >"Tags"</h3>
+                    <ul class="display-recipe tags">
+                        {tag_list.clone()}
+                    </ul>
+                </div>
+            </Show>
 
         </div>
     }
@@ -300,10 +326,15 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
 
 #[component]
 pub fn PrintRecipeSheet(recipe: Recipe) -> impl IntoView {
+
+    let mut are_ingrs_empty = false;
     let ingredient_list = {
         recipe
             .ingredients
-            .unwrap_or_else(|| vec![])
+            .unwrap_or_else(|| {
+                are_ingrs_empty = true;
+                vec![]
+            })
             .into_iter()
             .map(|ingredient| {
                 view! {
@@ -316,19 +347,16 @@ pub fn PrintRecipeSheet(recipe: Recipe) -> impl IntoView {
             .collect_view()
     };
 
-    let instructions = {
-        view! {
-            <li class="display-recipe instructions content">
-                { recipe.instructions.content }
-            </li>
-        }
-        .into_any()
-    };
+    let are_insts_empty = recipe.instructions.content.len() == 0;
 
+    let mut are_notes_empty = false;
     let note_list = {
         recipe
             .notes
-            .unwrap_or_else(|| vec![])
+            .unwrap_or_else(|| {
+                are_notes_empty = true;
+                vec![]
+            })
             .into_iter()
             .map(|note| {
                 view! {
@@ -340,13 +368,6 @@ pub fn PrintRecipeSheet(recipe: Recipe) -> impl IntoView {
             .collect_view()
     };
 
-    // Triggers Print Dialog
-    Effect::new(|_| {
-        let _ = web_sys::window()
-            .expect("window should be available")
-            .print();
-    });
-
     view! {
 
         <div class="print-recipe-container">
@@ -355,51 +376,71 @@ pub fn PrintRecipeSheet(recipe: Recipe) -> impl IntoView {
                 { recipe.name }
             </h2>
 
-            <div class="print-recipe ingredients container">
-                <h3 class="print-recipe ingredients title" >
-                    "Ingredients"
-                </h3>
-                <ul class="print-recipe ingredients">
-                    { ingredient_list }
-                </ul>
-            </div>
+            <Show
+                when=move || { !are_ingrs_empty }
+            >
+                <div class="print-recipe ingredients container">
+                    <h3 class="print-recipe ingredients title" >
+                        "Ingredients"
+                    </h3>
+                    <ul class="print-recipe ingredients">
+                        { ingredient_list.clone() }
+                    </ul>
+                </div>
+            </Show>
 
-            <div class="print-recipe instructions container" >
-                <h3 class="print-recipe instructions title" >
-                    "Instructions"
-                </h3>
-                <ul class="print-recipe instructions">
-                    { instructions }
-                </ul>
-            </div>
+            <Show
+                when=move || { !are_insts_empty }
+            >
+                <div class="print-recipe instructions container" >
+                    <h3 class="print-recipe instructions title" >
+                        "Instructions"
+                    </h3>
+                    <ul class="print-recipe instructions">
+                        <li class="display-recipe instructions content">
+                            { recipe.instructions.content.clone() }
+                        </li>
+                    </ul>
+                </div>
+            </Show>
 
-            <div class="print-recipe notes container">
-                <h3 class="print-recipe notes title" >
-                    "Notes"
-                </h3>
-                <ul class="print-recipe notes">
-                    { note_list }
-                </ul>
-            </div>
+            <Show
+                when=move || { !are_notes_empty }
+            >
+                <div class="print-recipe notes container">
+                    <h3 class="print-recipe notes title" >
+                        "Notes"
+                    </h3>
+                    <ul class="print-recipe notes">
+                        { note_list.clone() }
+                    </ul>
+                </div>
+            </Show>
 
         </div>
+
+        {move || {
+            // Triggers Print Dialog
+            Effect::new(|_| {
+                let _ = web_sys::window()
+                    .expect("window should be available")
+                    .print();
+            });
+        }}
     }
 }
 
-type RecipeSignals = RwSignal<(
+pub type RecipeSignals = RwSignal<(
     RwSignal<String>,
-    RwSignal<Vec<(u16, (ReadSignal<RecipeTag>, WriteSignal<RecipeTag>))>>,
+    RwSignal<Vec<(u16, ArcRwSignal<RecipeTag>)>>,
     RwSignal<
         Vec<(
             u16,
-            (ReadSignal<RecipeIngredient>, WriteSignal<RecipeIngredient>),
+            ArcRwSignal<RecipeIngredient>,
         )>,
     >,
-    (
-        ReadSignal<RecipeInstruction>,
-        WriteSignal<RecipeInstruction>,
-    ),
-    RwSignal<Vec<(u16, (ReadSignal<RecipeNote>, WriteSignal<RecipeNote>))>>,
+    RwSignal<RecipeInstruction>,
+    RwSignal<Vec<(u16, ArcRwSignal<RecipeNote>)>>,
 )>;
 
 #[component]
@@ -420,7 +461,7 @@ pub fn EditableRecipeSheet(
         RwSignal::new(recipe.name),
         RwSignal::new(entries_into_signals(recipe.tags)),
         RwSignal::new(entries_into_signals(recipe.ingredients)),
-        signal(recipe.instructions),
+        RwSignal::new(recipe.instructions),
         RwSignal::new(entries_into_signals(recipe.notes)),
     ));
     let (_, tags_signal, ingredients_signal, instructions_signal, notes_signal) =
@@ -428,28 +469,27 @@ pub fn EditableRecipeSheet(
 
     // Is page Dirty Signal (to know if we need to save it before leaving)
     let is_page_dirty = use_context::<IsPageDirtySignal>()
-    .expect("Expected to find IsPageDirtySignal in context")
-    .0;
+        .expect("Expected to find IsPageDirtySignal in context")
+        .0;
     // Subscribe to all recipe signals to set the page dirty if any changes, but only if the page is currently clean
     Effect::new( move |_| {
         if !is_page_dirty.get() {
             Effect::watch(
                 move || {
                     // Subscribe to all events
-                    //let (name, tags, ingrs, insts, notes) = *recipe_signals.read();
                     let sigs = recipe_signals.read();
                     //Subscribe to signals
                     let (_, t, ig, _, no) = (
                         sigs.0.read(),
                         sigs.1.read(),
                         sigs.2.read(),
-                        sigs.3.0.read(),
+                        sigs.3.read(),
                         sigs.4.read()
                     );
                     // Subscribe to every inner signal
-                    t.iter().for_each(|s| { s.1.0.read(); });
-                    ig.iter().for_each(|s| { s.1.0.read(); });
-                    no.iter().for_each(|s| { s.1.0.read(); });
+                    t.iter().for_each(|s| { s.1.track(); });
+                    ig.iter().for_each(|s| { s.1.track(); });
+                    no.iter().for_each(|s| { s.1.track(); });
                 },
                 // Make the page dirty whenever they change
                 move |_, _, _| {
@@ -512,14 +552,14 @@ pub fn EditableRecipeSheet(
 // helper function for EditableRecipeSheet
 fn entries_into_signals<T: RecipeEntry>(
     entries: Option<Vec<T>>,
-) -> Vec<(u16, (ReadSignal<T>, WriteSignal<T>))> {
+) -> Vec<(u16, ArcRwSignal<T>)> {
     if let Some(entries) = entries {
         let length = entries.len() as u16;
         entries
             .into_iter()
             .zip(0..length)
             .map(|(entry, id)| {
-                let new_signal = signal(entry);
+                let new_signal = ArcRwSignal::new(entry);
                 (id, new_signal)
             })
             .collect()
@@ -529,12 +569,12 @@ fn entries_into_signals<T: RecipeEntry>(
 }
 
 pub fn fetch_entries_from_signals<T: RecipeEntry>(
-    signals: Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>,
+    signals: Vec<(u16, ArcRwSignal<T>)>,
 ) -> Option<Vec<T>> {
     if signals.len() > 0 {
         let entries = signals
             .iter()
-            .map(|(_, (get_signal, _))| get_signal.clone().get_untracked())
+            .map(|(_, rw_signal)| rw_signal.get_untracked())
             .collect();
         Some(entries)
     } else {

@@ -211,7 +211,6 @@ pub fn PrintButtonSVG(color: String) -> impl IntoView {
             class="print-icon-svg recipe-menu-icon print"
             fill=color
             viewBox="0 0 612.00 612.00"
-            //stroke="#000000"
         >
             <g id="SVGRepo_bgCarrier" stroke-width="0"/>
             <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC" stroke-width="1.224"/>

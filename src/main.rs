@@ -35,8 +35,6 @@ async fn main() -> std::io::Result<()> {
         // Generate the list of routes in your Leptos App
         let routes = generate_route_list(App);
 
-        //println!("listening on http://{}", &addr.clone());
-
         App::new()
             // serve JS/WASM/CSS from `pkg`
             .service(Files::new("/pkg", format!("{site_root}/pkg")))
