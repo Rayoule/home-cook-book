@@ -123,8 +123,8 @@ pub fn NewRecipePage() -> impl IntoView {
     // store the submitted recipe name
     let submitted_name = RwSignal::new("".to_owned());
     Effect::new(move |_| {
-        if let Some(RecipeActionDescriptor::Add(recipe)) = action_submitted.get() {
-            submitted_name.set(recipe.name)
+        if let Some(action_desc) = action_submitted.get() {
+            if let RecipeActionDescriptor::Add(recipe) = action_desc { submitted_name.set(recipe.name) }
         }
     });
 
