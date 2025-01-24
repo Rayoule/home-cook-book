@@ -61,7 +61,7 @@ impl RecipeLight {
         out
     }
 
-    pub fn is_in_search(&self, search_words: &Vec<String>) -> bool {
+    pub fn is_in_search(&self, search_words: &[String]) -> bool {
         use regex::Regex;
         let re = Regex::new(r"\b\w+\b").unwrap();
 
