@@ -22,7 +22,7 @@ pub struct Recipe {
 impl Recipe {
     /// Check if the recipe is valid to be added/saved (need only a name)
     pub fn valid_for_save(&self) -> Result<(), String> {
-        if self.name.len() < 1 {
+        if self.name.is_empty() {
             Err("Recipe has no name".to_string())
         } else {
             Ok(())
@@ -44,15 +44,15 @@ impl RecipeLight {
     pub fn has_tags(&self, tags_to_check: &Vec<String>) -> bool {
         let mut out = false;
         // if no tags to check, then all recipes valid
-        if tags_to_check.len() < 1 {
+        if tags_to_check.is_empty() {
             out = true;
         // if there are, then check the tags in recipes and then compare them
         } else if let Some(tags) = &self.tags {
-            if tags_to_check.len() < 1 {
+            if tags_to_check.is_empty() {
                 return true;
             }
-            for i in 0..tags.len() {
-                if tags_to_check.contains(&tags[i].name) {
+            for tag in tags {
+                if tags_to_check.contains(&tag.name) {
                     out = true;
                     break;
                 }
@@ -146,18 +146,10 @@ impl JsonRecipe {
 pub struct JsonRecipeTags(Option<Vec<String>>);
 impl JsonRecipeTags {
     pub fn to_recipe_tags(self) -> Option<Vec<RecipeTag>> {
-        if let Some(tags) = self.0 {
-            Some(tags.into_iter().map(|t| RecipeTag { name: t }).collect())
-        } else {
-            None
-        }
+        self.0.map(|tags| tags.into_iter().map(|t| RecipeTag { name: t }).collect())
     }
     pub fn from_recipe_tags(recipe_tags: Option<Vec<RecipeTag>>) -> Self {
-        JsonRecipeTags(if let Some(recipe_tags) = recipe_tags {
-            Some(recipe_tags.into_iter().map(|t| t.name).collect())
-        } else {
-            None
-        })
+        JsonRecipeTags(recipe_tags.map(|recipe_tags| recipe_tags.into_iter().map(|t| t.name).collect()))
     }
 }
 
@@ -166,28 +158,16 @@ impl JsonRecipeTags {
 pub struct JsonRecipeIngredients(Option<Vec<(String, String)>>);
 impl JsonRecipeIngredients {
     pub fn to_recipe_ingredients(self) -> Option<Vec<RecipeIngredient>> {
-        if let Some(ingrs) = self.0 {
-            Some(
-                ingrs
+        self.0.map(|ingrs| ingrs
                     .into_iter()
                     .map(|(qty_unit, content)| RecipeIngredient { qty_unit, content })
-                    .collect(),
-            )
-        } else {
-            None
-        }
+                    .collect())
     }
     pub fn from_recipe_ingredients(recipe_ingrs: Option<Vec<RecipeIngredient>>) -> Self {
-        JsonRecipeIngredients(if let Some(recipe_ingrs) = recipe_ingrs {
-            Some(
-                recipe_ingrs
+        JsonRecipeIngredients(recipe_ingrs.map(|recipe_ingrs| recipe_ingrs
                     .into_iter()
                     .map(|i| (i.qty_unit, i.content))
-                    .collect(),
-            )
-        } else {
-            None
-        })
+                    .collect()))
     }
 }
 
@@ -208,23 +188,13 @@ impl JsonRecipeInstructions {
 pub struct JsonRecipeNotes(Option<Vec<String>>);
 impl JsonRecipeNotes {
     pub fn to_recipe_notes(self) -> Option<Vec<RecipeNote>> {
-        if let Some(notes) = self.0 {
-            Some(
-                notes
+        self.0.map(|notes| notes
                     .into_iter()
                     .map(|content| RecipeNote { content })
-                    .collect(),
-            )
-        } else {
-            None
-        }
+                    .collect())
     }
     pub fn from_recipe_notes(recipe_notes: Option<Vec<RecipeNote>>) -> Self {
-        JsonRecipeNotes(if let Some(recipe_notes) = recipe_notes {
-            Some(recipe_notes.into_iter().map(|t| t.content).collect())
-        } else {
-            None
-        })
+        JsonRecipeNotes(recipe_notes.map(|recipe_notes| recipe_notes.into_iter().map(|t| t.content).collect()))
     }
 }
 

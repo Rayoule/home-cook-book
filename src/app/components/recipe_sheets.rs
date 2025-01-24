@@ -22,7 +22,7 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
         .0;
 
     // Setup context with the recipe light getter
-    let (recipe_id_getter, _) = signal(recipe_light.id.clone());
+    let (recipe_id_getter, _) = signal(recipe_light.id);
 
     let (recipe_id, recipe_name, recipe_tags) =
         (recipe_light.id, recipe_light.name, recipe_light.tags);
@@ -46,7 +46,7 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
         move || {
             let tag_list = recipe_tags
                 .clone()
-                .unwrap_or_else(|| vec![])
+                .unwrap_or_else(std::vec::Vec::new)
                 .into_iter()
                 .map(move |t| {
                     view! {
@@ -206,7 +206,7 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
     };
 
 
-    let are_insts_empty = recipe.instructions.content.len() == 0;
+    let are_insts_empty = recipe.instructions.content.is_empty();
 
     let mut are_notes_empty: bool = false;
     let note_list = {
@@ -347,7 +347,7 @@ pub fn PrintRecipeSheet(recipe: Recipe) -> impl IntoView {
             .collect_view()
     };
 
-    let are_insts_empty = recipe.instructions.content.len() == 0;
+    let are_insts_empty = recipe.instructions.content.is_empty();
 
     let mut are_notes_empty = false;
     let note_list = {
@@ -449,10 +449,10 @@ pub fn EditableRecipeSheet(
     #[prop(optional)] is_new_recipe: Option<bool>,
 ) -> impl IntoView {
 
-    let is_new_recipe = is_new_recipe.unwrap_or_else(|| false);
+    let is_new_recipe = is_new_recipe.unwrap_or(false);
 
     // Create the recipe if None
-    let recipe = recipe.unwrap_or_else(|| Recipe::default());
+    let recipe = recipe.unwrap_or_default();
 
     // Needed for move into closure view
     // for each category, make a Signal<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>>
@@ -571,7 +571,7 @@ fn entries_into_signals<T: RecipeEntry>(
 pub fn fetch_entries_from_signals<T: RecipeEntry>(
     signals: Vec<(u16, ArcRwSignal<T>)>,
 ) -> Option<Vec<T>> {
-    if signals.len() > 0 {
+    if !signals.is_empty() {
         let entries = signals
             .iter()
             .map(|(_, rw_signal)| rw_signal.get_untracked())

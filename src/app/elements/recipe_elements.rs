@@ -295,7 +295,7 @@ pub enum RecipeEntryMenuMode {
 }
 
 #[component]
-pub fn EditableEntryList<T: RecipeEntry>(
+pub fn EditableEntryList<T>(
     entry_type: RecipeEntryType,
     rw_entries: RwSignal<Vec<(u16, ArcRwSignal<T>)>>,
     theme_color: RwSignal<ThemeColor>,
@@ -486,7 +486,7 @@ pub fn EditableTags(
 
     // Add Entry closure
     let mut add_entry = move |new_tag_name: String| {
-        if new_tag_name.len() > 0 {
+        if !new_tag_name.is_empty() {
             let new_entry_signal = ArcRwSignal::new(RecipeTag { name: new_tag_name });
             rw_entries.update(move |entries| {
                 entries.push((id_counter, new_entry_signal));
@@ -623,12 +623,12 @@ pub fn EditableTags(
                         // get current search bar input
                         let current_tag_field = current_tag_field.get();
                         // if there is an input, then filter suggestions
-                        if current_tag_field.len() != 0 {
+                        if !current_tag_field.is_empty() {
                             tags_to_suggest.retain(|tag| { tag.to_lowercase().contains(&current_tag_field) });
                         }
                         // make tag list
-                        let tags_to_suggest =
-                            tags_to_suggest
+                        
+                        tags_to_suggest
                                 .into_iter()
                                 .map(|tag| {
                                     let tag_name = tag.clone();
@@ -644,8 +644,7 @@ pub fn EditableTags(
                                         </button>
                                     }
                                 })
-                                .collect_view();
-                        tags_to_suggest
+                                .collect_view()
                     }}
                 </ul>
             </div>

@@ -59,7 +59,7 @@ pub fn RecipeSearchBar(
                 // On Input, if empty -> clear search
                 on:input=move |ev| {
                     let value = event_target_value(&ev);
-                    if value.len() < 1 {
+                    if value.is_empty() {
                         search_input.set(vec![]);
                     }
                 }

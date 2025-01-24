@@ -11,7 +11,7 @@ pub fn ServerActionPendingPopup() -> impl IntoView {
 
     let popup_color = RwSignal::new(PopupColor::random());
     Effect::new(move |_| {
-        let _ = action_pending.track();
+        action_pending.track();
         popup_color.set(PopupColor::random());
     });
 
@@ -70,7 +70,7 @@ pub fn DeleteRecipePopup() -> impl IntoView {
 
     let popup_color = RwSignal::new(PopupColor::random());
     Effect::new(move |_| {
-        let _ = delete_info_signal.track();
+        delete_info_signal.track();
         popup_color.set(PopupColor::random());
     });
 

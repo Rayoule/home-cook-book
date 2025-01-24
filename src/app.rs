@@ -149,8 +149,7 @@ pub fn App() -> impl IntoView {
         let mut tag_list = if let Some(Ok(recipes)) = all_recipe_light.get() {
             recipes
                 .iter()
-                .map(|recipe| recipe.tags.clone().unwrap_or_else(|| Vec::new()))
-                .flatten()
+                .flat_map(|recipe| recipe.tags.clone().unwrap_or_default())
                 .map(|t| t.name)
                 .unique()
                 .collect::<Vec<String>>()
@@ -220,7 +219,7 @@ pub fn CheckLogin() -> impl IntoView {
                         .pathname
                         .get()
                         .split('/')
-                        .last()
+                        .next_back()
                         .is_some_and(|last_word| last_word == "print");
 
                 if !is_print_page {

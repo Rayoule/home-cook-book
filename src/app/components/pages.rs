@@ -123,11 +123,8 @@ pub fn NewRecipePage() -> impl IntoView {
     // store the submitted recipe name
     let submitted_name = RwSignal::new("".to_owned());
     Effect::new(move |_| {
-        if let Some(action_desc) = action_submitted.get() {
-            match action_desc {
-                RecipeActionDescriptor::Add(recipe) => submitted_name.set(recipe.name),
-                _ => (),
-            }
+        if let Some(RecipeActionDescriptor::Add(recipe)) = action_submitted.get() {
+            submitted_name.set(recipe.name)
         }
     });
 
@@ -160,7 +157,7 @@ pub fn NewRecipePage() -> impl IntoView {
             match r {
                 Ok(_) => {
                     let name = submitted_name.get();
-                    if name.len() < 1 {
+                    if name.is_empty() {
                         error!("ERROR: Won't fetch the id with an empty recipe name.");
                     } else {
                         fetch_id_and_redirect.dispatch(name);
@@ -592,15 +589,15 @@ pub fn AllRecipes() -> impl IntoView {
                                         let sel_tags = selected_tags_signal.get();
                                         let search_input_value = search_input.get();
                                         // filter tags
-                                        if sel_tags.len() > 0 {
+                                        if !sel_tags.is_empty() {
                                             recipes.retain(|recipe| recipe.has_tags(&sel_tags));
                                         }
                                         // filter search
-                                        if search_input_value.len() > 0 {
+                                        if !search_input_value.is_empty() {
                                             recipes.retain(|recipe| recipe.is_in_search(&search_input_value));
                                         }
                                         // If no results:
-                                        if recipes.len() < 1 {
+                                        if recipes.is_empty() {
                                             view! {
                                                 <div>
                                                     <p>"No results..."</p>

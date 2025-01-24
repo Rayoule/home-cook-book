@@ -8,7 +8,7 @@ use {
     std::sync::{Arc, Mutex},
 };
 
-pub const ACCOUNTS_FILE_NAME: &'static str = "hcb_auth.json";
+pub const ACCOUNTS_FILE_NAME: &str = "hcb_auth.json";
 pub const LOG_PERSISTANCE_DURATION_SECONDS: u64 = 7200; // 7200s = 2h;
 
 // Struct found in the JSON auth file along with the .exe
