@@ -480,10 +480,10 @@ pub fn EditableRecipeSheet(
                     let sigs = recipe_signals.read();
                     //Subscribe to signals
                     let (_, t, ig, _, no) = (
-                        sigs.0.read(),
+                        sigs.0.track(),
                         sigs.1.read(),
                         sigs.2.read(),
-                        sigs.3.read(),
+                        sigs.3.track(),
                         sigs.4.read()
                     );
                     // Subscribe to every inner signal
