@@ -29,6 +29,9 @@ pub fn RecipeMenu(
 
     let menu_open = RwSignal::new(false);
 
+    // Recipe Menu ref
+    let recipe_menu_div_ref = NodeRef::<leptos::html::Div>::new();
+
     if !editable {
         let recipe_id = recipe_id.expect("Expected recipe ID to be Some for non edit mode");
 
@@ -41,10 +44,23 @@ pub fn RecipeMenu(
                     </p>
                 }}
             >
+                
+                {move || {
+                    if menu_open.get() {
+                        let _ = leptos_use::on_click_outside(
+                            recipe_menu_div_ref,
+                            move |ev| {
+                                menu_open.set(false);
+                                ev.stop_propagation();
+                            },
+                        );
+                    }
+                }}
+
                 <div
+                    node_ref=recipe_menu_div_ref
                     class="recipe-menu"
                     class:is-open=menu_open
-                    class:not-logged-in=move || { check_login_resource.get() == Some(false) }
                     style=move || { color.get().as_bg_main_color() }
                 >
 
@@ -220,7 +236,6 @@ pub fn RecipeMenu(
                 <div
                     class="recipe-menu"
                     class:is-open=menu_open
-                    class:not-logged-in=move || { check_login_resource.get() == Some(false) }
                     style=move || { color.get().as_bg_main_color() }
                 >
 
@@ -293,6 +308,33 @@ pub enum RecipeEntryMenuMode {
     Sort,
     Delete,
 }
+
+
+#[component]
+pub fn IngredientMultiplier( mult: RwSignal<f32>) -> impl IntoView {
+
+    let mult_ref = NodeRef::<leptos::html::Input>::new();
+
+    view! {
+        <input
+            class="ingredients-multiplier"
+            node_ref=mult_ref
+            type="number"
+            step="0.1"
+            min="0"
+            value="1"
+            placeholder="Multiplier"
+            on:input=move |ev| {
+                match event_target_value(&ev).parse::<f32>() {
+                    Ok(m) => mult.set(m),
+                    Err(_) => log!("ERROR: Multiplier not f32"),
+                }
+            }
+        />
+    }
+}
+
+
 
 #[component]
 pub fn EditableEntryList<T>(

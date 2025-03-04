@@ -182,10 +182,31 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
     }
 }
 
+
+
+
 #[component]
 pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
 
+    use regex::Regex;
+    fn extract_number(input: &str) -> Option<(&str, f32, &str)> {
+        let re = Regex::new(r"^([^0-9.,]*)([0-9]+(?:[.,][0-9]+)?)(.*)$").unwrap();
+    
+        if let Some(caps) = re.captures(input) {
+            let prefix = caps.get(1).map_or("", |m| m.as_str());
+            let num_str = caps.get(2).unwrap().as_str().replace(',', "."); // Normalize commas to dots
+            let suffix = caps.get(3).map_or("", |m| m.as_str());
+    
+            if let Ok(num) = num_str.parse::<f32>() {
+                return Some((prefix, num, suffix));
+            }
+        }
+    
+        None
+    }
+
     let mut are_ingrs_empty: bool = false;
+    let multiplier: RwSignal<f32> = RwSignal::new(1.0);
     let ingredient_list = {
         recipe
             .ingredients
@@ -195,10 +216,15 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
             })
             .into_iter()
             .map(|ingredient| {
+                
+                //let qty_unit: String = match ingredient.qty_unit.extract_number() {
+
+                //}
+
                 view! {
                     <li class="display-recipe ingredients">
-                        <span class="display-recipe ingredients units">{ingredient.qty_unit}</span>
-                        <span class="display-recipe ingredients content">{ingredient.content}</span>
+                        <span class="display-recipe ingredients units">{ ingredient.qty_unit }</span>
+                        <span class="display-recipe ingredients content">{ ingredient.content }</span>
                     </li>
                 }
             })
@@ -269,6 +295,7 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
                         style=move || { theme_color.get().as_visible_color() }
                         class="display-recipe ingredients title"
                     >"Ingredients"</h3>
+                    <IngredientMultiplier mult=multiplier />
                     <ul class="display-recipe ingredients">
                         { ingredient_list.clone() }
                     </ul>
