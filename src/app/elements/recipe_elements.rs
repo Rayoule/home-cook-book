@@ -39,9 +39,9 @@ pub fn RecipeMenu(
             
             <Transition
                 fallback=move || { view! {
-                    <p class="popin-warning" >
-                        "Wait for Login Check..."
-                    </p>
+                    <ServerWarningPopup
+                        text="Wait for Login Check...".to_string()
+                    />
                 }}
             >
                 
@@ -227,9 +227,9 @@ pub fn RecipeMenu(
 
             <Transition
                 fallback=move || { view! {
-                    <p class="popin-warning" >
-                        "Wait for Login Check..."
-                    </p>
+                    <ServerWarningPopup
+                        text="Wait for Login Check...".to_string()
+                    />
                 }}
             >
 
@@ -311,13 +311,17 @@ pub enum RecipeEntryMenuMode {
 
 
 #[component]
-pub fn IngredientMultiplier( mult: RwSignal<f32>) -> impl IntoView {
+pub fn IngredientMultiplier(
+    color: RwSignal<ThemeColor>,
+    mult: RwSignal<f32>,
+) -> impl IntoView {
 
     let mult_ref = NodeRef::<leptos::html::Input>::new();
 
     view! {
         <input
             class="ingredients-multiplier"
+            style=move || { color.get().as_border_main_color() }
             node_ref=mult_ref
             type="number"
             step="0.1"
@@ -327,7 +331,7 @@ pub fn IngredientMultiplier( mult: RwSignal<f32>) -> impl IntoView {
             on:input=move |ev| {
                 match event_target_value(&ev).parse::<f32>() {
                     Ok(m) => mult.set(m),
-                    Err(_) => log!("ERROR: Multiplier not f32"),
+                    Err(_) => log!("ERROR: Multiplier value: {} - cannot be parsed to f32", event_target_value(&ev)),
                 }
             }
         />
@@ -920,9 +924,9 @@ pub fn SettingsMenu() -> impl IntoView {
 
             <Transition
                 fallback=move || { view! {
-                    <p class="popin-warning" >
-                        "Wait for Login Check..."
-                    </p>
+                    <ServerWarningPopup
+                        text="Waiting for Login Check...".to_string()
+                    />
                 }}
             >
 

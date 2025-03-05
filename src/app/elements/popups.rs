@@ -1,3 +1,4 @@
+use gloo_timers::callback::Timeout;
 use leptos::{ev::MouseEvent, logging::*, prelude::*};
 
 use crate::app::{DeleteInfoSignal, PopupColor, RecipeActionDescriptor, RecipeServerAction};
@@ -106,6 +107,30 @@ pub fn DeleteRecipePopup() -> impl IntoView {
                 </div>
             </div>
         </Show>
+    }
+}
+
+
+#[component]
+pub fn ServerWarningPopup(text: String) -> impl IntoView {
+
+    let is_visible = RwSignal::new(false);
+
+    // Wait for 0.5s to display the popup
+    Effect::new(move |_| {
+        let timeout = Timeout::new(500, move || {
+            is_visible.set(true);
+        });
+        timeout.forget();
+    });
+
+    view! {
+        <p
+            class="popin-warning "
+            class:visible=move || { is_visible.get() }
+        >
+            { text }
+        </p>
     }
 }
 

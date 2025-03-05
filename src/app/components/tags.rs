@@ -1,7 +1,6 @@
 use crate::app::IsTagsMenuOpen;
 use leptos::ev::MouseEvent;
 use leptos::prelude::*;
-use leptos::logging::log;
 
 #[component]
 pub fn TagList(
@@ -18,10 +17,6 @@ pub fn TagList(
             .map(|t| RwSignal::new((selected_tags_signal.read().contains(t), t.clone())))
             .collect::<Vec<RwSignal<(bool, String)>>>()
     };
-
-    Effect::new(move || {
-        log!("Tags: {:?}", selected_tags_signal.get());
-    });
 
     let all_tag_elems = move || {
         // then generate the buttons
@@ -103,14 +98,21 @@ pub fn TagList(
                 class="tag-list"
             >
                 {all_tag_elems}
+                <br/>
+                <button
+                    class="clear-tags-button"
+                    on:click=on_clear_tags_click
+                >
+                    {"Clear"}
+                </button>
             </ul>
 
-            <button
+            /*<button
                 class="clear-tags-button"
                 on:click=on_clear_tags_click
             >
                 {"Clear"}
-            </button>
+            </button>*/
 
         </div>
     }

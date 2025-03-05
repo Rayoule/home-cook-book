@@ -145,7 +145,6 @@ pub fn App() -> impl IntoView {
     // All Tags signal
     let all_tags_signal = RwSignal::<Vec<String>>::new(vec![]);
     Effect::new(move |_| {
-        log!("Rerun all tags !");
         let mut tag_list = if let Some(Ok(recipes)) = all_recipe_light.get() {
             recipes
                 .iter()
@@ -224,9 +223,9 @@ pub fn CheckLogin() -> impl IntoView {
 
                 if !is_print_page {
                     view! {
-                        <p class="popin-warning" >
-                            "Wait for Login Check..."
-                        </p>
+                        <ServerWarningPopup
+                            text="Wait for Login Check...".to_string()
+                        />
                     }.into_any()
                 } else { ().into_any() }
             }

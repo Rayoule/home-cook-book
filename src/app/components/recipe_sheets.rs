@@ -1,3 +1,4 @@
+use crate::app::elements::popups::ServerWarningPopup;
 use crate::app::{IsPageDirtySignal, LoginCheckResource};
 use crate::app::{
     elements::recipe_elements::*, Recipe, RecipeActionDescriptor, RecipeEntry,
@@ -121,9 +122,9 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
 
                 <Transition
                     fallback=move || { view! {
-                        <p class="popin-warning" >
-                            "Wait for Login Check..."
-                        </p>
+                        <ServerWarningPopup
+                            text="Wait for Login Check...".to_string()
+                        />
                     }}
                 >
                     <Show
@@ -188,6 +189,7 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
 #[component]
 pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
 
+    // Extract a prefix, a number as f32, then a suffix.
     use regex::Regex;
     fn extract_number(input: &str) -> Option<(&str, f32, &str)> {
         let re = Regex::new(r"^([^0-9.,]*)([0-9]+(?:[.,][0-9]+)?)(.*)$").unwrap();
@@ -205,32 +207,50 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
         None
     }
 
-    let mut are_ingrs_empty: bool = false;
+
+    let are_ingrs_empty: bool = recipe.ingredients.is_none();
+
     let multiplier: RwSignal<f32> = RwSignal::new(1.0);
-    let ingredient_list = {
+
+    let ingredient_list = move || {
+        let mult_value = multiplier.get();
         recipe
             .ingredients
-            .unwrap_or_else(|| {
-                are_ingrs_empty = true;
-                vec![]
-            })
+            .clone()
+            .unwrap_or_else(|| { vec![] })
             .into_iter()
             .map(|ingredient| {
                 
-                //let qty_unit: String = match ingredient.qty_unit.extract_number() {
+                let qty_unit: String = if mult_value != 1.0 {
+                    match extract_number(&ingredient.qty_unit) {
+                        Some((pre, num, suf)) => {
+                            let mult_num = num * mult_value;
 
-                //}
+                            pre.to_string()
+                            + format!("{:.2}", mult_num)
+                                .trim_end_matches('0')
+                                .trim_end_matches('.')
+                            + suf
+                        },
+                        None => {
+                            log!("Could not parse f32 value.");
+                            ingredient.qty_unit
+                        },
+                    }
+                } else {
+                    ingredient.qty_unit
+                };
 
                 view! {
                     <li class="display-recipe ingredients">
-                        <span class="display-recipe ingredients units">{ ingredient.qty_unit }</span>
+                        <span class="display-recipe ingredients units">{ qty_unit }</span>
                         <span class="display-recipe ingredients content">{ ingredient.content }</span>
                     </li>
-                }
+                }.into_any()
             })
             .collect_view()
     };
-
+    
 
     let are_insts_empty = recipe.instructions.content.is_empty();
 
@@ -295,9 +315,14 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
                         style=move || { theme_color.get().as_visible_color() }
                         class="display-recipe ingredients title"
                     >"Ingredients"</h3>
-                    <IngredientMultiplier mult=multiplier />
+
+                    <IngredientMultiplier
+                        color=theme_color
+                        mult=multiplier
+                    />
+
                     <ul class="display-recipe ingredients">
-                        { ingredient_list.clone() }
+                        { ingredient_list() }
                     </ul>
                 </div>
             </Show>

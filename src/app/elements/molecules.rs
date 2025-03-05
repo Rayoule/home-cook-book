@@ -21,6 +21,18 @@ pub fn RecipeSearchBar(
         }
     });
 
+    fn get_search_words_from_input_value(input_value: String) -> Vec<String> {
+        let value = input_value.to_lowercase();
+
+        use regex::Regex;
+        let re = Regex::new(r"\b\w+\b").unwrap();
+        re
+            .find_iter(&value)
+            .map(|mat| mat.as_str())
+            .map(|word| word.to_string())
+            .collect()
+    }
+
     let on_search_submit = move |ev: ev::SubmitEvent| {
         ev.prevent_default();
 
@@ -28,18 +40,10 @@ pub fn RecipeSearchBar(
         let value = input_element
             .get()
             .expect("<input> should be mounted")
-            .value()
-            .to_lowercase();
+            .value();
 
-        use regex::Regex;
-        let re = Regex::new(r"\b\w+\b").unwrap();
-        let search_words: Vec<String> = re
-            .find_iter(&value)
-            .map(|mat| mat.as_str())
-            .map(|word| word.to_string())
-            .collect();
-
-        search_input.set(search_words)
+        let search_words = get_search_words_from_input_value(value);
+        search_input.set(search_words);
     };
 
     view! {
@@ -62,6 +66,13 @@ pub fn RecipeSearchBar(
                     if value.is_empty() {
                         search_input.set(vec![]);
                     }
+                    // Auto search (Heavy)
+                    /*
+                    else {
+                        let search_words = get_search_words_from_input_value(value);
+                        search_input.set(search_words);
+                    }
+                    */
                 }
             >
             </input>

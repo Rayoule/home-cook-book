@@ -321,9 +321,9 @@ pub fn RecipePage() -> impl IntoView {
         <div class="main-content">
         <Transition
             fallback=move || view! {
-                <p class="popin-warning" >
-                    { "Waiting for resource..." }
-                </p>
+                <ServerWarningPopup
+                    text="Waiting for resource...".to_string()
+                />
             }
         >
             {move || {
@@ -360,9 +360,9 @@ pub fn RecipePage() -> impl IntoView {
                     }
                 } else {
                     view! {
-                        <p class="popin-warning" >
-                            { "Recipe empty." }
-                        </p>
+                        <ServerWarningPopup
+                            text="Recipe empty.".to_string()
+                        />
                     }.into_any()
                 }
             }}
@@ -542,9 +542,9 @@ pub fn AllRecipes() -> impl IntoView {
 
                 <Transition
                     fallback=move || { view! {
-                        <p class="popin-warning" >
-                            "Wait for Login Check..."
-                        </p>
+                        <ServerWarningPopup
+                            text="Wait for Login Check...".to_string()
+                        />
                     }}
                 >
                     <Show
