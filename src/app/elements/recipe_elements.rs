@@ -101,65 +101,70 @@ pub fn RecipeMenu(
                     <Show
                         when=menu_open
                     >
-                        <Show
-                            when=move || { check_login_resource.get() == Some(true) }
-                        >
+                        
+                        <div class="recipe-menu-option-container">
+
+                            <Show
+                                when=move || { check_login_resource.get() == Some(true) }
+                            >
+                                <button
+                                    style=move || { color.get().as_alt_color() }
+                                    class="recipe-menu-option"
+                                    on:click=move |ev: MouseEvent| {
+                                        ev.stop_propagation();
+                                        let recipe_id = recipe_id;
+                                        let edit_path = "/recipe/".to_owned() + &recipe_id.to_string() + "/editable";
+                                        let navigate = leptos_router::hooks::use_navigate();
+                                        navigate(&edit_path, Default::default());
+                                    }
+                                >
+                                    <EditButtonSVG color=color.get().alt_color() />
+                                    <p class="recipe-menu-text" >"Edit"</p>
+                                </button>
+                            </Show>
+            
                             <button
                                 style=move || { color.get().as_alt_color() }
                                 class="recipe-menu-option"
-                                on:click=move |ev: MouseEvent| {
+                                on:click=move |ev| {
                                     ev.stop_propagation();
                                     let recipe_id = recipe_id;
-                                    let edit_path = "/recipe/".to_owned() + &recipe_id.to_string() + "/editable";
-                                    let navigate = leptos_router::hooks::use_navigate();
-                                    navigate(&edit_path, Default::default());
+                                    let print_path = "/recipe/".to_owned() + &recipe_id.to_string() + "/print";
+                                    let window = web_sys::window().expect("window should be available");
+                                    window
+                                        .open_with_url_and_target(&print_path, "_blank")
+                                        .unwrap_or_else(|_| {
+                                            error!("No Window found.");
+                                            None
+                                        });
                                 }
                             >
-                                <EditButtonSVG color=color.get().alt_color() />
-                                <p class="recipe-menu-text" >"Edit"</p>
+                                <PrintButtonSVG color=color.get().alt_color() />
+                                <p class="recipe-menu-text" >"Print"</p>
                             </button>
-                        </Show>
-        
-                        <button
-                            style=move || { color.get().as_alt_color() }
-                            class="recipe-menu-option"
-                            on:click=move |ev| {
-                                ev.stop_propagation();
-                                let recipe_id = recipe_id;
-                                let print_path = "/recipe/".to_owned() + &recipe_id.to_string() + "/print";
-                                let window = web_sys::window().expect("window should be available");
-                                window
-                                    .open_with_url_and_target(&print_path, "_blank")
-                                    .unwrap_or_else(|_| {
-                                        error!("No Window found.");
-                                        None
-                                    });
-                            }
-                        >
-                            <PrintButtonSVG color=color.get().alt_color() />
-                            <p class="recipe-menu-text" >"Print"</p>
-                        </button>
-        
-                        <Show
-                            when=move || { check_login_resource.get() == Some(true) }
-                        >
-                            <button
-                                style=move || { color.get().as_alt_color() }
-                                class="recipe-menu-option"
-                                on:click=move |ev: MouseEvent| {
-                                    ev.stop_propagation();
-                                    let recipe_id = recipe_id;
-                                    let delete_info_signal =
-                                        use_context::<DeleteInfoSignal>()
-                                            .expect("To find DeleteInfoSignal in context.")
-                                            .0;
-                                    delete_info_signal.set( Some( DeletePopupInfo(recipe_id)) );
-                                }
+            
+                            <Show
+                                when=move || { check_login_resource.get() == Some(true) }
                             >
-                                <CrossButtonSVG color=color.get().alt_color() />
-                                <p class="recipe-menu-text" >"Delete"</p>
-                            </button>
-                        </Show>
+                                <button
+                                    style=move || { color.get().as_alt_color() }
+                                    class="recipe-menu-option"
+                                    on:click=move |ev: MouseEvent| {
+                                        ev.stop_propagation();
+                                        let recipe_id = recipe_id;
+                                        let delete_info_signal =
+                                            use_context::<DeleteInfoSignal>()
+                                                .expect("To find DeleteInfoSignal in context.")
+                                                .0;
+                                        delete_info_signal.set( Some( DeletePopupInfo(recipe_id)) );
+                                    }
+                                >
+                                    <CrossButtonSVG color=color.get().alt_color() />
+                                    <p class="recipe-menu-text" >"Burn"</p>
+                                </button>
+                            </Show>
+                        
+                        </div>
         
                     </Show>
         
@@ -274,7 +279,7 @@ pub fn RecipeMenu(
                                     class:menu-open=menu_open
                                     type="text"
                                     id="text-input"
-                                    placeholder="Recipe Name..."
+                                    placeholder="Recipe"
                                     maxlength="45"
                                     // get_untracked() because this is only initial value
                                     value=name_signal.get_untracked()
@@ -318,23 +323,37 @@ pub fn IngredientMultiplier(
 
     let mult_ref = NodeRef::<leptos::html::Input>::new();
 
+    let is_input_valid = RwSignal::new(true);
+
     view! {
-        <input
-            class="ingredients-multiplier"
-            style=move || { color.get().as_border_main_color() }
-            node_ref=mult_ref
-            type="number"
-            step="0.1"
-            min="0"
-            value="1"
-            placeholder="Multiplier"
-            on:input=move |ev| {
-                match event_target_value(&ev).parse::<f32>() {
-                    Ok(m) => mult.set(m),
-                    Err(_) => log!("ERROR: Multiplier value: {} - cannot be parsed to f32", event_target_value(&ev)),
+        <div class="multiplier-container">
+            <span class="multiplier-span">{"x"}</span>
+            <input
+                class="ingredients-multiplier "
+                class:not-valid=move || { !is_input_valid.get() }
+                style=move || { color.get().as_border_main_color() }
+                node_ref=mult_ref
+                value="1"
+                placeholder="Multiplier"
+                on:input=move |ev| {
+                    let value = event_target_value(&ev);
+                    match value.replace(",", ".").parse::<f32>() {
+                        Ok(m) => {
+                            is_input_valid.set(true);
+                            mult.set(m)
+                        },
+                        Err(e) => {
+                            if value.len() == 0 {
+                                is_input_valid.set(true);
+                            } else {
+                                is_input_valid.set(false);
+                                log!("ERROR: Multiplier value: {} - cannot be parsed to f32. Parse Error: {}", event_target_value(&ev), e.to_string())
+                            }
+                        },
+                    }
                 }
-            }
-        />
+            />
+        </div>
     }
 }
 
@@ -697,63 +716,6 @@ pub fn EditableTags(
         </div>
     }
     .into_any()
-}
-
-#[component]
-pub fn DeleteButton(recipe_id: ReadSignal<u16>) -> impl IntoView {
-    let delete_info_signal = use_context::<DeleteInfoSignal>()
-        .expect("To find DeleteInfoReadSignal in context.")
-        .0;
-
-    let on_want_delete_click = move |_| {
-        delete_info_signal.set(Some(DeletePopupInfo(recipe_id.get())));
-    };
-
-    view! {
-        <span
-            class= "sub-menu-option"
-            on:click=on_want_delete_click
-        > {"Delete"} </span>
-    }
-}
-
-#[component]
-pub fn DuplicateButton(recipe_id: ReadSignal<u16>) -> impl IntoView {
-    let recipe_action = use_context::<RecipeServerAction>()
-        .expect("To find RecipeServerAction in context.")
-        .0;
-
-    let on_duplicate_click = move |_| {
-        recipe_action.dispatch(RecipeActionDescriptor::Duplicate(recipe_id.get()));
-    };
-
-    view! {
-        <span
-            class= "sub-menu-option"
-            on:click=on_duplicate_click
-        >{"Duplicate"}</span>
-    }
-}
-
-#[component]
-pub fn PrintButton(recipe_id: ReadSignal<u16>) -> impl IntoView {
-    let on_duplicate_click = move |_| {
-        let print_path = "/recipe/".to_owned() + &recipe_id.get().to_string() + "/print";
-        let window = web_sys::window().expect("window should be available");
-        window
-            .open_with_url_and_target(&print_path, "_blank")
-            .unwrap_or_else(|_| {
-                error!("No Window found.");
-                None
-            });
-    };
-
-    view! {
-        <span
-            class= "sub-menu-option"
-            on:click=on_duplicate_click
-        >{"Print"}</span>
-    }
 }
 
 

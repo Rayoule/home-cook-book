@@ -38,6 +38,8 @@
 
 	--border-margin: 1rem;
 	--recipe-dynamic-max-width: min(55rem, calc(100vw - (var(--border-margin) * 2) ));
+
+	--display-recipe-title-margin: 2.5rem;
 }
 
 * {
@@ -181,31 +183,38 @@ svg {
 		height: var(--height);
 	}
 }
+.recipe-menu-option-container {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+}
 .recipe-menu-option {
-	font-size: larger;
+	font-size: 1rem;
 	font-weight: bold;
 
-	display: flex;
-	flex-direction: column;
-	align-items: center;
+	position: relative;
+
+	text-align: center;
 
 	height: 4rem;
 	width: 4rem;
 
-	margin: 0.25rem 0;
+	padding: 0;
 
 	color: var(--theme-color-bg);
 	background-color: #00000000;
 	border: none;
 }
 .recipe-menu-text {
-	margin-left: 0.35rem;
+	position: absolute;
+	bottom: 0;
+	width: 100%;
 }
 svg {
 	&.recipe-menu-icon {
-		height: 3rem;
+		height: 2rem;
 
-		&.edit {
+		/*&.edit {
 			transform: scale(0.8);
 		}
 
@@ -217,7 +226,7 @@ svg {
 			height: 2rem;
 			stroke-width: 0.05rem;
 			transform: scale(1.1);
-		}
+		}*/
 	}
 }
 
@@ -623,12 +632,21 @@ ul.recipe-light li::before {
     width: 20px;
 	height: 20px;
 
-	margin: auto auto;
-
 	background-color: var(--theme-color-bg);
 
-    border-radius: 15px;
+    border-radius: 2rem;
 	border: none;
+
+	&::after {
+		content: "";
+		position: absolute;
+		top: -10px;
+		right: -10px;
+		bottom: -10px;
+		left: -10px;
+		background: transparent;
+		pointer-events: auto;
+	}
 }
 .sub-menu-option {
 	cursor: pointer;
@@ -678,7 +696,7 @@ ul.recipe-light li::before {
 	}
 
 	&.title {
-		margin-bottom: 2.5rem;
+		margin-bottom: var(--display-recipe-title-margin);
 	}
 
 
@@ -773,18 +791,43 @@ ul.recipe-light li::before {
 	width: 100%;
 }
 
+.ingredients-title-with-multiplier {
+	display: flex;
+	flex-direction: column;
+
+	width: 100%;
+}
+.multiplier-container {
+	margin-top: calc( var(--display-recipe-title-margin) - 1.1rem );
+	margin-bottom: 0.5rem;
+	margin-left: calc( 25% - 3rem );
+}
+.multiplier-span {
+	position: absolute;
+	transform: translate(0.3rem, 0.15rem);
+	margin: 0 auto;
+	margin-right: 0.1rem;
+	
+}
 .ingredients-multiplier {
 	text-align: center;
 
 	height: 1.1rem;
 	width: 2rem;
+	
+	padding-left: 0.8rem;
+	padding-right: 0.2rem;
 
-	padding: 0 0.2rem;
-
+	color: black;
 	background-color: white;
 
 	border: 2px solid var(--theme-color-2);
 	border-radius: 2rem;
+
+	&.not-valid {
+		color: white;
+		background-color: rgb(139, 28, 28);
+	}
 
 	&:focus {
 		outline: none;
@@ -1093,8 +1136,7 @@ ul.recipe-light li::before {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
-
-	margin-top: 1rem;
+	justify-content: center;
 }
 .tag-add-hashtag {
 	font-size: large;
@@ -1108,18 +1150,17 @@ ul.recipe-light li::before {
 
 	color: #808080;
 
-	transform: translateX(0.5rem);
-
+	transform: translateX(1rem);
 }
 #text-input.tag-add {
 	text-align: left;
 	box-sizing: border-box;
 
 	height: var(--buttons-height);
-	width: 15rem;
+	width: 10rem;
 
 	padding: 0.5rem 1rem;
-	padding-left: 1.5rem;
+	padding-left: 1.7rem;
 }
 .tag-add-button {
 	font-size: small;
@@ -1163,6 +1204,7 @@ svg {
 ul.tags {
 	display: flex;
 	flex-wrap: wrap;
+	justify-content: center;
 }
 
 
@@ -1223,28 +1265,8 @@ textarea#text-input {
 }
 
 .tags-suggestions-container {
-
 	position: relative;
-
-	margin-top: 1.5rem;
-
-	/*
-	height: 6rem;
-
-	overflow : auto;
-	overflow-y: hidden;
-	
-
-	&::after {
-		content: "";
-		position: absolute;
-		bottom: 0;
-		left: 0;
-		right: 0;
-		height: 1rem;
-		background: linear-gradient(to top, var(--theme-color-bg), rgba(0, 0, 0, 0));
-		pointer-events: none;
-	}*/
+	margin-top: 2rem;
 }
 .tags-suggestions-button {
 
@@ -1259,23 +1281,9 @@ textarea#text-input {
 		transform: rotate(0deg);
 	}
 }
-/*.tags-suggestions {
+.tags-suggestions {
 
-	display: inline-block;
-	position: absolute;
-
-	overflow-y: auto;
-
-	height: 100%;
-	width: var(--recipe-dynamic-max-width);
-}*/
-svg {
-	&.unroll-icon-svg {
-		height: var(--buttons-height);
-		width: var(--buttons-height);
-
-		fill: var(--theme-color-2);
-	}
+	text-align: center;
 }
 .tag-suggested {
 	cursor: pointer;
@@ -1491,22 +1499,13 @@ svg {
 
 	font-weight: bold;
 	position: absolute;
-	right: 1rem;
-	margin: 0 0;
-	color: var(--theme-color-1);
+
+	padding: 0 auto;
 
 	height: 1.1rem;
 	width: 1.1rem;
-	//height: 15px;
-	//width: 15px;
-
-	//color: var(--theme-color-1);
-	//background-color: var(--theme-color-1-alt);
-	//border-radius: 2rem;
-	//border: 0.2rem solid var(--theme-color-1-alt);
 
 	color: var(--theme-color-1-alt);
-	//background-color: var(--theme-color-1-alt);
 	border: none;
 
 	&.hide-notifier {
@@ -1543,7 +1542,7 @@ svg {
 	}
 
 	&::after {
-		content: "#";
+		content: "";
 		position: relative;
 		top: 0;
 		left: -0.5rem;
@@ -1551,6 +1550,7 @@ svg {
 
 	&.hide-notifier {
 		&::after {
+			content: "#";
 			left: 0;
 		}
 	}
@@ -1655,10 +1655,10 @@ ul.tag-list {
 	height: var(--buttons-height);
 	width: var(--buttons-width);
 
-	margin-top: 0.5rem;
+	margin-top: 1rem;
 
-	color: var(--theme-color-3-alt);
-	background-color: var(--theme-color-3);
+	color: var(--theme-color-bg);
+	background-color: var(--theme-color-menu);
 	border: none;
 	border-radius: 2rem;
 	box-shadow: var(--shadow);

@@ -95,10 +95,12 @@ impl RecipeLight {
             recipe_words.iter().any(|word| {
                 // Check if recipe_words contains any of search_words
                 // (find exactly matching words)
+                
                 word.contains(item)
                 // Check if search_words are sub parts of recipe_words
-                // (find matchings word parts. ex: find "re" in "recipe")
-                || item.contains(word)
+                // But only if the word is at least 3 characters long
+                // (find matchings word parts. ex: find "rec" in "recipe" but not "re" in "recipe")
+                || { word.len() >= 3 && item.contains(word) }
             })
         })
     }
@@ -398,7 +400,7 @@ impl RecipeEntry for RecipeInstruction {
         view! {
             <RecipeEntryInput
                 class=              "instructions".to_owned()
-                placeholder=        "Instruction content".to_owned()
+                placeholder=        "Instructions".to_owned()
                 rw_entry=           rw_entry
             />
         }

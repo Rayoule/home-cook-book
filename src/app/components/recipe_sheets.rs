@@ -311,15 +311,17 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
                 when=move || { !are_ingrs_empty }
             >
                 <div class="display-recipe ingredients container">
-                    <h3
-                        style=move || { theme_color.get().as_visible_color() }
-                        class="display-recipe ingredients title"
-                    >"Ingredients"</h3>
+                    <div class="ingredients-title-with-multiplier">
+                        <h3
+                            style=move || { theme_color.get().as_visible_color() + "margin-bottom: 0;" }
+                            class="display-recipe ingredients title"
+                        >"Ingredients"</h3>
 
-                    <IngredientMultiplier
-                        color=theme_color
-                        mult=multiplier
-                    />
+                        <IngredientMultiplier
+                            color=theme_color
+                            mult=multiplier
+                        />
+                    </div>
 
                     <ul class="display-recipe ingredients">
                         { ingredient_list() }

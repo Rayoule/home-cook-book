@@ -14,7 +14,7 @@ console_error_panic_hook = "0.1.7"
 serde = { version = "1.0.217", features = ["derive"] }
 futures = "0.3.31"
 leptos = { version = "0.7.4", features = ["nightly"] }
-leptos-use = { version = "0.15.5", features = ["on_click_outside"] }
+leptos-use = { version = "0.15.5", features = ["on_click_outside", "use_timeout_fn"] }
 leptos_actix = { version = "0.7.4", optional = true }
 leptos_meta = "0.7.4"
 leptos_router = { version = "0.7.4", features = ["nightly"] }
