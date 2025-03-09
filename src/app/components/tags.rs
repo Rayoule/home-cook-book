@@ -1,6 +1,7 @@
 use crate::app::IsTagsMenuOpen;
 use leptos::ev::MouseEvent;
-use leptos::prelude::*;
+use leptos::{leptos_dom, prelude::*};
+use crate::app::elements::popups::BODY_STOP_SCROLL_CLASS;
 
 #[component]
 pub fn TagList(
@@ -51,6 +52,15 @@ pub fn TagList(
         ev.stop_propagation();
         is_tags_menu_open.set(true);
     };
+
+    // Prevent scroll
+    Effect::new(move |_| {
+        if is_tags_menu_open.get() {
+            leptos_dom::helpers::document().body().unwrap().class_list().add_1(BODY_STOP_SCROLL_CLASS)
+        } else {
+            leptos_dom::helpers::document().body().unwrap().class_list().remove_1(BODY_STOP_SCROLL_CLASS)
+        }
+    });
 
     view! {
 

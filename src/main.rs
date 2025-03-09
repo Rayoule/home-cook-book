@@ -23,8 +23,8 @@ async fn main() -> std::io::Result<()> {
     let conf = get_configuration(None).unwrap();
 
     // For the raspberry platform, run on 0.0.0.0:3000
-    //let addr = conf.leptos_options.site_addr;
-    let addr = "0.0.0.0:3000".to_string();
+    let addr = conf.leptos_options.site_addr;
+    //let addr = "0.0.0.0:3000".to_string();
 
     // Initializing login states
     let states = SharedLoginStates::init_states();

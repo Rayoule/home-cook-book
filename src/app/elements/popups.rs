@@ -1,7 +1,12 @@
 use gloo_timers::callback::Timeout;
-use leptos::{ev::MouseEvent, logging::*, prelude::*};
+use leptos::{ev::MouseEvent, leptos_dom, logging::*, prelude::*};
 
 use crate::app::{DeleteInfoSignal, PopupColor, RecipeActionDescriptor, RecipeServerAction};
+
+
+
+pub const BODY_STOP_SCROLL_CLASS: &'static str = "prevent-scroll";
+
 
 #[component]
 pub fn ServerActionPendingPopup() -> impl IntoView {
@@ -37,6 +42,8 @@ pub fn ServerActionPendingPopup() -> impl IntoView {
     }
 }
 
+
+
 #[derive(Clone, Debug)]
 pub struct DeletePopupInfo(pub u16);
 
@@ -66,6 +73,7 @@ pub fn DeleteRecipePopup() -> impl IntoView {
 
     let on_no_click = move |ev: MouseEvent| {
         ev.stop_propagation();
+        // Close the Popup
         delete_info_signal.set(None);
     };
 
@@ -75,6 +83,16 @@ pub fn DeleteRecipePopup() -> impl IntoView {
         popup_color.set(PopupColor::random());
     });
 
+    // Prevent Scrolling when Popup is enabled
+    Effect::new(move |_| {
+        if delete_info_signal.get().is_some() {
+            leptos_dom::helpers::document().body().unwrap().class_list().add_1(BODY_STOP_SCROLL_CLASS)
+        } else {
+            leptos_dom::helpers::document().body().unwrap().class_list().remove_1(BODY_STOP_SCROLL_CLASS)
+        }
+    });
+
+
     view! {
         <Show
             when=move || { delete_info_signal.get().is_some() }
@@ -83,6 +101,7 @@ pub fn DeleteRecipePopup() -> impl IntoView {
                 class="popup"
                 on:click=on_no_click
             >
+
                 <div
                     class="popup-window"
                     style=popup_color.get().window_background_color()

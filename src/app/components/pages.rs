@@ -372,29 +372,33 @@ pub fn RecipePage() -> impl IntoView {
 }
 
 // Colors
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum ThemeColor {
     Color1,
     Color2,
     Color3,
     Color4,
+    Undefined,
 }
+use ThemeColor::*;
 impl ThemeColor {
     pub fn main_color(&self) -> String {
         match self {
-            ThemeColor::Color1 => "var(--theme-color-1)",
-            ThemeColor::Color2 => "var(--theme-color-2)",
-            ThemeColor::Color3 => "var(--theme-color-3)",
-            ThemeColor::Color4 => "var(--theme-color-4)",
+            Color1  => "var(--theme-color-1)",
+            Color2  => "var(--theme-color-2)",
+            Color3  => "var(--theme-color-3)",
+            Color4  => "var(--theme-color-4)",
+            Undefined    => "var(--theme-color-undefined)",
         }
         .to_string()
     }
     pub fn alt_color(&self) -> String {
         match self {
-            ThemeColor::Color1 => "var(--theme-color-1-alt)",
-            ThemeColor::Color2 => "var(--theme-color-2-alt)",
-            ThemeColor::Color3 => "var(--theme-color-3-alt)",
-            ThemeColor::Color4 => "var(--theme-color-4-alt)",
+            Color1  => "var(--theme-color-1-alt)",
+            Color2  => "var(--theme-color-2-alt)",
+            Color3  => "var(--theme-color-3-alt)",
+            Color4  => "var(--theme-color-4-alt)",
+            Undefined    => "var(--theme-color-undefined-alt)",
         }
         .to_string()
     }
@@ -419,10 +423,11 @@ impl ThemeColor {
     }
     pub fn as_visible_color(&self) -> String {
         let col = match self {
-            ThemeColor::Color1 => self.main_color(),
-            ThemeColor::Color2 => self.main_color(),
-            ThemeColor::Color3 => self.alt_color(),
-            ThemeColor::Color4 => self.alt_color(),
+            Color1  => self.main_color(),
+            Color2  => self.main_color(),
+            Color3  => self.alt_color(),
+            Color4  => self.alt_color(),
+            Undefined    => self.main_color(),
         };
 
         "color: ".to_string() + &col + ";"
@@ -432,10 +437,10 @@ impl ThemeColor {
         use rand::Rng;
         let mut rng = rand::thread_rng();
         match rng.gen_range(0..4) {
-            0 => ThemeColor::Color1,
-            1 => ThemeColor::Color2,
-            2 => ThemeColor::Color3,
-            3 => ThemeColor::Color4,
+            0 => Color1,
+            1 => Color2,
+            2 => Color3,
+            3 => Color4,
             _ => unreachable!(),
         }
     }
@@ -529,7 +534,18 @@ pub fn AllRecipes() -> impl IntoView {
 
         <SettingsMenu/>
 
-        <div class="logo" >
+        <div
+            class="logo"
+            on:click=move |ev| {
+                ev.stop_propagation();
+                // Trigger Shuffle Colors
+                log!("Shuffle Clicked !");
+                use_context::<ShuffleColors>()
+                    .expect("Expected to find ShuffleColors in context")
+                    .0
+                    .set(true);
+            }
+        >
             <LogoSVG/>
         </div>
 
@@ -586,18 +602,21 @@ pub fn AllRecipes() -> impl IntoView {
                                     if recipes.is_empty() {
                                         view! { <p>"No recipes were found."</p> }.into_any()
                                     } else {
+                                        // Fetch selected tags and search inputs
                                         let sel_tags = selected_tags_signal.get();
                                         let search_input_value = search_input.get();
-                                        // filter tags
-                                        if !sel_tags.is_empty() {
-                                            recipes.retain(|recipe| recipe.has_tags(&sel_tags));
-                                        }
-                                        // filter search
-                                        if !search_input_value.is_empty() {
-                                            recipes.retain(|recipe| recipe.is_in_search(&search_input_value));
-                                        }
+
+                                        // Give a new ID to each recipe so it can fetch into the color pool
+                                        let mut recipes: Vec<(usize, RecipeLight)> =
+                                            recipes
+                                                .into_iter()
+                                                .enumerate()
+                                                .collect();
+
+                                        
                                         // If no results:
                                         if recipes.is_empty() {
+
                                             view! {
                                                 <div>
                                                     <p>"No results..."</p>
@@ -609,16 +628,42 @@ pub fn AllRecipes() -> impl IntoView {
                                                     </button>
                                                 </div>
                                             }.into_any()
+
                                         } else {
-                                            // else collect recipe views
+
+                                            // filter tags
+                                            if !sel_tags.is_empty() {
+                                                recipes.retain(|recipe| recipe.1.has_tags(&sel_tags));
+                                            }
+                                            // filter search
+                                            if !search_input_value.is_empty() {
+                                                recipes.retain(|recipe| recipe.1.is_in_search(&search_input_value));
+                                            }
+
+                                            // Fetch the current Color Map
+                                            let color_map = use_context::<RecipesColorMap>()
+                                                .expect("Expected to find RecipesColorMap in context.")
+                                                .0
+                                                .get();
+                                            // And don't forget to refresh the shuffle !
+                                            use_context::<ShuffleColors>()
+                                                .expect("Expected to find ShuffleColors in context.")
+                                                .0
+                                                .set(false);
+
+                                            // Recipe Views
                                             recipes
                                                 .into_iter()
-                                                .map(move |recipe| {
-                                                    let style_color = ThemeColor::random();
+                                                .map(move |(local_id, recipe)| {
+                                                    let style_color = color_map
+                                                        .get(local_id)
+                                                        .copied()
+                                                        .unwrap_or(ThemeColor::Undefined);
+
                                                     view! {
                                                         <RecipeCard
                                                             recipe_light=recipe
-                                                            custom_color_style=style_color
+                                                            color=style_color
                                                         />
                                                     }
                                                 })
@@ -628,7 +673,7 @@ pub fn AllRecipes() -> impl IntoView {
                                     }
                                 }
                             })
-                            .unwrap_or_else(|| ().into_any())
+                            .unwrap_or(().into_any())
                     }}
                 </div>
             </div>

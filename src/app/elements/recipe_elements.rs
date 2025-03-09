@@ -7,6 +7,7 @@ use elements::icons_svg::{
 use leptos::ev::MouseEvent;
 use gloo_timers::callback::Timeout;
 use leptos::html::{Input, Li};
+use leptos::leptos_dom;
 use leptos::logging::error;
 
 
@@ -44,18 +45,6 @@ pub fn RecipeMenu(
                     />
                 }}
             >
-                
-                {move || {
-                    if menu_open.get() {
-                        let _ = leptos_use::on_click_outside(
-                            recipe_menu_div_ref,
-                            move |ev| {
-                                menu_open.set(false);
-                                ev.stop_propagation();
-                            },
-                        );
-                    }
-                }}
 
                 <div
                     node_ref=recipe_menu_div_ref
@@ -63,6 +52,18 @@ pub fn RecipeMenu(
                     class:is-open=menu_open
                     style=move || { color.get().as_bg_main_color() }
                 >
+
+                    {move || {
+                        if menu_open.get() {
+                            let _ = leptos_use::on_click_outside(
+                                recipe_menu_div_ref,
+                                move |_| {
+                                    menu_open.set(false);
+                                    //ev.stop_propagation();
+                                }
+                            );
+                        }
+                    }}
 
                     <button
                         style=move || { color.get().as_alt_color() }
@@ -112,7 +113,6 @@ pub fn RecipeMenu(
                                     class="recipe-menu-option"
                                     on:click=move |ev: MouseEvent| {
                                         ev.stop_propagation();
-                                        let recipe_id = recipe_id;
                                         let edit_path = "/recipe/".to_owned() + &recipe_id.to_string() + "/editable";
                                         let navigate = leptos_router::hooks::use_navigate();
                                         navigate(&edit_path, Default::default());
@@ -128,7 +128,6 @@ pub fn RecipeMenu(
                                 class="recipe-menu-option"
                                 on:click=move |ev| {
                                     ev.stop_propagation();
-                                    let recipe_id = recipe_id;
                                     let print_path = "/recipe/".to_owned() + &recipe_id.to_string() + "/print";
                                     let window = web_sys::window().expect("window should be available");
                                     window
@@ -151,7 +150,9 @@ pub fn RecipeMenu(
                                     class="recipe-menu-option"
                                     on:click=move |ev: MouseEvent| {
                                         ev.stop_propagation();
-                                        let recipe_id = recipe_id;
+                                        // Close the Menu
+                                        menu_open.set(false);
+                                        // Open the delete popup
                                         let delete_info_signal =
                                             use_context::<DeleteInfoSignal>()
                                                 .expect("To find DeleteInfoSignal in context.")
@@ -334,7 +335,7 @@ pub fn IngredientMultiplier(
                 style=move || { color.get().as_border_main_color() }
                 node_ref=mult_ref
                 value="1"
-                placeholder="Multiplier"
+                placeholder=""
                 on:input=move |ev| {
                     let value = event_target_value(&ev);
                     match value.replace(",", ".").parse::<f32>() {
@@ -858,6 +859,15 @@ pub fn SettingsMenu() -> impl IntoView {
         .expect("Expected to find PageName in context")
         .0;
 
+    // Prevent scroll
+    Effect::new(move |_| {
+        if is_settings_menu_open.get() {
+            leptos_dom::helpers::document().body().unwrap().class_list().add_1(BODY_STOP_SCROLL_CLASS)
+        } else {
+            leptos_dom::helpers::document().body().unwrap().class_list().remove_1(BODY_STOP_SCROLL_CLASS)
+        }
+    });
+
     view! {
         <button
             class = "settings-menu-button"
@@ -1054,7 +1064,7 @@ pub fn RecipeEntryMenu<T: RecipeEntry>(entry_menu_info: RecipeEntryMenuInfo<T>) 
                         });
                     }
                 >
-                    <CrossButtonSVG color="var(--theme-color-bg)".to_string() add_class="tag-delete".to_string() />
+                    <CrossButtonSVG color="var(--theme-color-bg)".to_string() />
                 </button>
             </Show>
 

@@ -1,3 +1,4 @@
+use gloo_timers::callback::Timeout;
 use leptos::prelude::*;
 use leptos::html;
 use leptos::ev;
@@ -45,15 +46,18 @@ pub fn RecipeSearchBar(
     let stop_clone = stop.clone();
 
     // Reset the timeout on input
-    Effect::new(move |_| {
-        current_search_input.track();
-        if is_pending.get_untracked() {
-            stop();
-            start(());
-        } else {
-            start(());
-        }
-    });
+    Effect::watch(
+        move || current_search_input.track(),
+        move |_, _, _| {
+            if is_pending.get_untracked() {
+                stop();
+                start(());
+            } else {
+                start(());
+            }
+        },
+        false
+    );
 
     // Cancels the timer
     Effect::new(move |_| {
@@ -125,9 +129,26 @@ pub fn RecipeSearchBar(
 
 #[component]
 pub fn LoadingElem(text: String) -> impl IntoView {
+
+    let is_visible = RwSignal::new(false);
+
+    // Wait for 0.5s to display the popup
+    Effect::new(move |_| {
+        let timeout = Timeout::new(500, move || {
+            is_visible.set(true);
+        });
+        timeout.forget();
+    });
+
     view! {
-        <div class="loading-elem" >
-            <p class="loading-elem-content" > { text } </p>
+        <div
+            class="loading-elem "
+            class:visible=move || { is_visible.get() }
+        >
+            <p
+                class="loading-elem-content"
+                class:visible=move || { is_visible.get() }
+            > { text } </p>
         </div>
     }
 }

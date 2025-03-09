@@ -171,7 +171,7 @@ pub async fn get_all_recipes_light() -> Result<Vec<RecipeLight>, ServerFnError> 
     }
 
     // Sort recipes alphabetically
-    all_recipe_light.sort_by_key(|r| r.name.to_lowercase());
+    //all_recipe_light.sort_by_key(|r| r.name.to_lowercase());
 
     Ok(all_recipe_light)
 }

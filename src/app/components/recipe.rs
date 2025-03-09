@@ -269,6 +269,7 @@ pub trait RecipeEntry: std::fmt::Debug + Clone + Default + std::marker::Sync + s
     ) -> AnyView;
     fn update_field_from_string_input(&mut self, field_id: Option<usize>, input: String);
     fn get_string_from_field(&self, field_id: Option<usize>) -> String;
+    fn is_empty(&self) -> bool;
 }
 
 /// INGREDIENTS and implementions -----
@@ -298,6 +299,10 @@ impl RecipeEntry for RecipeIngredient {
 
     fn get_css_class_name() -> String {
         "ingredients".to_string()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.qty_unit.trim().is_empty() && self.content.trim().is_empty()
     }
 
     fn into_editable_view(
@@ -393,6 +398,10 @@ impl RecipeEntry for RecipeInstruction {
         "instructions".to_string()
     }
 
+    fn is_empty(&self) -> bool {
+        self.content.trim().is_empty()
+    }
+
     fn into_editable_view(
         rw_entry: Self::S,
         _menu_info: Option<RecipeEntryMenuInfo<Self>>,
@@ -443,6 +452,10 @@ impl RecipeEntry for RecipeNote {
 
     fn get_css_class_name() -> String {
         "notes".to_string()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.content.trim().is_empty()
     }
 
     fn into_editable_view(
@@ -515,6 +528,10 @@ impl RecipeEntry for RecipeTag {
 
     fn get_css_class_name() -> String {
         "tags".to_string()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.name.trim().is_empty()
     }
 
     fn into_editable_view(

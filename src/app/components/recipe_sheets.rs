@@ -1,5 +1,5 @@
 use crate::app::elements::popups::ServerWarningPopup;
-use crate::app::{IsPageDirtySignal, LoginCheckResource};
+use crate::app::{IsPageDirtySignal, LoginCheckResource, PageColor};
 use crate::app::{
     elements::recipe_elements::*, Recipe, RecipeActionDescriptor, RecipeEntry,
     RecipeEntryType, RecipeIngredient, RecipeInstruction, RecipeLight, RecipeNote,
@@ -10,7 +10,7 @@ use leptos::html::Div;
 use leptos::{logging::*, prelude::*};
 
 #[component]
-pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> impl IntoView {
+pub fn RecipeCard(recipe_light: RecipeLight, color: ThemeColor) -> impl IntoView {
     
     // Is logged in ?
     let check_login_resource = use_context::<LoginCheckResource>()
@@ -28,7 +28,22 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
     let (recipe_id, recipe_name, recipe_tags) =
         (recipe_light.id, recipe_light.name, recipe_light.tags);
 
+
+    // Closure that updates PageColor in context
+    let update_page_color_context = move |new_color: ThemeColor| {
+        // Fetch page color
+        use_context::<PageColor>()
+            .expect("To find PageColor in context.")
+            .0
+            // Update it
+            .set(new_color);
+    };
+
+    // On RecipeCard click
     let on_click = move |_| {
+        // Update page color
+        update_page_color_context(color);
+        // Navigate to display page
         let path = "/recipe/".to_string() + &recipe_id.to_string() + "/display";
         let navigate = leptos_router::hooks::use_navigate();
         navigate(&path, Default::default());
@@ -47,7 +62,7 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
         move || {
             let tag_list = recipe_tags
                 .clone()
-                .unwrap_or_else(std::vec::Vec::new)
+                .unwrap_or(Vec::new())
                 .into_iter()
                 .map(move |t| {
                     view! {
@@ -76,15 +91,15 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
     let recipe_card_style = move || {
         if is_menu_open.get() {
             "background-color: var(--theme-color-bg);".to_string()
-                + &custom_color_style.as_border_main_color()
+                + &color.as_border_main_color()
         } else {
-            custom_color_style.as_bg_main_color() + &custom_color_style.as_alt_color()
+            color.as_bg_main_color() + &color.as_alt_color()
         }
     };
 
     let recipe_card_button_style = move || {
         if is_menu_open.get() {
-            custom_color_style.as_bg_main_color()
+            color.as_bg_main_color()
         } else {
             "background-color: var(--theme-color-bg);".to_string()
         }
@@ -132,9 +147,12 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
                     >
                         <span
                             class= "sub-menu-option"
-                            style=custom_color_style.as_visible_color()
+                            style=color.as_visible_color()
                             on:click=move |ev| {
                                 ev.stop_propagation();
+                                // Update page color
+                                update_page_color_context(color);
+                                // Navigate to edit page
                                 let path =
                                     "/recipe/".to_owned()
                                     + &recipe_id_getter.get_untracked().to_string()
@@ -147,7 +165,7 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
 
                         <span
                             class= "sub-menu-option"
-                            style=custom_color_style.as_visible_color()
+                            style=color.as_visible_color()
                             on:click=move |ev| {
                                 ev.stop_propagation();
                                 recipe_action.dispatch(RecipeActionDescriptor::Duplicate(recipe_id_getter.get()));
@@ -160,7 +178,7 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
 
                 <span
                     class= "sub-menu-option"
-                    style=custom_color_style.as_visible_color()
+                    style=color.as_visible_color()
                     on:click=move |ev| {
                         ev.stop_propagation();
                         let print_path =
@@ -188,6 +206,11 @@ pub fn RecipeCard(recipe_light: RecipeLight, custom_color_style: ThemeColor) -> 
 
 #[component]
 pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
+
+    // Fetch page color
+    let theme_color = use_context::<PageColor>()
+        .expect("To find PageColor in context.")
+        .0;
 
     // Extract a prefix, a number as f32, then a suffix.
     use regex::Regex;
@@ -217,7 +240,7 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
         recipe
             .ingredients
             .clone()
-            .unwrap_or_else(|| { vec![] })
+            .unwrap_or(vec![])
             .into_iter()
             .map(|ingredient| {
                 
@@ -294,8 +317,6 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
             })
             .collect_view()
     };
-
-    let theme_color = RwSignal::new(ThemeColor::random());
 
     view! {
         <RecipeMenu
@@ -508,6 +529,11 @@ pub fn EditableRecipeSheet(
     // Create the recipe if None
     let recipe = recipe.unwrap_or_default();
 
+    // Fetch page color
+    let theme_color = use_context::<PageColor>()
+        .expect("To find PageColor in context.")
+        .0;
+
     // Needed for move into closure view
     // for each category, make a Signal<Vec<(u16, (ReadSignal<T>, WriteSignal<T>))>>
     // 0.tags, 1.ingredients, 2.instructions, 3.notes
@@ -553,8 +579,6 @@ pub fn EditableRecipeSheet(
             );
         }
     });
-
-    let theme_color = RwSignal::new(ThemeColor::random());
 
     view! {
 
@@ -629,7 +653,8 @@ pub fn fetch_entries_from_signals<T: RecipeEntry>(
         let entries = signals
             .iter()
             .map(|(_, rw_signal)| rw_signal.get_untracked())
-            .collect();
+            .filter(|entry| !entry.is_empty())
+            .collect::<Vec<T>>();
         Some(entries)
     } else {
         None

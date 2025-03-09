@@ -99,38 +99,6 @@ pub fn SearchSVG() -> impl IntoView {
     }
 }
 
-#[component]
-pub fn SortUpSVG() -> impl IntoView {
-    view! {
-        <svg
-            class="sort-icon-svg"
-            stroke="none"
-            fill="black"
-        >
-            <path
-                d="M8 1.25a2.101 2.101 0 00-1.785.996l.64.392-.642-.388-5.675 9.373-.006.01a2.065 2.065 0 00.751 2.832c.314.183.67.281
-                1.034.285h11.366a2.101 2.101 0 001.791-1.045 2.064 2.064 0 00-.006-2.072L9.788 2.25l-.003-.004A2.084 2.084 0 008 1.25z"
-            />
-        </svg>
-    }
-}
-
-#[component]
-pub fn SortDownSVG() -> impl IntoView {
-    view! {
-        <svg
-            class="sort-icon-svg"
-            stroke="none"
-            fill="black"
-            transform="rotate(180)"
-        >
-            <path
-                d="M8 1.25a2.101 2.101 0 00-1.785.996l.64.392-.642-.388-5.675 9.373-.006.01a2.065 2.065 0 00.751 2.832c.314.183.67.281
-                1.034.285h11.366a2.101 2.101 0 001.791-1.045 2.064 2.064 0 00-.006-2.072L9.788 2.25l-.003-.004A2.084 2.084 0 008 1.25z"
-            />
-        </svg>
-    }
-}
 
 #[component]
 pub fn SortUpDownVG(is_up: bool) -> impl IntoView {
@@ -222,7 +190,7 @@ pub fn PrintButtonSVG(color: String) -> impl IntoView {
 #[component]
 pub fn EditButtonSVG(color: String) -> impl IntoView {
     view! {
-        <svg
+        /*<svg
             class="edit-icon-svg recipe-menu-icon edit"
             viewBox="0 0 24 24"
             fill=color
@@ -241,28 +209,26 @@ pub fn EditButtonSVG(color: String) -> impl IntoView {
                 21.9999H16C17.6569 21.9999 19 20.6568 19 18.9999V13.9999C19 13.4477 18.5523 12.9999 18 12.9999C17.4477 12.9999
                 17 13.4477 17 13.9999V18.9999C17 19.5522 16.5523 19.9999 16 19.9999H5C4.44772 19.9999 4 19.5522 4 18.9999V7.99994Z"
             />
-        </svg>
+        </svg>*/
 
-        /*<svg
+        <svg
             class="edit-icon-svg recipe-menu-icon edit"
+            viewBox="0 0 24 24"
             fill=color.clone()
             stroke=color
         >
-            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
             <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
-            <g id="SVGRepo_iconCarrier">
-                <path
-                    d="M18.3785 8.44975L8.9636 17.8648C8.6844 18.144 8.3288 18.3343 7.94161 18.4117L4.99988 19.0001L5.58823 16.0583C5.66566
-                    15.6711 5.85597 15.3155 6.13517 15.0363L15.5501 5.62132M18.3785 8.44975L19.7927 7.03553C20.1832 6.64501 20.1832 6.01184
-                    19.7927 5.62132L18.3785 4.20711C17.988 3.81658 17.3548 3.81658 16.9643 4.20711L15.5501 5.62132M18.3785 8.44975L15.5501
-                    5.62132"
-                    stroke="#000000"
-                    stroke-width="0.9120000000000001"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                ></path>
-            </g>
-        </svg>*/
+            <path
+                d="M18.3785 8.44975L8.9636 17.8648C8.6844 18.144 8.3288 18.3343 7.94161 18.4117L4.99988 19.0001L5.58823 16.0583C5.66566
+                15.6711 5.85597 15.3155 6.13517 15.0363L15.5501 5.62132M18.3785 8.44975L19.7927 7.03553C20.1832 6.64501 20.1832 6.01184
+                19.7927 5.62132L18.3785 4.20711C17.988 3.81658 17.3548 3.81658 16.9643 4.20711L15.5501 5.62132M18.3785 8.44975L15.5501
+                5.62132"
+                stroke="#000000"
+                stroke-width="0.9120000000000001"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            ></path>
+        </svg>
     }
 }
 
