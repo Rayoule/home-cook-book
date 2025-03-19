@@ -78,6 +78,49 @@ input[type="number"] {
 }
 
 
+.logo-img {
+	width: 200px;
+	height: 200px;
+
+	fill: var(--theme-color-1);
+	stroke:rgb(0, 0, 0);
+	stroke-width: 10px;
+}
+.recipe-menu-icon {
+	height: 2rem;
+	width: 2rem;
+
+	// Ajuster la taille ici
+
+	/*&.edit {
+		transform: scale(0.8);
+	}
+
+	&.print {
+		transform: scale(0.75);
+	}*/
+
+	/*&.delete {
+		height: 1.5rem;
+		width: 1.5rem;
+		stroke-width: 0.1rem;
+		transform: scale(1.1);
+	}*/
+}
+.settings-icon {
+	height: 3rem;
+	width: 3rem;
+
+	&.backup {
+		//
+	}
+
+	&.logout {
+		//
+	}
+}
+
+
 
 
 .logo {
@@ -363,10 +406,10 @@ svg {
 		box-shadow: var(--menu-shadow);
 	}
 }
-.settings-icon {
+/*.settings-icon {
 	height: 3rem;
 	width: 3rem;
-}
+}*/
 .settings-button-text {
 	font-size: large;
 	font-weight: bold;

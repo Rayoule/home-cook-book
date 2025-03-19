@@ -5,7 +5,7 @@ use leptos::prelude::*;
 pub fn LogoSVG() -> impl IntoView {
     view! {
 
-        <svg
+        /*<svg
             class="logo-svg"
             width="31.651993mm"
             height="32.948757mm"
@@ -59,7 +59,8 @@ pub fn LogoSVG() -> impl IntoView {
                 -0.464749,-0.59539 -1.35473,-1.61756 -0.561861,-0.37159 1.020906,1.31161 1.824076,2.75145 2.679753,4.17608 0.706257,1.43717 1.796086,2.65762 2.225518,4.23017 0.240842,0.43669 0.455515,1.75153 0.57001,1.8157 z m 4.496397,-1.42824 c 0.381466,-0.85332 -0.614851,-2.86635 -0.644943,-2.93788 0.164129,0.84575 0.470642,2.82648 0.644943,2.93788 z m -1.604156,0.004 c 0.07061,-1.38582 -0.4621,-2.52171 -1.246292,-3.64175 -0.692614,-1.62915 -1.584712,-3.20162 -2.6717,-4.60702 -1.318365,-2.13139 -3.788904,-3.24344 -5.887659,-4.26991 1.504224,1.14575 2.841667,2.46811 4.40625,3.53916 1.151993,1.01354 1.789728,2.43842 2.925864,3.49862 1.062195,1.27653 1.477216,2.92541 2.068036,4.43467 0.03794,0.13375 0.385146,1.3569 0.405501,1.04623 z m -9.14649,-1.15772 c 0.129406,-1.85767 -0.716883,-3.5784 -1.295174,-5.30618 -0.516904,-0.99713 0.833736,2.35313 0.856412,3.14957 0.166646,0.55849 0.329103,2.16086 0.438762,2.15661 z m 11.018096,-1.31041 c 0.109254,-0.78084 -0.956668,-2.40962 -1.082875,-2.3554 0.300062,0.57895 0.935338,2.335 1.082875,2.3554 z m -0.786804,-3.31874 c -0.817611,-1.52843 -2.111932,-2.66361 -3.41947,-3.76069 -0.539512,-0.49419 -2.848425,-2.33703 -1.237707,-0.79483 1.623461,1.42633 3.173146,2.90235 4.596997,4.51521 -0.07861,0.0433 0.136242,0.11456 0.06018,0.0403 z m 2.042263,-0.14428 c -0.116782,-0.59314 -0.529229,-2.64399 -0.731167,-2.37025 0.15773,0.80676 0.312259,1.80004 0.731167,2.37025 z m -1.520504,-2.35091 c -0.547198,-1.76648 -2.352824,-2.51755 -3.63952,-3.66905 -1.170777,-0.92492 -2.611479,-1.12568 -4.035158,-1.21066 -0.636158,0.003 -1.85516,-0.25239 -0.447418,0.0749 1.773326,0.27654 3.097626,1.52228 4.709612,2.21268 1.413068,0.49963 2.351869,1.79115 3.43814,2.63957 z"
             />
             </g>
-        </svg>
+        </svg>*/
+        <img src="/assets/logo.svg" class="logo-img" />
     }
 }
 
@@ -157,7 +158,7 @@ pub fn BackButtonSVG(#[prop(optional)] backup_page: bool) -> impl IntoView {
 #[component]
 pub fn PrintButtonSVG(color: String) -> impl IntoView {
     view! {
-        <svg
+        /*<svg
             class="print-icon-svg recipe-menu-icon print"
             fill=color
             viewBox="0 0 612.00 612.00"
@@ -165,7 +166,9 @@ pub fn PrintButtonSVG(color: String) -> impl IntoView {
             <g id="SVGRepo_bgCarrier" stroke-width="0"/>
             <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC" stroke-width="1.224"/>
             <g id="SVGRepo_iconCarrier"> <g> <path d="M404.814,0H60.736v612h490.527V153L404.814,0z M402.979,79.292l83.433,81.913h-83.433V79.292L402.979,79.292z M497.102,554.625H114.898V57.375h237.719v155.788h144.484V554.625z"/> </g> </g>
-        </svg>
+        </svg>*/
+
+        <img src="/assets/print.svg" class="recipe-menu-icon print" />
     }
 }
 
@@ -193,7 +196,7 @@ pub fn EditButtonSVG(color: String) -> impl IntoView {
             />
         </svg>*/
 
-        <svg
+        /*<svg
             class="edit-icon-svg recipe-menu-icon edit"
             viewBox="0 0 24 24"
             fill=color.clone()
@@ -210,7 +213,8 @@ pub fn EditButtonSVG(color: String) -> impl IntoView {
                 stroke-linecap="round"
                 stroke-linejoin="round"
             ></path>
-        </svg>
+        </svg>*/
+        <img src="/assets/edit.svg" class="recipe-menu-icon edit" />
     }
 }
 
@@ -248,7 +252,7 @@ pub fn CrossButtonSVG(color: String, #[prop(optional)] add_class: String) -> imp
 #[component]
 pub fn LogoutButtonSVG() -> impl IntoView {
     view! {
-        <svg
+        /*<svg
             class="logout-icon-svg settings-icon"
             viewBox="0 0 24 24"
             fill="none"
@@ -259,14 +263,16 @@ pub fn LogoutButtonSVG() -> impl IntoView {
                 d="M15 16.5V19C15 20.1046 14.1046 21 13 21H6C4.89543 21 4 20.1046 4 19V5C4 3.89543 4.89543 3 6 3H13C14.1046 3 15
                 3.89543 15 5V8.0625M11 12H21M21 12L18.5 9.5M21 12L18.5 14.5"
             />
-        </svg>
+        </svg>*/
+
+        <img src="/assets/logout.svg" class="settings-icon logout" />
     }
 }
 
 #[component]
 pub fn BackupButtonSVG() -> impl IntoView {
     view! {
-        <svg
+        /*<svg
             class="backup-icon-svg settings-icon"
             viewBox="0 0 24 24"
         >
@@ -276,7 +282,9 @@ pub fn BackupButtonSVG() -> impl IntoView {
                 L2,4 C2,2.8954305 2.8954305,2 4,2 Z M17,4 L17,10 L7,10 L7,4 L4,4 L4,20 L6,20 L6,12 L18,12 L18,20 L20,20 L20,6.48925072
                 L17.5777706,4 L17,4 Z M9,4 L9,8 L15,8 L15,4 L9,4 Z M8,14 L8,20 L16,20 L16,14 L8,14 Z M12,5 L14,5 L14,7 L12,7 L12,5 Z"
             />
-        </svg>
+        </svg>*/
+
+        <img src="/assets/backup.svg" class="settings-icon backup" />
     }
 }
 
