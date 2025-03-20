@@ -2,7 +2,7 @@ use crate::app::*;
 use components::recipe_sheets::RecipeSignals;
 use elements::icons_svg::{
     BackButtonSVG, BackupButtonSVG, CrossButtonSVG, EditButtonSVG, LogoutButtonSVG, PlusIconSVG,
-    PrintButtonSVG, RemoveSVG, SortSVG, SortUpDownVG,
+    PrintButtonSVG, RemoveSVG, SortSVG, SortUpDownVG, DeleteButtonSVG,
 };
 use leptos::ev::MouseEvent;
 use gloo_timers::callback::Timeout;
@@ -160,7 +160,7 @@ pub fn RecipeMenu(
                                         delete_info_signal.set( Some( DeletePopupInfo(recipe_id)) );
                                     }
                                 >
-                                    <CrossButtonSVG color=color.get().alt_color() />
+                                    <DeleteButtonSVG color=color.get().alt_color() />
                                     <p class="recipe-menu-text" >"Burn"</p>
                                 </button>
                             </Show>

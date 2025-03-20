@@ -142,7 +142,7 @@ pub fn BackButtonSVG(#[prop(optional)] backup_page: bool) -> impl IntoView {
     };
 
     view! {
-        <svg
+        /*<svg
             class="back-icon-svg".to_string() + &backup_page_class
             viewBox="-4.5 0 19 19"
         >
@@ -151,7 +151,10 @@ pub fn BackButtonSVG(#[prop(optional)] backup_page: bool) -> impl IntoView {
                 0-1.456l6.8-6.8a1.03 1.03 0 0 1 1.456 1.455L3.055 9.439l6.073 6.073A1.03
                 1.03 0 0 1 8.4 17.27z"
             />
-        </svg>
+        </svg>*/
+
+        <img src="/assets/back.svg" class="back-icon-svg".to_string() + &backup_page_class />
+
     }
 }
 
@@ -215,6 +218,23 @@ pub fn EditButtonSVG(color: String) -> impl IntoView {
             ></path>
         </svg>*/
         <img src="/assets/edit.svg" class="recipe-menu-icon edit" />
+    }
+}
+
+#[component]
+pub fn DeleteButtonSVG(color: String) -> impl IntoView {
+    view! {
+        /*<svg
+            class="print-icon-svg recipe-menu-icon print"
+            fill=color
+            viewBox="0 0 612.00 612.00"
+        >
+            <g id="SVGRepo_bgCarrier" stroke-width="0"/>
+            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC" stroke-width="1.224"/>
+            <g id="SVGRepo_iconCarrier"> <g> <path d="M404.814,0H60.736v612h490.527V153L404.814,0z M402.979,79.292l83.433,81.913h-83.433V79.292L402.979,79.292z M497.102,554.625H114.898V57.375h237.719v155.788h144.484V554.625z"/> </g> </g>
+        </svg>*/
+
+        <img src="/assets/delete.svg" class="recipe-menu-icon delete" />
     }
 }
 
