@@ -182,6 +182,10 @@ pub fn App() -> impl IntoView {
     let page_color = RwSignal::new(ThemeColor::random());
     provide_context(PageColor(page_color));
 
+    Effect::new(move || {
+        log!("Page Color is now: {:?}", page_color.get());
+    });
+
     // Color Map Memo
     let recipes_color_map: Memo<Vec<ThemeColor>> = Memo::new(move |prev_colors| {
 

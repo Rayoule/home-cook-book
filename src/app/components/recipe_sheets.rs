@@ -320,7 +320,6 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
 
     view! {
         <RecipeMenu
-            color=theme_color
             editable=false
             recipe_static_name=recipe.name
             recipe_id=recipe.id
@@ -583,7 +582,6 @@ pub fn EditableRecipeSheet(
     view! {
 
         <RecipeMenu
-            color=theme_color
             editable=true
             recipe_static_name="".to_string()
             recipe_id=recipe.id

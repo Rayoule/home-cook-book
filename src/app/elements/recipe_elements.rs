@@ -15,7 +15,6 @@ use leptos::logging::error;
 
 #[component]
 pub fn RecipeMenu(
-    color: RwSignal<ThemeColor>,
     editable: bool,
     recipe_id: Option<u16>,
     recipe_static_name: String,
@@ -26,6 +25,11 @@ pub fn RecipeMenu(
     // Is logged in
     let check_login_resource = use_context::<LoginCheckResource>()
         .expect("Expected to find LoginCheckAction in context")
+        .0;
+
+    // Fetch page color
+    let color = use_context::<PageColor>()
+        .expect("To find PageColor in context.")
         .0;
 
     let menu_open = RwSignal::new(false);
@@ -550,6 +554,11 @@ pub fn EditableTags(
     // Counter to assign new IDs
     let mut id_counter: u16 = rw_entries.read().len().try_into().unwrap();
 
+    // TODO REMOVE
+    Effect::new(move || {
+        log!("List of tags changed: {:?}", rw_entries.get())
+    });
+
     // Add Entry closure
     let mut add_entry = move |new_tag_name: String| {
         if !new_tag_name.is_empty() {
@@ -582,7 +591,7 @@ pub fn EditableTags(
             <ul class=style_class.clone() >
 
                 <For
-                    each=move || rw_entries.get()
+                    each=rw_entries
                     key=|entry| entry.0
                     children=move |(id, entry_signal)| {
 

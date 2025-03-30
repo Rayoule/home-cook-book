@@ -102,15 +102,16 @@ pub fn RecipeSearchBar(
             class="search-bar"
             on:submit=on_search_submit
         >
-            <button
+            /*<button
                 type="submit"
                 class="search-bar-button"
             >
                 <SearchSVG/>
-            </button>
+            </button>*/
             <input
                 class="search-bar-input"
                 node_ref=input_element
+                placeholder="Search"
                 // On Input, if empty -> clear search, else -> submit search for timer
                 on:input=move |ev| {
                     let value = event_target_value(&ev);
