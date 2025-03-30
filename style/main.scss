@@ -30,7 +30,7 @@
 	--theme-color-popup-2: #94A070;
 
 	--shadow: 2px 3px 5px rgba(0, 0, 0, 0.25);
-	--shadow-dense: 2px 3px 5px rgba(0, 0, 0, 0.7);
+	--shadow-dense: 2px 3px 5px rgba(0, 0, 0, 0.4);
 
 	--buttons-height: 2rem;
 	--buttons-width: 4.35rem;
@@ -79,52 +79,6 @@ input[type="number"] {
 }
 
 
-.logo-img {
-	width: 200px;
-	height: 200px;
-
-	fill: var(--theme-color-1);
-	stroke:rgb(0, 0, 0);
-	stroke-width: 10px;
-}
-.recipe-menu-icon {
-	//height: 2rem;
-	width: 2.5rem;
-
-	// Ajuster la taille ici
-
-	/*&.edit {
-		transform: scale(0.8);
-	}*/
-
-	&.print {
-		transform: 2.4rem;
-	}
-
-	/*&.delete {
-		height: 1.5rem;
-		width: 1.5rem;
-		stroke-width: 0.1rem;
-		transform: scale(1.1);
-	}*/
-}
-.settings-icon {
-	//height: 3rem;
-	width: 3rem;
-
-	margin: auto;
-
-	&.backup {
-		//
-	}
-
-	&.logout {
-		//
-	}
-}
-
-
-
 
 .logo {
 	display: block;
@@ -134,17 +88,10 @@ input[type="number"] {
 	margin-right: auto;
 	margin-bottom: 20px;
 }
-svg {
-	&.logo-svg {
-		overflow: visible;
-
-		width: 200px;
-		height: 200px;
-
-		fill: var(--theme-color-1);
-	}
+.logo-img {
+	width: 200px;
+	height: 200px;
 }
-
 
 
 .recipe-menu {
@@ -240,8 +187,8 @@ svg {
 	}
 
 	&.back {
-		top: 1.1rem;
-		left: 1.1rem;
+		top: var(--top-right-buttons-position);
+		left: var(--top-right-buttons-position);
 
 		background-color: #00000000;
 		border-radius: 80px;
@@ -262,25 +209,10 @@ svg {
 	}
 
 	&.recipe-menu-icon {
-		height: 2rem;
-		width: 2rem;
 
-		// Ajuster la taille ici
+		width: 2.5rem;
 
-		/*&.edit {
-			transform: scale(0.8);
-		}
-
-		&.print {
-			transform: scale(0.75);
-		}*/
-
-		&.delete {
-			height: 1.5rem;
-			width: 1.5rem;
-			stroke-width: 0.1rem;
-			transform: scale(1.1);
-		}
+		overflow: visible;
 	}
 }
 
@@ -409,10 +341,6 @@ svg {
 		box-shadow: var(--menu-shadow);
 	}
 }
-/*.settings-icon {
-	height: 3rem;
-	width: 3rem;
-}*/
 .settings-button-text {
 	font-size: 1rem;
 	font-weight: bold;
@@ -422,19 +350,32 @@ svg {
 	width: 100%;
 
 	color: var(--theme-color-bg);
-
-	//margin-left: 0.5rem;
 }
 svg {
 	&.settings-icon {
+		//height: 3rem;
+		width: 3rem;
+	
+		margin: auto;
+
 		fill: var(--theme-color-bg);
+	
+		/*fill: var(--theme-color-1-alt);
+		stroke: none;
+		stroke-width: 0;*/
+	
+		&.backup {
+			//
+		}
+	
+		&.logout {
+			//
+		}
 	}
 
-	&.logout-icon-svg {
-		fill: none;
-		stroke: var(--theme-color-bg);
-		stroke-width: 0.13rem;
-	}
+	/*&.logout-icon-svg {
+		fill: var(--theme-color-bg);
+	}*/
 }
 .settings-button {
 
@@ -442,8 +383,6 @@ svg {
 
 	position: relative;
 
-	//height: 4rem;
-	//width: 8rem;
 	height: 6.3rem;
 	width: 6rem;
 
@@ -1328,19 +1267,6 @@ textarea#text-input {
 	position: relative;
 	margin-top: 2rem;
 }
-.tags-suggestions-button {
-
-	background-color: #00000000;
-	border: none;
-
-	transform: rotate(180deg);
-
-	transition: transform 0.2s ease-out;
-
-	&.open {
-		transform: rotate(0deg);
-	}
-}
 .tags-suggestions {
 
 	text-align: center;
@@ -1525,6 +1451,13 @@ svg {
 		&.down {
 			transform: Rotate(180deg);
 		}
+	}
+
+	&.delete-entry-icon-svg {
+		height: 1.5rem;
+		width: 1.5rem;
+		stroke-width: 0.1rem;
+		transform: scale(1.1);
 	}
 }
 
@@ -1981,61 +1914,3 @@ ul.tag-list {
 	margin-top: 1rem;
 }
 
-
-
-
-// SLIDES Definitions -----------------------------------------------
-
-.slideIn {
-	animation: 0.25s slideIn forwards cubic-bezier(0.0, 0.0, 0.2, 1);
-}
-
-.slideOut {
-	animation: 0.1s slideOut forwards;
-}
-
-@keyframes slideIn {
-	from {
-	transform: translate(100vw, 0);
-	}
-	to {
-	transform: translate(0px, 0px);
-	}
-}
-  
-@keyframes slideOut {
-	from {
-	  transform: translate(0px, 0px);
-	}
-	to {
-	  transform: translate(-100vw, 0);
-	}
-}
-
-.slideInBack {
-	animation: 0.25s slideInBack forwards cubic-bezier(0.0, 0.0, 0.2, 1);
-}
-
-.slideOutBack {
-	animation: 0.1s slideOutBack forwards;
-}
-
-@keyframes slideInBack {
-	from {
-	  transform: translate(-100vw, 0);
-	}
-  
-	to {
-	  transform: translate(0px, 0px);
-	}
-}
-  
-@keyframes slideOutBack {
-	from {
-	  transform: translate(0px, 0px);
-	}
-  
-	to {
-	  transform: translate(100vw, 0);
-	}
-}
