@@ -409,7 +409,7 @@ impl RecipeEntry for RecipeInstruction {
         view! {
             <RecipeEntryInput
                 class=              "instructions".to_owned()
-                placeholder=        "Instructions".to_owned()
+                placeholder=        "".to_owned()
                 rw_entry=           rw_entry
             />
         }

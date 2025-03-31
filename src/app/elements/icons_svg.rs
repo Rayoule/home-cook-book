@@ -205,13 +205,11 @@ pub fn DeleteButtonSVG(color: String) -> impl IntoView {
 
 /// Close Tags Menu Button
 #[component]
-pub fn CrossButtonSVG(color: String, #[prop(optional)] add_class: String) -> impl IntoView {
+pub fn CrossButtonSVG(#[prop(optional)] add_class: String) -> impl IntoView {
     view! {
         <svg
-            class="delete-entry-icon-svg ".to_string() + &add_class
+            class=add_class
             viewBox="0 -0.5 25 25"
-            stroke=color.clone()
-            fill=color
         >
             <path
                 d="M6.96967 16.4697C6.67678 16.7626 6.67678 17.2374 6.96967 17.5303C7.26256 17.8232 7.73744

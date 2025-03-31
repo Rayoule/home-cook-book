@@ -178,13 +178,9 @@ pub fn App() -> impl IntoView {
     });
 
     // The current page color (to feed RecipePage from the same color as the RecipeCard clicked)
-    // Default is random
-    let page_color = RwSignal::new(ThemeColor::random());
+    // Default is Color3
+    let page_color = RwSignal::new(ThemeColor::Color3);
     provide_context(PageColor(page_color));
-
-    Effect::new(move || {
-        log!("Page Color is now: {:?}", page_color.get());
-    });
 
     // Color Map Memo
     let recipes_color_map: Memo<Vec<ThemeColor>> = Memo::new(move |prev_colors| {

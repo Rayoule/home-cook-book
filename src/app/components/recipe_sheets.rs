@@ -526,7 +526,17 @@ pub fn EditableRecipeSheet(
     let is_new_recipe = is_new_recipe.unwrap_or(false);
 
     // Create the recipe if None
-    let recipe = recipe.unwrap_or_default();
+    let mut recipe = recipe.unwrap_or_default();
+    
+    // If this is a new recipe, then add a default empty ingredient
+    if is_new_recipe {
+        recipe.ingredients = Some(vec![
+            RecipeIngredient {
+                qty_unit: "".to_string(),
+                content: "".to_string()
+            }
+        ])
+    }
 
     // Fetch page color
     let theme_color = use_context::<PageColor>()

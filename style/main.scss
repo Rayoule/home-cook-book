@@ -128,6 +128,10 @@ input[type="number"] {
 	display: flex;
 	flex-direction: row;
 	justify-content: center;
+
+	&.menu-closed {
+		display: none;
+	}
 }
 .recipe-menu-option {
 	font-size: 1rem;
@@ -145,6 +149,10 @@ input[type="number"] {
 	color: var(--theme-color-bg);
 	background-color: #00000000;
 	border: none;
+
+	&.unavailable {
+		display: none;
+	}
 }
 .recipe-menu-text {
 	position: absolute;
@@ -333,13 +341,19 @@ svg {
     border-bottom-right-radius: var(--drop-menu-border-radius);
 
 	transition:
-		top var(--menu-open-speed) ease-out
+		top var(--menu-open-speed) ease-out,
+		height var(--menu-open-speed) ease-out
 	;
 
 	&.is-open {
 		top: 0;
 		box-shadow: var(--menu-shadow);
+
+		&.not-logged {
+			height: calc( var(--menu-height) + 3rem );
+		}
 	}
+
 }
 .settings-button-text {
 	font-size: 1rem;
@@ -436,7 +450,7 @@ svg {
 
 	padding: 0;
 	padding-left: 0.5rem;
-	margin-right: 1rem;
+	margin-right: 2rem;
 	margin-left: 0.5rem;
 
 	outline: inherit;
@@ -458,17 +472,34 @@ svg {
     padding: 0;
     
 }
+.cancel-search-button {
+	position: absolute;
+
+	right: 0.5rem;
+
+	height: 1.5rem;
+	width: 1.5rem;
+
+	background-color: #00000000;
+	border: none;
+
+	overflow: visible;
+}
 svg {
-	&.search-icon-svg {
-		height: 1.2rem;
-		width: 1.2rem;
-
-		stroke: var(--theme-color-1);
-		stroke-width: 1.4rem;
-		fill: none;
-
+	&.cancel-search-svg {
+		height: 1.5rem;
+		transform: scale(1.3);
+		padding: auto;
 		overflow: visible;
+
+		fill: var(--theme-color-1);
+		stroke: var(--theme-color-1);
+		stroke-width: 0.5px;
 	}
+}
+.not-found-img {
+	width: 80vw;
+	margin: 1rem 5vw;
 }
 
 .all-recipes {
@@ -775,6 +806,10 @@ ul.recipe-light li::before {
 	bottom: 2rem;
 	left: 0;
 	width: 100%;
+
+	&.menu-open {
+		display: none;
+	}
 }
 
 .ingredients-title-with-multiplier {
@@ -1007,6 +1042,8 @@ ul.recipe-light li::before {
 	}
 
 	&.recipe-name {
+
+		/*
 		font-weight: x-large;
 		font-size: larger;
 
@@ -1014,6 +1051,19 @@ ul.recipe-light li::before {
 		padding: 0.25rem;
 
 		background-color: white;
+		*/
+
+		position: absolute;
+		bottom: 2rem;
+		left: 0;
+
+		width: 84vw;
+		margin: 0 8vw;
+
+		background-color: rgba(255, 255, 255, 0);
+		//background: none;
+		font-weight: bold;
+		font-size: 1.4rem;
 	
 		&.menu-open {
 			opacity: 0%;
@@ -1177,15 +1227,6 @@ svg {
 		height: 1.2rem;
 		width: 1.2rem;
 	}
-}
-
-
-.recipe-name-input-container {
-	position: absolute;
-
-	width: 100%;
-	bottom: 1rem;
-	left: 0;
 }
 
 
@@ -1445,7 +1486,11 @@ svg {
 	&.delete-entry-icon-svg {
 		height: 1.5rem;
 		width: 1.5rem;
+
+		fill: var(--theme-color-bg);
+		stroke: var(--theme-color-bg);
 		stroke-width: 0.1rem;
+
 		transform: scale(1.1);
 	}
 }

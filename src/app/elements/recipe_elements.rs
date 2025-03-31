@@ -50,71 +50,75 @@ pub fn RecipeMenu(
                 }}
             >
 
-                <div
-                    node_ref=recipe_menu_div_ref
-                    class="recipe-menu"
-                    class:is-open=menu_open
-                    style=move || { color.get().as_bg_main_color() }
-                >
+                {move || {
 
-                    {move || {
-                        if menu_open.get() {
-                            let _ = leptos_use::on_click_outside(
-                                recipe_menu_div_ref,
-                                move |_| {
-                                    menu_open.set(false);
-                                    //ev.stop_propagation();
-                                }
-                            );
-                        }
-                    }}
+                    // Fetch the color here so there aren't mismatches on reload
+                    let color = color.get();
 
-                    <button
-                        style=move || { color.get().as_alt_color() }
-                        class="recipe-menu-button back"
-                        on:click=move |ev| {
-                            ev.stop_propagation();
-                            let navigate = leptos_router::hooks::use_navigate();
-                            navigate("/", Default::default());
-                        }
-                    >
-                        <BackButtonSVG/>
-                    </button>
-
-                    <button
-                        style=move || { color.get().as_alt_color() }
-                        class="recipe-menu-button menu"
-                        on:click=move |ev| {
-                            ev.stop_propagation();
-                            menu_open.update(|b| *b = !*b);
-                        }
-                    >
-                    </button>
-
-                    <Show
-                        when=move || { !menu_open.get() }
-                    >
-                        <h2
-                            style=move || { color.get().as_alt_color() }
-                            class="display-recipe-name"
-                            class:menu-open=menu_open
+                    view! {
+                        <div
+                            node_ref=recipe_menu_div_ref
+                            class="recipe-menu"
+                            class:is-open=menu_open
+                            style=move || { color.as_bg_main_color() }
                         >
-                            { recipe_static_name.clone() }
-                        </h2>
-                    </Show>
-        
-                    <Show
-                        when=menu_open
-                    >
-                        
-                        <div class="recipe-menu-option-container">
 
-                            <Show
-                                when=move || { check_login_resource.get() == Some(true) }
+                            // Close the menu on click outside
+                            {move || {
+                                if menu_open.get() {
+                                    let _ = leptos_use::on_click_outside(
+                                        recipe_menu_div_ref,
+                                        move |_| {
+                                            menu_open.set(false);
+                                            //ev.stop_propagation();
+                                        }
+                                    );
+                                }
+                            }}
+
+                            // Button Back <
+                            <button
+                                style=move || { color.as_alt_color() }
+                                class="recipe-menu-button back"
+                                on:click=move |ev| {
+                                    ev.stop_propagation();
+                                    let navigate = leptos_router::hooks::use_navigate();
+                                    navigate("/", Default::default());
+                                }
                             >
+                                <BackButtonSVG/>
+                            </button>
+
+                            // Button Open Menu
+                            <button
+                                style=move || { color.as_alt_color() }
+                                class="recipe-menu-button menu"
+                                on:click=move |ev| {
+                                    ev.stop_propagation();
+                                    menu_open.update(|b| *b = !*b);
+                                }
+                            >
+                            </button>
+
+                            // Recipe Name
+                            <h2
+                                style=move || { color.as_alt_color() }
+                                class="display-recipe-name"
+                                class:menu-open=menu_open
+                            >
+                                { recipe_static_name.clone() }
+                            </h2>
+
+                            // Recipe Menu Options
+                            <div
+                                class="recipe-menu-option-container"
+                                class:menu-closed=move || !menu_open.get()
+                            >
+                                // Button Edit
                                 <button
-                                    style=move || { color.get().as_alt_color() }
+                                    style=move || { color.as_alt_color() }
                                     class="recipe-menu-option"
+                                    class:unavailable=move || { check_login_resource.get() != Some(true) }
                                     on:click=move |ev: MouseEvent| {
                                         ev.stop_propagation();
                                         let edit_path = "/recipe/".to_owned() + &recipe_id.to_string() + "/editable";
@@ -122,36 +126,35 @@ pub fn RecipeMenu(
                                         navigate(&edit_path, Default::default());
                                     }
                                 >
-                                    <EditButtonSVG color=color.get().alt_color() />
+                                    <EditButtonSVG color=color.alt_color() />
                                     <p class="recipe-menu-text" >"Edit"</p>
                                 </button>
-                            </Show>
-            
-                            <button
-                                style=move || { color.get().as_alt_color() }
-                                class="recipe-menu-option"
-                                on:click=move |ev| {
-                                    ev.stop_propagation();
-                                    let print_path = "/recipe/".to_owned() + &recipe_id.to_string() + "/print";
-                                    let window = web_sys::window().expect("window should be available");
-                                    window
-                                        .open_with_url_and_target(&print_path, "_blank")
-                                        .unwrap_or_else(|_| {
-                                            error!("No Window found.");
-                                            None
-                                        });
-                                }
-                            >
-                                <PrintButtonSVG color=color.get().alt_color() />
-                                <p class="recipe-menu-text" >"Print"</p>
-                            </button>
-            
-                            <Show
-                                when=move || { check_login_resource.get() == Some(true) }
-                            >
+
+                                // Button Print
                                 <button
-                                    style=move || { color.get().as_alt_color() }
+                                    style=move || { color.as_alt_color() }
                                     class="recipe-menu-option"
+                                    on:click=move |ev| {
+                                        ev.stop_propagation();
+                                        let print_path = "/recipe/".to_owned() + &recipe_id.to_string() + "/print";
+                                        let window = web_sys::window().expect("window should be available");
+                                        window
+                                            .open_with_url_and_target(&print_path, "_blank")
+                                            .unwrap_or_else(|_| {
+                                                error!("No Window found.");
+                                                None
+                                            });
+                                    }
+                                >
+                                    <PrintButtonSVG color=color.alt_color() />
+                                    <p class="recipe-menu-text" >"Print"</p>
+                                </button>
+
+                                // Button Delete
+                                <button
+                                    style=move || { color.as_alt_color() }
+                                    class="recipe-menu-option"
+                                    class:unavailable=move || { check_login_resource.get() != Some(true) }
                                     on:click=move |ev: MouseEvent| {
                                         ev.stop_propagation();
                                         // Close the Menu
@@ -164,16 +167,16 @@ pub fn RecipeMenu(
                                         delete_info_signal.set( Some( DeletePopupInfo(recipe_id)) );
                                     }
                                 >
-                                    <DeleteButtonSVG color=color.get().alt_color() />
+                                    <DeleteButtonSVG color=color.alt_color() />
                                     <p class="recipe-menu-text" >"Burn"</p>
                                 </button>
-                            </Show>
-                        
+
+                            </div>
+                
                         </div>
-        
-                    </Show>
-        
-                </div>
+                    }
+                }}
+                
             </Transition>
         }.into_any()
     } else {
@@ -278,22 +281,21 @@ pub fn RecipeMenu(
 
                     { move || {
                         view! {
-                            <div class="recipe-name-input-container" >
-                                <input
-                                    class="text-input recipe-name"
-                                    class:menu-open=menu_open
-                                    type="text"
-                                    id="text-input"
-                                    placeholder="Recipe"
-                                    maxlength="45"
-                                    // get_untracked() because this is only initial value
-                                    value=name_signal.get_untracked()
-                                    // update name_signal on input
-                                    on:input=move |ev| {
-                                        name_signal.set(event_target_value(&ev))
-                                    }
-                                />
-                            </div>
+                            <input
+                                class="text-input recipe-name"
+                                class:menu-open=menu_open
+                                style=move || color.get().as_alt_color()
+                                type="text"
+                                id="text-input"
+                                placeholder="Recipe"
+                                maxlength="45"
+                                // get_untracked() because this is only initial value
+                                value=name_signal.get_untracked()
+                                // update name_signal on input
+                                on:input=move |ev| {
+                                    name_signal.set(event_target_value(&ev))
+                                }
+                            />
                         }.into_any()
                     }}
 
@@ -382,15 +384,17 @@ where
         .0;
 
     // Counter to assign new IDs
-    let mut id_counter: u16 = rw_entries.read().len().try_into().unwrap();
+    let id_counter: RwSignal<u16> = RwSignal::new(
+        rw_entries.read().len().try_into().unwrap()
+    );
 
     // Add Entry closure
     let add_entry = move |_| {
         let new_entry_signal = ArcRwSignal::new(T::default());
         rw_entries.update(move |entries| {
-            entries.push((id_counter, new_entry_signal));
+            entries.push((id_counter.get(), new_entry_signal));
         });
-        id_counter += 1;
+        id_counter.update(|x| *x = *x + 1);
         is_page_dirty.set(true);
     };
 
@@ -552,21 +556,19 @@ pub fn EditableTags(
         .0;
 
     // Counter to assign new IDs
-    let mut id_counter: u16 = rw_entries.read().len().try_into().unwrap();
-
-    // TODO REMOVE
-    Effect::new(move || {
-        log!("List of tags changed: {:?}", rw_entries.get())
-    });
+    let id_counter: RwSignal<u16> = RwSignal::new(
+        rw_entries.read().len().try_into().unwrap()
+    );
 
     // Add Entry closure
-    let mut add_entry = move |new_tag_name: String| {
+    let add_entry = move |new_tag_name: String| {
         if !new_tag_name.is_empty() {
             let new_entry_signal = ArcRwSignal::new(RecipeTag { name: new_tag_name });
             rw_entries.update(move |entries| {
-                entries.push((id_counter, new_entry_signal));
+                entries.push((id_counter.get(), new_entry_signal));
             });
-            id_counter += 1;
+            //id_counter += 1;
+            id_counter.update(|x| *x = *x + 1 );
             is_page_dirty.set(true);
             true
         } else {
@@ -591,7 +593,7 @@ pub fn EditableTags(
             <ul class=style_class.clone() >
 
                 <For
-                    each=rw_entries
+                    each=move || rw_entries.get()
                     key=|entry| entry.0
                     children=move |(id, entry_signal)| {
 
@@ -629,10 +631,8 @@ pub fn EditableTags(
                                     });
                                 }
                             >
-
                                 // Entry
                                 { RecipeTag::into_editable_view(entry_signal, Some(entry_menu_info.clone())) }
-
                             </li>
                         }
                     }
@@ -894,21 +894,24 @@ pub fn SettingsMenu() -> impl IntoView {
             }
         ></div>
 
-        <div
-            class = "settings-menu"
-            class:is-open=is_settings_menu_open
-            on:click=move |ev| {
-                ev.stop_propagation();
-                is_settings_menu_open.set(false);
-            }
+        
+
+        <Transition
+            fallback=move || { view! {
+                <ServerWarningPopup
+                    text="Waiting for Login Check...".to_string()
+                />
+            }}
         >
 
-            <Transition
-                fallback=move || { view! {
-                    <ServerWarningPopup
-                        text="Waiting for Login Check...".to_string()
-                    />
-                }}
+            <div
+                class="settings-menu"
+                class:is-open=is_settings_menu_open
+                class:not-logged=move || check_login_resource.get() != Some(true)
+                on:click=move |ev| {
+                    ev.stop_propagation();
+                    is_settings_menu_open.set(false);
+                }
             >
 
                 <Show
@@ -962,10 +965,8 @@ pub fn SettingsMenu() -> impl IntoView {
                     </button>
                     
                 </Show>
-
-            </Transition>
-
-        </div>
+            </div>
+        </Transition>
     }
 }
 
@@ -1073,7 +1074,9 @@ pub fn RecipeEntryMenu<T: RecipeEntry>(entry_menu_info: RecipeEntryMenuInfo<T>) 
                         });
                     }
                 >
-                    <CrossButtonSVG color="var(--theme-color-bg)".to_string() />
+                    <CrossButtonSVG
+                        add_class="delete-entry-icon-svg".to_string()
+                    />
                 </button>
             </Show>
 

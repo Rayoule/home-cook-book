@@ -4,7 +4,7 @@ use leptos::html;
 use leptos::ev;
 use leptos_use::{use_timeout_fn, UseTimeoutFnReturn};
 
-use crate::app::elements::icons_svg::SearchSVG;
+use crate::app::elements::icons_svg::CrossButtonSVG;
 
 // Will display on top of each page in the header
 #[component]
@@ -124,6 +124,20 @@ pub fn RecipeSearchBar(
                 }
             >
             </input>
+            <Show
+                when=move || !search_input.get().is_empty()
+            >
+                <button
+                    class="cancel-search-button"
+                    on:click=move |_| {
+                        request_search_clear.set(true);
+                    }
+                >
+                    <CrossButtonSVG
+                        add_class="cancel-search-svg".to_string()
+                    />
+                </button>
+            </Show>
         </form>
     }
 }

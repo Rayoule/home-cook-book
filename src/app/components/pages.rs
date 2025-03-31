@@ -613,62 +613,55 @@ pub fn AllRecipes() -> impl IntoView {
                                                 .enumerate()
                                                 .collect();
 
-                                        
-                                        // If no results:
+                                        // filter tags
+                                        if !sel_tags.is_empty() {
+                                            recipes.retain(|recipe| recipe.1.has_tags(&sel_tags));
+                                        }
+                                        // filter search
+                                        if !search_input_value.is_empty() {
+                                            recipes.retain(|recipe| recipe.1.is_in_search(&search_input_value));
+                                        }
+
+                                        // Fetch the current Color Map
+                                        let color_map = use_context::<RecipesColorMap>()
+                                            .expect("Expected to find RecipesColorMap in context.")
+                                            .0
+                                            .get();
+                                        // And don't forget to refresh the shuffle !
+                                        use_context::<ShuffleColors>()
+                                            .expect("Expected to find ShuffleColors in context.")
+                                            .0
+                                            .set(false);
+
+
+                                        // If empty, then it means that there is a search with no results
                                         if recipes.is_empty() {
-
                                             view! {
-                                                <div>
-                                                    <p>"No results..."</p>
-                                                    <button
-                                                        //class="cancel-search-button"
-                                                        on:click=on_cancel_search_click
-                                                    >
-                                                        "Cancel"
-                                                    </button>
-                                                </div>
+                                                <img
+                                                    src="/assets/not_found.svg"
+                                                    class="not-found-img"
+                                                    on:click=on_cancel_search_click
+                                                />
                                             }.into_any()
-
                                         } else {
-
-                                            // filter tags
-                                            if !sel_tags.is_empty() {
-                                                recipes.retain(|recipe| recipe.1.has_tags(&sel_tags));
-                                            }
-                                            // filter search
-                                            if !search_input_value.is_empty() {
-                                                recipes.retain(|recipe| recipe.1.is_in_search(&search_input_value));
-                                            }
-
-                                            // Fetch the current Color Map
-                                            let color_map = use_context::<RecipesColorMap>()
-                                                .expect("Expected to find RecipesColorMap in context.")
-                                                .0
-                                                .get();
-                                            // And don't forget to refresh the shuffle !
-                                            use_context::<ShuffleColors>()
-                                                .expect("Expected to find ShuffleColors in context.")
-                                                .0
-                                                .set(false);
-
                                             // Recipe Views
                                             recipes
-                                                .into_iter()
-                                                .map(move |(local_id, recipe)| {
-                                                    let style_color = color_map
-                                                        .get(local_id)
-                                                        .copied()
-                                                        .unwrap_or(ThemeColor::Undefined);
+                                            .into_iter()
+                                            .map(move |(local_id, recipe)| {
+                                                let style_color = color_map
+                                                    .get(local_id)
+                                                    .copied()
+                                                    .unwrap_or(ThemeColor::Undefined);
 
-                                                    view! {
-                                                        <RecipeCard
-                                                            recipe_light=recipe
-                                                            color=style_color
-                                                        />
-                                                    }
-                                                })
-                                                .collect_view()
-                                                .into_any()
+                                                view! {
+                                                    <RecipeCard
+                                                        recipe_light=recipe
+                                                        color=style_color
+                                                    />
+                                                }
+                                            })
+                                            .collect_view()
+                                            .into_any()
                                         }
                                     }
                                 }
