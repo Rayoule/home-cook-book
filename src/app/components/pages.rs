@@ -69,28 +69,31 @@ pub fn LoginMenu() -> impl IntoView {
     };
 
     view! {
-        <div>
-            <h3 class="login-title" >{"Login"}</h3>
-            <form class="login-form" on:submit=submit_event>
-                <input
-                    class="login-input"
-                    type="text"
-                    placeholder="Username"
-                    value=move || submission.0.get().0
-                    node_ref=name_input
-                />
-                <br/>
-                <input
-                    class="login-input"
-                    type="password"
-                    placeholder="Password"
-                    value=move || submission.0.get().1
-                    node_ref=password_input
-                />
-                <br/>
-                <button class="login-button" type="submit"> "ok" </button>
-            </form>
-        </div>
+        <form
+            class="login-form"
+            on:submit=submit_event
+            on:click=move |ev| {
+                ev.stop_propagation();
+            }
+        >
+            <input
+                class="login-input"
+                type="text"
+                placeholder="Username"
+                value=move || submission.0.get().0
+                node_ref=name_input
+            />
+            <br/>
+            <input
+                class="login-input"
+                type="password"
+                placeholder="Password"
+                value=move || submission.0.get().1
+                node_ref=password_input
+            />
+            <br/>
+            <button class="login-button" type="submit"> "Login" </button>
+        </form>
     }
 }
 

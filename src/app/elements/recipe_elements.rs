@@ -334,11 +334,16 @@ pub fn IngredientMultiplier(
 
     view! {
         <div class="multiplier-container">
-            <span class="multiplier-span">{"x"}</span>
+            <span
+                class="multiplier-span"
+                style=move || { color.get().as_visible_color() }
+            >
+                {"x"}
+            </span>
             <input
                 class="ingredients-multiplier "
                 class:not-valid=move || { !is_input_valid.get() }
-                style=move || { color.get().as_border_main_color() }
+                style=move || { color.get().as_alt_color() }
                 node_ref=mult_ref
                 value="1"
                 placeholder=""
@@ -917,14 +922,15 @@ pub fn SettingsMenu() -> impl IntoView {
                 <Show
                     when=move || check_login_resource.get() == Some(true)
                     fallback=move || view! {
-                        <div
+                        /*<div
                             class="login-container"
                             on:click=move |ev| {
                                 ev.stop_propagation();
                             }
                         >
                             <LoginMenu/>
-                        </div>
+                        </div>*/
+                        <LoginMenu/>
                     }
                 >
 

@@ -331,7 +331,7 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
                 when=move || { !are_ingrs_empty }
             >
                 <div class="display-recipe ingredients container">
-                    <div class="ingredients-title-with-multiplier">
+                    <div>
                         <h3
                             style=move || { theme_color.get().as_visible_color() + "margin-bottom: 0;" }
                             class="display-recipe ingredients title"
@@ -527,7 +527,7 @@ pub fn EditableRecipeSheet(
 
     // Create the recipe if None
     let mut recipe = recipe.unwrap_or_default();
-    
+
     // If this is a new recipe, then add a default empty ingredient
     if is_new_recipe {
         recipe.ingredients = Some(vec![

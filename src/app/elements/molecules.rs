@@ -6,6 +6,9 @@ use leptos_use::{use_timeout_fn, UseTimeoutFnReturn};
 
 use crate::app::elements::icons_svg::CrossButtonSVG;
 
+
+const SEARCH_DELAY_MS: f64 = 500.0;
+
 // Will display on top of each page in the header
 #[component]
 pub fn RecipeSearchBar(
@@ -26,7 +29,6 @@ pub fn RecipeSearchBar(
 
 
     // Search Timeout
-    const SEARCH_DELAY_MS: f64 = 500.0;
     let current_search_input = RwSignal::new(String::new());
     let should_cancel_timeout = RwSignal::new(false);
 
@@ -102,12 +104,6 @@ pub fn RecipeSearchBar(
             class="search-bar"
             on:submit=on_search_submit
         >
-            /*<button
-                type="submit"
-                class="search-bar-button"
-            >
-                <SearchSVG/>
-            </button>*/
             <input
                 class="search-bar-input"
                 node_ref=input_element
@@ -118,14 +114,16 @@ pub fn RecipeSearchBar(
                     if value.is_empty() {
                         should_cancel_timeout.set(true);
                         search_input.set(vec![]);
-                    } else {
+                    }/* else {
                         current_search_input.set(value);
-                    }
+                    }*/
+                    current_search_input.set(value);
+
                 }
             >
             </input>
             <Show
-                when=move || !search_input.get().is_empty()
+                when=move || !current_search_input.get().is_empty()
             >
                 <button
                     class="cancel-search-button"

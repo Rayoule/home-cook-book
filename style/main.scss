@@ -290,6 +290,10 @@ svg {
 	&.is-enabled {
 		display: inherit;
 		opacity: 35%;
+
+		&.tags-blocker {
+			opacity: 0%;
+		}
 	}
 }
 
@@ -475,7 +479,7 @@ svg {
 .cancel-search-button {
 	position: absolute;
 
-	right: 0.5rem;
+	right: 0.7rem;
 
 	height: 1.5rem;
 	width: 1.5rem;
@@ -812,25 +816,31 @@ ul.recipe-light li::before {
 	}
 }
 
-.ingredients-title-with-multiplier {
-	display: flex;
-	flex-direction: column;
 
-	width: 100%;
-}
 .multiplier-container {
 	margin-top: calc( var(--display-recipe-title-margin) - 1.1rem );
 	margin-bottom: 0.5rem;
 	margin-left: calc( 25% - 3rem );
 }
 .multiplier-span {
+	font-size: default;
+	font-weight: bold;
+	font-family: inherit;
+
 	position: absolute;
 	transform: translate(0.3rem, 0.15rem);
 	margin: 0 auto;
 	margin-right: 0.1rem;
+	height: 1.1rem;
+
+	//padding-bottom: 0.5rem;
 	
 }
 .ingredients-multiplier {
+	font-size: large;
+	font-weight: bold;
+	font-family: inherit;
+
 	text-align: center;
 
 	height: 1.1rem;
@@ -840,9 +850,10 @@ ul.recipe-light li::before {
 	padding-right: 0.2rem;
 
 	color: black;
-	background-color: white;
+	background: none;
 
-	border: 2px solid var(--theme-color-2);
+	//border: 2px solid var(--theme-color-2);
+	border: none;
 	border-radius: 2rem;
 
 	&.not-valid {
@@ -1000,6 +1011,12 @@ ul.recipe-light li::before {
 		&::before {
 			content: "#";
 		}
+
+		// Prevent blue outline when clicked on browser
+		-webkit-tap-highlight-color: transparent;
+		&:focus {
+			outline: none;
+		}
 	}
 }
 
@@ -1025,9 +1042,9 @@ ul.recipe-light li::before {
 
 	width: 100%;
 
-	border: none;
-	background-color: #ffffff;
-    border-radius: 15px;
+	border: 2px solid var(--theme-color-2);
+	background: none;
+	border-radius: 1rem;
 
 	&.wrapper {
 		position: relative;
@@ -1042,17 +1059,6 @@ ul.recipe-light li::before {
 	}
 
 	&.recipe-name {
-
-		/*
-		font-weight: x-large;
-		font-size: larger;
-
-		width: auto;
-		padding: 0.25rem;
-
-		background-color: white;
-		*/
-
 		position: absolute;
 		bottom: 2rem;
 		left: 0;
@@ -1060,10 +1066,12 @@ ul.recipe-light li::before {
 		width: 84vw;
 		margin: 0 8vw;
 
-		background-color: rgba(255, 255, 255, 0);
-		//background: none;
 		font-weight: bold;
 		font-size: 1.4rem;
+
+		border: none;
+		background: none;
+		border-radius: 0;
 	
 		&.menu-open {
 			opacity: 0%;
@@ -1105,6 +1113,10 @@ ul.recipe-light li::before {
 
 		background-color: #00000000;
 
+		border: none;
+		background: none;
+		border-radius: 0;
+
 
 		&.wrapper {
 			margin-left: 1rem;
@@ -1137,8 +1149,8 @@ ul.recipe-light li::before {
 		padding-left: 1rem;
 		padding-top: 0.75rem;
 
-		border: none;
-		border-radius: 1rem;
+		//border: none;
+		
 	}
 
 	&.notes {
@@ -1168,6 +1180,10 @@ ul.recipe-light li::before {
 	height: var(--buttons-height);
 	background-color: white;
 	border-radius: 2rem;
+
+	border: 2px solid var(--theme-color-2);
+	background: none;
+	border-radius: 1rem;
 }
 
 .tag-add-form {
@@ -1319,7 +1335,7 @@ textarea#text-input {
 	color: var(--theme-color-4-alt);
 	background-color: #00000000;
 
-    border: 3px solid var(--theme-color-2);
+    border: 2px solid var(--theme-color-2);
 	border-radius: 2rem;
 
     transition: transform 0.1s ease-out;
@@ -1588,6 +1604,8 @@ svg {
 	position: fixed;
 
 	display: flex;
+	flex-direction: column;
+	justify-content: center;
 
 	left: -100vw;
 	top: 0;
@@ -1597,6 +1615,8 @@ svg {
 
 	background-color: var(--tag-list-color);
 	box-shadow: none;
+
+	border-radius: 0rem 3rem 3rem 0rem;
 
 	&.unrolled {
 		left: 0;
@@ -1615,9 +1635,10 @@ ul.tag-list {
 
 	overflow-y: auto;
 
-	//height: auto;
 	margin: 4rem var(--border-margin);
-	padding-top: 25vh;
+	margin-bottom: 0;
+	margin-top: 0;
+	padding-bottom: 4rem;
 
 	transition:
 		max-height 0.15s ease-out
@@ -1800,23 +1821,21 @@ ul.tag-list {
 
 // LOGIN Definitions -----------------------------------------------
 
-.login-title {
-	margin-bottom: 1rem;
-
-	color: var(--theme-color-bg);
+.login-form {
+	transform: translateY(1rem);
 }
 .login-input {
-
+	font-family: inherit;
 	font-weight: bold;
 
 	height: 1.5rem;
 	width: 50vw;
 	max-width: 300px;
 
-	color: var(--theme-color-menu);
-	background-color: var(--theme-color-bg);
+	color: var(--theme-color-bg);
+	background: var(--theme-color-menu);
 
-	border: none;
+	border: 2px solid var(--theme-color-1-alt);
 	border-radius: 40px;
 
 	margin-bottom: 0.5rem;
@@ -1826,10 +1845,13 @@ ul.tag-list {
 
 	font-size:medium;
 	font-weight: bold;
+	font-family: inherit;
 
 	display: block;
 
-	margin: 1rem auto;
+	margin: 0.5rem auto;
+	//margin-top: 1rem;
+	margin-bottom: 0;
 
 	height: var(--buttons-height);
 	width: var(--buttons-width);
