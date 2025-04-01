@@ -33,11 +33,12 @@
 	--shadow-dense: 2px 3px 5px rgba(0, 0, 0, 0.4);
 
 	--buttons-height: 2rem;
-	--buttons-width: 4.35rem;
+	//--buttons-width: 4.35rem;
+	--buttons-width: 4rem;
 
 	--top-right-buttons-position: 1.4rem;
 
-	--drop-menu-border-radius: 25px;
+	--drop-menu-border-radius: /*25px*/ 3rem;
 
 	--border-margin: 1rem;
 	--recipe-dynamic-max-width: min(55rem, calc(100vw - (var(--border-margin) * 2) ));
@@ -501,9 +502,27 @@ svg {
 		stroke-width: 0.5px;
 	}
 }
+.not-found-container {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+
+	position: relative;
+
+	width: 90vw;
+
+	opacity: 50%;
+}
+.not-found-span {
+	font-family: inherit;
+	font-size: larger;
+	font-weight: bold;
+
+	color: var(--theme-color-1);
+}
 .not-found-img {
-	width: 80vw;
-	margin: 1rem 5vw;
+	width: 50vw;
+	margin: 1rem auto;
 }
 
 .all-recipes {
@@ -818,44 +837,47 @@ ul.recipe-light li::before {
 
 
 .multiplier-container {
+	position: relative;
+
+	box-sizing: border-box;
+
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+
 	margin-top: calc( var(--display-recipe-title-margin) - 1.1rem );
 	margin-bottom: 0.5rem;
-	margin-left: calc( 25% - 3rem );
+	margin-left: calc( 25% - 4rem );
+
+	padding: 0;
+
+	width: var(--buttons-width);
+	height: var(--buttons-height);
+
+	border: 2px solid currentColor;
+	border-radius: 2rem;
 }
 .multiplier-span {
-	font-size: default;
+	font-size: medium;
 	font-weight: bold;
 	font-family: inherit;
 
-	position: absolute;
-	transform: translate(0.3rem, 0.15rem);
-	margin: 0 auto;
-	margin-right: 0.1rem;
-	height: 1.1rem;
-	
+	padding-left: 0.5rem;
 }
 .ingredients-multiplier {
-	font-size: large;
+	font-size: medium;
 	font-weight: bold;
 	font-family: inherit;
-
 	text-align: center;
 
-	height: 1.1rem;
-	width: 1.35rem;
-	
-	padding-left: 0.8rem;
-	padding-right: 0.2rem;
+	width: 2.5rem;
 
-	color: black;
 	background: none;
-
 	border: none;
-	border-radius: 2rem;
+	box-sizing: border-box;
 
 	&.not-valid {
-		color: white;
-		background-color: rgb(139, 28, 28);
+		background-color: rgba(255, 0, 0, 0);
 	}
 
 	&:focus {

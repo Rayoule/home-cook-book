@@ -18,16 +18,6 @@ pub fn RecipeSearchBar(
 
     let input_element: NodeRef<html::Input> = NodeRef::new();
 
-    Effect::new(move |_| {
-        if request_search_clear.get() {
-            // Clear search
-            input_element.get().expect("Input to be mounted").set_value("");
-            search_input.set(vec![]);
-            request_search_clear.set(false);
-        }
-    });
-
-
     // Search Timeout
     let current_search_input = RwSignal::new(String::new());
     let should_cancel_timeout = RwSignal::new(false);
@@ -46,6 +36,17 @@ pub fn RecipeSearchBar(
     );
 
     let stop_clone = stop.clone();
+
+    // Clear Search request
+    Effect::new(move |_| {
+        if request_search_clear.get() {
+            // Clear search
+            input_element.get().expect("Input to be mounted").set_value("");
+            current_search_input.set("".to_string());
+            search_input.set(vec![]);
+            request_search_clear.set(false);
+        }
+    });
 
     // Reset the timeout on input
     Effect::watch(
@@ -114,16 +115,14 @@ pub fn RecipeSearchBar(
                     if value.is_empty() {
                         should_cancel_timeout.set(true);
                         search_input.set(vec![]);
-                    }/* else {
-                        current_search_input.set(value);
-                    }*/
+                    }
                     current_search_input.set(value);
 
                 }
             >
             </input>
             <Show
-                when=move || !current_search_input.get().is_empty()
+                when=move || !current_search_input.get().trim().is_empty()
             >
                 <button
                     class="cancel-search-button"

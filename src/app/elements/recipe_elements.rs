@@ -333,17 +333,20 @@ pub fn IngredientMultiplier(
     let is_input_valid = RwSignal::new(true);
 
     view! {
-        <div class="multiplier-container">
+        <div
+            class="multiplier-container"
+            style=move || color.get().as_visible_color()
+        >
             <span
                 class="multiplier-span"
-                style=move || { color.get().as_visible_color() }
+                style=move || color.get().as_visible_color()
             >
                 {"x"}
             </span>
             <input
                 class="ingredients-multiplier "
-                class:not-valid=move || { !is_input_valid.get() }
-                style=move || { color.get().as_alt_color() }
+                class:not-valid=move || !is_input_valid.get()
+                style=move || color.get().as_visible_color()
                 node_ref=mult_ref
                 value="1"
                 placeholder=""

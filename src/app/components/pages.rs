@@ -640,11 +640,18 @@ pub fn AllRecipes() -> impl IntoView {
                                         // If empty, then it means that there is a search with no results
                                         if recipes.is_empty() {
                                             view! {
-                                                <img
-                                                    src="/assets/not_found.svg"
-                                                    class="not-found-img"
-                                                    on:click=on_cancel_search_click
-                                                />
+                                                <div
+                                                    class="not-found-container"
+                                                >
+                                                    <span
+                                                        class="not-found-span"
+                                                    >"No Results"</span>
+                                                    <img
+                                                        src="/assets/not_found.svg"
+                                                        class="not-found-img"
+                                                        on:click=on_cancel_search_click
+                                                    />
+                                                </div>
                                             }.into_any()
                                         } else {
                                             // Recipe Views
