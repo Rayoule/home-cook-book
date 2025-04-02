@@ -1,3 +1,4 @@
+use crate::app::elements::icons_svg::HashtagSVG;
 use crate::app::IsTagsMenuOpen;
 use leptos::ev::MouseEvent;
 use leptos::{leptos_dom, prelude::*};
@@ -76,6 +77,16 @@ pub fn TagList(
                 class:hide-notifier=move || selected_tags_signal.read().is_empty()
                 on:click=on_unroll_click
             >
+                {move || {
+                    let mut hashtag_class = "hashtag-svg ".to_string();
+                    if !selected_tags_signal.read().is_empty() {
+                        hashtag_class = hashtag_class + "hide-hashtag"
+                    }
+
+                    view! {
+                        <HashtagSVG add_class=hashtag_class />
+                    }
+                }}
             </button>
         </div>
 

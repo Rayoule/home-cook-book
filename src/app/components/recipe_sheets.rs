@@ -333,7 +333,7 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
                 <div class="display-recipe ingredients container">
                     <div>
                         <h3
-                            style=move || { theme_color.get().as_visible_color() + "margin-bottom: 0;" }
+                            style=move || theme_color.get().as_visible_color()
                             class="display-recipe ingredients title"
                         >"Ingredients"</h3>
 
@@ -528,14 +528,15 @@ pub fn EditableRecipeSheet(
     // Create the recipe if None
     let mut recipe = recipe.unwrap_or_default();
 
-    // If this is a new recipe, then add a default empty ingredient
+    // If this is a new recipe, then add a default empty ingredient and set default name
     if is_new_recipe {
         recipe.ingredients = Some(vec![
             RecipeIngredient {
                 qty_unit: "".to_string(),
                 content: "".to_string()
             }
-        ])
+        ]);
+        recipe.name = "New Recipe".to_string();
     }
 
     // Fetch page color

@@ -200,7 +200,7 @@ pub fn RecipeMenu(
             let signals = recipe_signals.get_untracked();
             // Gather recipe
             use components::recipe_sheets::fetch_entries_from_signals;
-            let updated_recipe: Recipe = Recipe {
+            let mut updated_recipe: Recipe = Recipe {
                 id: recipe_id,
                 name: signals.0.clone().get_untracked(),
                 tags: fetch_entries_from_signals(signals.1.get_untracked()),
@@ -209,31 +209,29 @@ pub fn RecipeMenu(
                 notes: fetch_entries_from_signals(signals.4.get_untracked()),
             };
 
-            // Check recipe
-            match updated_recipe.valid_for_save() {
-                Ok(_) => {
-                    if is_new_recipe {
-                        // Add new recipe
-                        recipe_action.dispatch(RecipeActionDescriptor::Add(updated_recipe));
-                    } else {
-                        // Update the id
-                        let id = updated_recipe.id;
-                        // Save the recipe
-                        recipe_action.dispatch(RecipeActionDescriptor::Save(updated_recipe));
-                        // Reroute to display
-                        if let Some(id) = id {
-                            let path = "/recipe/".to_string() + &id.to_string() + "/display";
-                            let navigate = leptos_router::hooks::use_navigate();
-                            navigate(&path, Default::default());
-                        }
-                    }
+            // Check recipe name
+            if updated_recipe.name.is_empty() {
+                updated_recipe.name = "New Recipe".to_string();
+            }
 
-                    is_page_dirty.set(false);
-                }
-                Err(e) => {
-                    error!("{}", e);
+            // Dispatch recipe
+            if is_new_recipe {
+                // Add new recipe
+                recipe_action.dispatch(RecipeActionDescriptor::Add(updated_recipe));
+            } else {
+                // Update the id
+                let id = updated_recipe.id;
+                // Save the recipe
+                recipe_action.dispatch(RecipeActionDescriptor::Save(updated_recipe));
+                // Reroute to display
+                if let Some(id) = id {
+                    let path = "/recipe/".to_string() + &id.to_string() + "/display";
+                    let navigate = leptos_router::hooks::use_navigate();
+                    navigate(&path, Default::default());
                 }
             }
+
+            is_page_dirty.set(false);
         };
 
         view! {
@@ -287,7 +285,7 @@ pub fn RecipeMenu(
                                 style=move || color.get().as_alt_color()
                                 type="text"
                                 id="text-input"
-                                placeholder="Recipe"
+                                placeholder="New Recipe"
                                 maxlength="45"
                                 // get_untracked() because this is only initial value
                                 value=name_signal.get_untracked()
@@ -337,12 +335,15 @@ pub fn IngredientMultiplier(
             class="multiplier-container"
             style=move || color.get().as_visible_color()
         >
-            <span
+            /*<span
                 class="multiplier-span"
                 style=move || color.get().as_visible_color()
             >
                 {"x"}
-            </span>
+            </span>*/
+            <CrossButtonSVG
+                add_class="multiplier-cross-svg".to_string()
+            />
             <input
                 class="ingredients-multiplier "
                 class:not-valid=move || !is_input_valid.get()

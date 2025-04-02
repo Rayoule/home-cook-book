@@ -19,17 +19,6 @@ pub struct Recipe {
     pub notes: Option<Vec<RecipeNote>>,
 }
 
-impl Recipe {
-    /// Check if the recipe is valid to be added/saved (need only a name)
-    pub fn valid_for_save(&self) -> Result<(), String> {
-        if self.name.is_empty() {
-            Err("Recipe has no name".to_string())
-        } else {
-            Ok(())
-        }
-    }
-}
-
 /// Lightweight recipe format
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RecipeLight {
@@ -469,7 +458,7 @@ impl RecipeEntry for RecipeNote {
 
             <RecipeEntryInput
                 class=              "notes note-content".to_owned()
-                placeholder=        "Note content".to_owned()
+                placeholder=        "".to_owned()
                 rw_entry=           rw_entry
             />
         }
