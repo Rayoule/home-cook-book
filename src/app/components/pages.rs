@@ -438,8 +438,8 @@ impl ThemeColor {
 
     pub fn random() -> Self {
         use rand::Rng;
-        let mut rng = rand::thread_rng();
-        match rng.gen_range(0..4) {
+        let mut rng = rand::rng();
+        match rng.random_range(0..4) {
             0 => Color1,
             1 => Color2,
             2 => Color3,
@@ -492,8 +492,8 @@ impl PopupColor {
 
     pub fn random() -> Self {
         use rand::Rng;
-        let mut rng = rand::thread_rng();
-        match rng.gen_range(0..3) {
+        let mut rng = rand::rng();
+        match rng.random_range(0..3) {
             0 => PopupColor::Color1,
             1 => PopupColor::Color2,
             2 => PopupColor::Color3,

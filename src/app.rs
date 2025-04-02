@@ -17,7 +17,7 @@ use leptos::prelude::*;
 use leptos_meta::*;
 use leptos_router::components::{Router, Routes, Route};
 use leptos_router::path;
-use rand::{seq::SliceRandom, thread_rng};
+use rand::{seq::SliceRandom, rng};
 
 pub mod components;
 pub mod elements;
@@ -210,7 +210,7 @@ pub fn App() -> impl IntoView {
             // Generate and push colors
             use ThemeColor::*;
             let mut color_pool = [Color1, Color2, Color3, Color4];
-            let mut rng = thread_rng();
+            let mut rng = rng();
             for i in 0..n {
                 let x = i%4;
                 if x == 0 {
