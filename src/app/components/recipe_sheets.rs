@@ -1,5 +1,5 @@
 use crate::app::elements::popups::ServerWarningPopup;
-use crate::app::{IsPageDirtySignal, LoginCheckResource, PageColor};
+use crate::app::{IsPageDirtySignal, LoginCheckResource, PageColor, SelectedTagsRwSignal};
 use crate::app::{
     elements::recipe_elements::*, Recipe, RecipeActionDescriptor, RecipeEntry,
     RecipeEntryType, RecipeIngredient, RecipeInstruction, RecipeLight, RecipeNote,
@@ -212,6 +212,11 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
         .expect("To find PageColor in context.")
         .0;
 
+    // Fetch Selected tags signal
+    let selected_tags_signal = use_context::<SelectedTagsRwSignal>()
+        .expect("To find SelectedTagsRwSignal in context.")
+        .0;
+
     // Extract a prefix, a number as f32, then a suffix.
     use regex::Regex;
     fn extract_number(input: &str) -> Option<(&str, f32, &str)> {
@@ -310,8 +315,18 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
             .into_iter()
             .map(|tag| {
                 view! {
-                    <li class="display-recipe tags">
-                        { tag.name }
+                    <li
+                        class="display-recipe tags"
+                        on:click=move |ev| {
+                            ev.stop_propagation();
+                            // Set tag search to the current tag clicked
+                            selected_tags_signal.set(vec![tag.name.clone()]);
+                            // Then navigate to main page
+                            let navigate = leptos_router::hooks::use_navigate();
+                            navigate("/", Default::default());
+                        }
+                    >
+                        { tag.name.clone() }
                     </li>
                 }
             })
@@ -331,21 +346,19 @@ pub fn RecipeSheet(recipe: Recipe) -> impl IntoView {
                 when=move || { !are_ingrs_empty }
             >
                 <div class="display-recipe ingredients container">
-                    <div>
-                        <h3
-                            style=move || theme_color.get().as_visible_color()
-                            class="display-recipe ingredients title"
-                        >"Ingredients"</h3>
-
-                        <IngredientMultiplier
-                            color=theme_color
-                            mult=multiplier
-                        />
-                    </div>
+                    <h3
+                        style=move || theme_color.get().as_visible_color()
+                        class="display-recipe ingredients title"
+                    >"Ingredients"</h3>
 
                     <ul class="display-recipe ingredients">
                         { ingredient_list() }
                     </ul>
+
+                    <IngredientMultiplier
+                        color=theme_color
+                        mult=multiplier
+                    />
                 </div>
             </Show>
             
@@ -536,7 +549,6 @@ pub fn EditableRecipeSheet(
                 content: "".to_string()
             }
         ]);
-        recipe.name = "New Recipe".to_string();
     }
 
     // Fetch page color

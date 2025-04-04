@@ -10,6 +10,8 @@ use leptos::html::{Input, Li};
 use leptos::leptos_dom;
 use leptos::logging::error;
 
+use super::icons_svg::SaveIconSVG;
+
 
 
 
@@ -272,7 +274,7 @@ pub fn RecipeMenu(
                                 class="recipe-menu-button save"
                                 on:click=on_save_click
                             >
-                                "save"
+                                <SaveIconSVG/>
                             </button>
                         </Show>
                     </Show>
@@ -335,12 +337,6 @@ pub fn IngredientMultiplier(
             class="multiplier-container"
             style=move || color.get().as_visible_color()
         >
-            /*<span
-                class="multiplier-span"
-                style=move || color.get().as_visible_color()
-            >
-                {"x"}
-            </span>*/
             <CrossButtonSVG
                 add_class="multiplier-cross-svg".to_string()
             />
@@ -1004,6 +1000,9 @@ pub fn RecipeEntryMenu<T: RecipeEntry>(entry_menu_info: RecipeEntryMenuInfo<T>) 
                 {move || {
 
                     if let Some(index) = all_entries.read().iter().position(|x| x.0 == current_id) {
+
+                        let show_move_up = index > 0;
+                        let show_move_down = index < all_entries.read().len() - 1;
                         
                         view! {
 
@@ -1012,7 +1011,8 @@ pub fn RecipeEntryMenu<T: RecipeEntry>(entry_menu_info: RecipeEntryMenuInfo<T>) 
                                     view! {
                                         // Sort up button
                                         <button
-                                            class="recipe-entry-menu-button move-up"
+                                            class="recipe-entry-menu-button move-up "
+                                            class:two-buttons=move || show_move_down && show_move_up
                                             on:click=move |ev| {
                                                 ev.stop_propagation();
                                                 all_entries.update(|entries| {
@@ -1034,6 +1034,7 @@ pub fn RecipeEntryMenu<T: RecipeEntry>(entry_menu_info: RecipeEntryMenuInfo<T>) 
                                         // Sort down button
                                         <button
                                             class="recipe-entry-menu-button move-down"
+                                            class:two-buttons=move || show_move_down && show_move_up
                                             on:click=move |ev| {
                                                 ev.stop_propagation();
                                                 all_entries.update(|entries| {

@@ -31,23 +31,16 @@ pub struct RecipeLight {
 impl RecipeLight {
     /// Check if a recipe has a tag in the given tag list
     pub fn has_tags(&self, tags_to_check: &Vec<String>) -> bool {
-        let mut out = false;
         // if no tags to check, then all recipes valid
         if tags_to_check.is_empty() {
-            out = true;
+            true
         // if there are, then check the tags in recipes and then compare them
         } else if let Some(tags) = &self.tags {
-            if tags_to_check.is_empty() {
-                return true;
-            }
-            for tag in tags {
-                if tags_to_check.contains(&tag.name) {
-                    out = true;
-                    break;
-                }
-            }
+            // Ensure that the recipe MUST contain all the selected tags to be displayed
+            tags_to_check.iter().all(|tag| tags.contains(&RecipeTag{name: tag.to_string()}))
+        } else {
+            false
         }
-        out
     }
 
     pub fn is_in_search(&self, search_words: &[String]) -> bool {
@@ -299,12 +292,15 @@ impl RecipeEntry for RecipeIngredient {
         menu_info: Option<RecipeEntryMenuInfo<Self>>,
     ) -> AnyView {
 
+        let menu_info = menu_info.expect("Expected to find menu_signal for ingredient entry.");
+
         view! {
             <div
                 class="editable-ingredients-wrapper"
+                class:menu-open=move || menu_info.mode.read() != RecipeEntryMenuMode::Closed
             >
                 <RecipeEntryMenu
-                    entry_menu_info=     menu_info.expect("Expected to find menu_signal for ingredient entry.")
+                    entry_menu_info=     menu_info.clone()
                 />
 
                 <RecipeEntryInput

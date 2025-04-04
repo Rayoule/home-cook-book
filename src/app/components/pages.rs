@@ -319,8 +319,6 @@ pub fn RecipePage() -> impl IntoView {
             <CheckLogin/>
         </Show>
 
-        <DeleteRecipePopup/>
-
         <div class="main-content">
         <Transition
             fallback=move || view! {
@@ -338,6 +336,8 @@ pub fn RecipePage() -> impl IntoView {
                         RecipePageMode::Editable => {
                             // Editable Recipe
                             view! {
+                                <DeleteRecipePopup/>
+                                
                                 <EditableRecipeSheet
                                     recipe=         recipe
                                     is_new_recipe=  false
@@ -557,8 +557,6 @@ pub fn AllRecipes() -> impl IntoView {
 
             <div class="all-recipes">
 
-                <DeleteRecipePopup/>
-
                 <Transition
                     fallback=move || { view! {
                         <ServerWarningPopup
@@ -592,6 +590,46 @@ pub fn AllRecipes() -> impl IntoView {
                         request_search_clear=request_search_clear
                     />
                 </div>
+
+                // Selected tags
+                <Show
+                    when=move || !selected_tags_signal.read().is_empty()
+                >
+                    {move || {
+                        let sel_tags = selected_tags_signal
+                            .get()
+                            .into_iter()
+                            .map(|t| view! {
+                                <li
+                                    class="display-recipe tags"
+                                    // On click, remove this tag from the tag_selection
+                                    on:click=move |ev| {
+                                        ev.stop_propagation();
+                                        selected_tags_signal.update(|sel| {
+                                            // Find the right tag
+                                            if let Some(index) = sel.iter().position(|x| *x == t.clone()) {
+                                                // Remove it
+                                                sel.remove(index);
+                                            } else {
+                                                // The tag should be found at this point
+                                                error!("Tag to delete was not found!");
+                                            }
+                                        })
+                                    }
+                                >
+                                    { t.clone() }
+                                </li>
+                            })
+                            .collect_view();
+                        
+                        view! {
+                            <ul class="show-selected-tags">
+                                {sel_tags.into_any()}
+                            </ul>
+                        }
+                        
+                    }}
+                </Show>
 
                 <div class="recipe-list-container">
                     {move || {

@@ -4,7 +4,6 @@ use leptos::prelude::*;
 #[component]
 pub fn LogoSVG() -> impl IntoView {
     view! {
-
         <img src="/assets/logo.svg" class="logo-img" />
     }
 }
@@ -325,5 +324,12 @@ pub fn HashtagSVG(#[prop(optional)] add_class: String) -> impl IntoView {
                 />
             </g>
         </svg>
+    }
+}
+
+#[component]
+pub fn SaveIconSVG() -> impl IntoView {
+    view! {
+        <img src="/assets/save.svg" class="save-img" />
     }
 }
