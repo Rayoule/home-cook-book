@@ -46,7 +46,7 @@ pub fn DownloadAll(has_been_backed_up: RwSignal<bool>) -> impl IntoView {
                             on:click =  move |_| { has_been_backed_up.set(true) }
                             class=      "download-backup-button"
                         >
-                            "Download All"
+                            "Download Backup"
                         </a>
                     }.into_any()
                 } else {
@@ -108,7 +108,7 @@ pub fn UploadAll(has_been_backed_up: RwSignal<bool>) -> impl IntoView {
             when = has_been_backed_up
             fallback = move || view! {
                 <p class="backup-warning" >
-                    "Download all before you can overwrite."
+                    "To overwrite the recipes, download a backup first"
                 </p>
             }
         >
@@ -135,7 +135,7 @@ pub fn UploadAll(has_been_backed_up: RwSignal<bool>) -> impl IntoView {
                             class=          "save-input"
                             node_ref=       textarea
                             id=             "text-input"
-                            placeholder=    "Paste JSON save here"
+                            placeholder=    "Paste JSON backup here"
                             on:input=move |ev| {
                                 // resize box to fit text
                                 #[cfg(feature= "hydrate")]

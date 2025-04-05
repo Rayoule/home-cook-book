@@ -57,6 +57,14 @@ pub fn DeleteRecipePopup() -> impl IntoView {
         .expect("To find DeleteInfoSignal in context.")
         .0;
 
+    // On page change, reset the popup
+    Effect::new(move || {
+        leptos_router::hooks::use_location()
+            .pathname
+            .track();
+        delete_info_signal.set(None);
+    });
+
     let on_sure_click = move |ev: MouseEvent| {
         ev.stop_propagation();
         if let Some(info) = delete_info_signal.get() {
@@ -91,7 +99,6 @@ pub fn DeleteRecipePopup() -> impl IntoView {
             leptos_dom::helpers::document().body().unwrap().class_list().remove_1(BODY_STOP_SCROLL_CLASS)
         }
     });
-
 
     view! {
         <Show

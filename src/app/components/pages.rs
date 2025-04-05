@@ -241,6 +241,7 @@ pub struct IsPageDirtySignal(pub RwSignal<bool>);
 
 #[component]
 pub fn RecipePage() -> impl IntoView {
+
     // Get params functions
     let get_recipe_id_param = move |tracked: bool| {
         let params = if tracked {
@@ -335,9 +336,7 @@ pub fn RecipePage() -> impl IntoView {
                     match get_recipe_mode(true) {
                         RecipePageMode::Editable => {
                             // Editable Recipe
-                            view! {
-                                <DeleteRecipePopup/>
-                                
+                            view! { 
                                 <EditableRecipeSheet
                                     recipe=         recipe
                                     is_new_recipe=  false
@@ -347,6 +346,7 @@ pub fn RecipePage() -> impl IntoView {
                         RecipePageMode::Display => {
                             // Display Recipe
                             view! {
+                                <DeleteRecipePopup/>
                                 <RecipeSheet
                                     recipe= recipe
                                 />

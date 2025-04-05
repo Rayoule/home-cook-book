@@ -99,7 +99,6 @@ button {
 }
 
 
-
 .logo {
 	display: block;
 
@@ -1286,6 +1285,8 @@ svg {
 		padding: 10px;
 
 		width: inherit;
+
+		border-color: var(--theme-color-menu);
 	}
 }
 .editable-ingredients-wrapper {
