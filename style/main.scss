@@ -567,6 +567,7 @@ svg {
 
 	position: relative;
 
+	max-width: var(--recipe-dynamic-max-width);
 	width: 90vw;
 	margin-top: 1rem;
 
@@ -583,12 +584,13 @@ svg {
 
 	margin: 0 auto;
 
-	transform: translateX(-10vw);
+	transform: translateX(-20%);
 
 	color: var(--theme-color-1);
 }
 .not-found-img {
-	width: 65vw;
+	max-width: 30rem;
+	width: 100%;
 	margin: 1rem auto;
 }
 
